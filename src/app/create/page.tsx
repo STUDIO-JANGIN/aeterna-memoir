@@ -1,4 +1,5 @@
-"use client"
+"use client" // 1순위: 클라이언트 컴포넌트 선언이 가장 먼저!
+export const dynamic = 'force-dynamic' // 2순위: 그 다음에 빌드 설정 추가
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { supabase } from "@/lib/supabase"

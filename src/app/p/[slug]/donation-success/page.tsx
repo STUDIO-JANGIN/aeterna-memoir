@@ -114,5 +114,3 @@ export default function DonationSuccessPage({ params }: PageProps) {
     </Suspense>
   )
 }
-
-export { DONATION_STORAGE_PREFIX }

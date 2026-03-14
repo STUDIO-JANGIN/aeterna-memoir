@@ -1,10 +1,6 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export type UploadNewEventProfileResult =
   | { ok: true }
@@ -17,6 +13,7 @@ export async function uploadNewEventProfileAction(
   slug: string,
   formData: FormData
 ): Promise<UploadNewEventProfileResult> {
+  const supabase = getSupabaseAdmin()
   const file = formData.get("profile_image") as File | null
   if (!file || file.size === 0) return { ok: true }
 

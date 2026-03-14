@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
+import { getAppBaseUrl } from "@/lib/appUrl"
 import { supabase } from "@/lib/supabase"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
     // Full price: $99, Credit price: $70 (99 - 29)
     const unitAmount = hasCredit ? 7000 : 9900
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    const baseUrl = getAppBaseUrl()
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",

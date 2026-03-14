@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { headers } from "next/headers"
-import { createClient } from "@supabase/supabase-js"
 import { notifyAdmin } from "@/lib/notifyAdmin"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -13,17 +13,18 @@ const stripe =
     apiVersion: "2026-02-25.clover", // <-- 여기를 2024-06-20에서 이대로 바꾸세요!
   })
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase =
-  supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
-    : null
-
 export async function POST(req: NextRequest) {
   if (!stripe || !webhookSecret) {
     console.error("Stripe webhook not configured – missing secret or webhook secret")
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 })
+  }
+
+  let supabase
+  try {
+    supabase = getSupabaseAdmin()
+  } catch (e) {
+    console.error("Supabase not configured:", e instanceof Error ? e.message : e)
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 500 })
   }
 
   const h = await headers()

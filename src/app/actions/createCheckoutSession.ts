@@ -1,7 +1,8 @@
 "use server"
 
 import Stripe from "stripe"
-import { createClient } from "@supabase/supabase-js"
+import { getAppBaseUrl } from "@/lib/appUrl"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 // 에러 메시지가 요구하는 "2026-02-25.clover"로 정확히 맞췄습니다.
@@ -10,10 +11,6 @@ const stripe = secretKey
       apiVersion: "2026-02-25.clover" as any,
     })
   : null
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
 
 const AETERNA_PACKAGE_PRICE_CENTS = 4900
 
@@ -28,12 +25,8 @@ export async function createCheckoutSessionAction(
   if (!stripe) {
     return { ok: false, error: "Stripe is not configured." }
   }
-
-  const origin =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (typeof process.env.VERCEL_URL === "string" && process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000")
+  const supabase = getSupabaseAdmin()
+  const origin = getAppBaseUrl()
 
   try {
     // 최신 버전 규격에 맞게 'payment_method_types'를 제거하고 'automatic_payment_methods'를 썼습니다.

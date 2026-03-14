@@ -1,18 +1,16 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import QRCode from "qrcode"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+import { getAppBaseUrl } from "@/lib/appUrl"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export type GenerateInvitePdfResult =
   | { ok: true; url: string }
   | { ok: false; error: string }
 
 export async function generateInvitePdfAction(slug: string): Promise<GenerateInvitePdfResult> {
+  const supabase = getSupabaseAdmin()
   const slugNorm = slug?.trim()
   if (!slugNorm) return { ok: false, error: "Invalid slug." }
 
@@ -27,11 +25,7 @@ export async function generateInvitePdfAction(slug: string): Promise<GenerateInv
   }
 
   try {
-    const origin =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (typeof process.env.VERCEL_URL === "string" && process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000")
+    const origin = getAppBaseUrl()
 
     const guestUrl = `${origin}/p/${encodeURIComponent(slugNorm)}`
 

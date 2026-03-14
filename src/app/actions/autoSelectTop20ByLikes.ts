@@ -1,13 +1,7 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { revalidatePath } from "next/cache"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false },
-})
 
 export type AutoSelectResult =
   | { ok: true; selectedCount: number }
@@ -22,6 +16,7 @@ const TOP_N = 15
 export async function autoSelectTop20ByLikesAction(
   slug: string
 ): Promise<AutoSelectResult> {
+  const supabase = getSupabaseAdmin()
   const { data: event, error: eventErr } = await supabase
     .from("events")
     .select("id, collection_end_at")

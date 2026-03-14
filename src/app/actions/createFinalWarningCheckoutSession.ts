@@ -1,8 +1,9 @@
 "use server"
 
 import Stripe from "stripe"
-import { createClient } from "@supabase/supabase-js"
 import { PAYMENT_METHOD_TYPES } from "@/lib/checkout"
+import { getAppBaseUrl } from "@/lib/appUrl"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 const stripe =
@@ -10,10 +11,6 @@ const stripe =
   new Stripe(secretKey, {
     apiVersion: "2026-02-25.clover",
   })
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
 
 /** Final Warning 할인: $9.99 USD (₩13,000 상당) */
 const FINAL_WARNING_USD_CENTS = 999
@@ -33,12 +30,8 @@ export async function createFinalWarningCheckoutSessionAction(
   if (!stripe) {
     return { ok: false, error: "Stripe is not configured." }
   }
-
-  const origin =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (typeof process.env.VERCEL_URL === "string" && process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000")
+  const supabase = getSupabaseAdmin()
+  const origin = getAppBaseUrl()
 
   try {
     const session = await stripe.checkout.sessions.create({

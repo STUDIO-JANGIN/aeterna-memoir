@@ -1,12 +1,9 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 import { createLumaVideoJob } from "@/lib/ai/luma-client"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+import { getAppBaseUrl } from "@/lib/appUrl"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 const DEFAULT_PROMPT =
   "A peaceful and cinematic tribute video, slow motion, soft lighting"
@@ -20,6 +17,7 @@ export type GenerateVideoResult =
  * 시작 시 events.video_status = 'generating', 완료 시 webhook에서 full_film_url 갱신.
  */
 export async function generateVideoAction(slug: string): Promise<GenerateVideoResult> {
+  const supabase = getSupabaseAdmin()
   const { data: event, error: eventErr } = await supabase
     .from("events")
     .select("id, name, is_premium, video_status")
@@ -54,11 +52,7 @@ export async function generateVideoAction(slug: string): Promise<GenerateVideoRe
     return { ok: false, error: "영상에 사용할 사진이 없습니다. 스토리를 먼저 등록해 주세요." }
   }
 
-  const appOrigin =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (typeof process.env.VERCEL_URL === "string" && process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000")
+  const appOrigin = getAppBaseUrl()
   const webhookUrl = `${appOrigin}/api/ai/luma-webhook`
 
   const jobResult = await createLumaVideoJob({

@@ -1,14 +1,34 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://clnxgqhbejscniwhvmjc.supabase.co"
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const SUPABASE_URL_ENV = "NEXT_PUBLIC_SUPABASE_URL"
+const SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY"
 
-export const supabaseAdmin =
-  supabaseUrl && serviceRoleKey
-    ? createClient(supabaseUrl, serviceRoleKey, {
-        auth: {
-          persistSession: false,
-        },
-      })
-    : null
+let _adminClient: SupabaseClient | null = null
 
+/**
+ * Server-only Supabase client (service role). Use in Server Actions and API routes.
+ * Lazy-initialized so env is read at first use, not at module load (avoids "supabaseKey is required" during prerender).
+ * Throws a clear error if env vars are missing.
+ */
+export function getSupabaseAdmin(): SupabaseClient {
+  if (_adminClient) return _adminClient
+
+  const url = process.env[SUPABASE_URL_ENV]
+  const key = process.env[SUPABASE_SERVICE_ROLE_KEY_ENV]
+
+  const missing: string[] = []
+  if (!url || (typeof url === "string" && url.trim() === "")) missing.push(SUPABASE_URL_ENV)
+  if (!key || (typeof key === "string" && key.trim() === "")) missing.push(SUPABASE_SERVICE_ROLE_KEY_ENV)
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Supabase server config missing: ${missing.join(", ")}. ` +
+        `Add them in Vercel → Project → Settings → Environment Variables (Production/Preview), then redeploy.`
+    )
+  }
+
+  _adminClient = createClient(url as string, key as string, {
+    auth: { persistSession: false },
+  })
+  return _adminClient
+}

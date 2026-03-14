@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
+import { getAppBaseUrl } from "@/lib/appUrl"
 import { PAYMENT_METHOD_TYPES } from "@/lib/checkout"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid eventId or amount (use 1, 2, or 3)" }, { status: 400 })
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    const baseUrl = getAppBaseUrl()
     const successUrl = redirectUrl
       ? `${baseUrl}/event/${eventId}?bridge=success&redirect=${encodeURIComponent(redirectUrl)}`
       : `${baseUrl}/event/${eventId}?bridge=success`

@@ -1,10 +1,6 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 function randomId(length: number): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -52,6 +48,7 @@ export type CreateEventResult =
 export async function createEventAction(
   input: CreateEventInput
 ): Promise<CreateEventResult> {
+  const supabase = getSupabaseAdmin()
   const name = input.name?.trim()
   if (!name) return { ok: false, error: "Name is required." }
   if (!input.creator_email) return { ok: false, error: "Creator email is required." }

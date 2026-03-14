@@ -1,13 +1,6 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false },
-})
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 /**
  * 디버그: .env.local에 아래 추가 후 서버 재시작하면 ID로 직접 조회 테스트.
@@ -23,6 +16,7 @@ export async function setStorySelectedAction(
   storyId: string,
   isSelected: boolean
 ): Promise<SetSelectedResult> {
+  const supabase = getSupabaseAdmin()
   const { error } = await supabase
     .from("stories")
     .update({ is_selected: isSelected })
@@ -79,10 +73,7 @@ export async function getEventBySlugAction(slug: string): Promise<AdminEvent | n
 
 /** slug로 이벤트 단건 조회 (admin/guest 공통). 정확 일치 후, 없으면 대소문자 무시 1회 재시도. */
 export async function getEventBySlug(slug: string): Promise<AdminEvent | null> {
-  // 환경 변수 확인 (터미널에서 같은 프로젝트/키 사용 여부 확인용)
-  console.log("[getEventBySlug] Current Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
-  console.log("[getEventBySlug] SUPABASE_SERVICE_ROLE_KEY set:", !!process.env.SUPABASE_SERVICE_ROLE_KEY, "length:", process.env.SUPABASE_SERVICE_ROLE_KEY?.length ?? 0)
-
+  const supabase = getSupabaseAdmin()
   const slugNorm = slug?.trim()
   if (!slugNorm) {
     console.error("[getEventBySlug] slug 비어 있음", { slug })

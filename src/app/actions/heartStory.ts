@@ -1,13 +1,6 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false },
-})
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export type HeartResult =
   | { ok: true; likesCount: number }
@@ -15,6 +8,7 @@ export type HeartResult =
 
 /** 스토리 좋아요: likes_count 1 증가 (중복 체크 없이 단순 증가) */
 export async function heartStoryAction(storyId: string): Promise<HeartResult> {
+  const supabase = getSupabaseAdmin()
   const { data: row, error: fetchError } = await supabase
     .from("stories")
     .select("likes_count")

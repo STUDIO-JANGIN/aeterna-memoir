@@ -1,7 +1,7 @@
 "use server"
 
 import Stripe from "stripe"
-import { createClient } from "@supabase/supabase-js"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 const stripe =
@@ -9,10 +9,6 @@ const stripe =
   new Stripe(secretKey, {
     apiVersion: "2026-02-25.clover",
   })
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
 
 export type PaymentSuccessResult =
   | { ok: true; downloadUrl: string; eventName: string | null }
@@ -29,6 +25,7 @@ export async function getPaymentSuccessAction(
   if (!stripe || !sessionId?.trim()) {
     return { ok: false, error: "Invalid session." }
   }
+  const supabase = getSupabaseAdmin()
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId, {

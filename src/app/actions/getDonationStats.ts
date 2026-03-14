@@ -1,10 +1,6 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export type DonationStatsResult =
   | { ok: true; count: number; list: { displayLabel: string }[]; recentCount1h: number }
@@ -17,6 +13,7 @@ const MAX_LIST_SIZE = 30
  * list[].displayLabel is masked for social proof, e.g. "익명의 지인님이 1%의 마음을 보탰습니다".
  */
 export async function getDonationStatsAction(slug: string): Promise<DonationStatsResult> {
+  const supabase = getSupabaseAdmin()
   const slugNorm = slug?.trim()
   if (!slugNorm) {
     return { ok: false, error: "Invalid slug." }

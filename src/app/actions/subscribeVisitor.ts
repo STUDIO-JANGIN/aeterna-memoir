@@ -1,13 +1,6 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false },
-})
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export type SubscribeVisitorResult =
   | { ok: true }
@@ -18,6 +11,7 @@ export async function subscribeVisitorAction(
   email: string,
   provider: string
 ): Promise<SubscribeVisitorResult> {
+  const supabase = getSupabaseAdmin()
   const trimmed = email.trim().toLowerCase()
   if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
     return { ok: false, error: "유효한 이메일 주소를 입력해 주세요." }

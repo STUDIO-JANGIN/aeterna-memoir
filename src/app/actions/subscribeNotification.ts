@@ -1,13 +1,6 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false },
-})
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export type SubscribeResult =
   | { ok: true }
@@ -18,6 +11,7 @@ export async function subscribeNotificationAction(
   eventId: string,
   email: string
 ): Promise<SubscribeResult> {
+  const supabase = getSupabaseAdmin()
   const trimmed = email.trim().toLowerCase()
   if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
     return { ok: false, error: "Please enter a valid email address." }

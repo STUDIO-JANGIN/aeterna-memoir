@@ -1,14 +1,7 @@
 "use server"
 
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { revalidatePath } from "next/cache"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false },
-})
 
 export type UpdateDeadlineResult =
   | { ok: true; collection_end_at: string; expired_at: string }
@@ -20,6 +13,7 @@ export async function extendDeadlineAction(
   extendHours: number = 24,
   slug?: string
 ): Promise<UpdateDeadlineResult> {
+  const supabase = getSupabaseAdmin()
   const { data: row, error: fetchError } = await supabase
     .from("events")
     .select("collection_end_at, created_at")

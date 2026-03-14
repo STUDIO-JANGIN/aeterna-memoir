@@ -1,13 +1,10 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 import { createLumaVideoJob } from "@/lib/ai/luma-client"
+import { getAppBaseUrl } from "@/lib/appUrl"
 import { notifyAdmin } from "@/lib/notifyAdmin"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export type RequestFullFilmResult =
   | { ok: true; message: string }
@@ -18,6 +15,7 @@ export type RequestFullFilmResult =
  * Sets full_film_requested_at so a backend job can start high-quality rendering.
  */
 export async function requestFullFilmAction(slug: string): Promise<RequestFullFilmResult> {
+  const supabase = getSupabaseAdmin()
   const { data: event, error: eventErr } = await supabase
     .from("events")
     .select("id, name, is_paid, full_film_requested_at, tier, video_credits")
@@ -67,11 +65,7 @@ export async function requestFullFilmAction(slug: string): Promise<RequestFullFi
   }
 
   // Luma AI에 비디오 생성 Job을 요청 (Webhook 방식)
-  const appOrigin =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (typeof process.env.VERCEL_URL === "string" && process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000")
+  const appOrigin = getAppBaseUrl()
 
   const webhookUrl = `${appOrigin}/api/ai/luma-webhook`
 

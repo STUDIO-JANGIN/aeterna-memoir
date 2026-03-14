@@ -1,11 +1,7 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { revalidatePath } from "next/cache"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
 
 export type SavePreviewFilmResult =
   | { ok: true; previewFilmUrl: string }
@@ -19,6 +15,7 @@ export async function savePreviewFilmAction(
   slug: string,
   formData: FormData
 ): Promise<SavePreviewFilmResult> {
+  const supabase = getSupabaseAdmin()
   const file = formData.get("file") as File | null
   if (!file || !file.size) {
     return { ok: false, error: "No file provided." }

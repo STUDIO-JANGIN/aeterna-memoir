@@ -1,18 +1,11 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import sharp from "sharp"
 
 const MAX_IMAGE_BYTES = 1024 * 1024 // 1MB
 const MAX_WIDTH = 1920
 const WEBP_QUALITY_STEPS = [85, 75, 65, 55, 45]
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false },
-})
 
 function logStep(label: string, detail?: Record<string, unknown>) {
   console.log("[createStory]", label, detail !== undefined ? JSON.stringify(detail, null, 0) : "")
@@ -23,6 +16,7 @@ function logError(label: string, detail: Record<string, unknown>) {
 }
 
 export async function createStoryAction(formData: FormData) {
+  const supabase = getSupabaseAdmin()
   let eventId: string | null = null
   try {
     // 1) 폼 필드 추출 (slug 또는 eventId로 이벤트 식별)

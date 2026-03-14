@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 import { notifyAdmin } from "@/lib/notifyAdmin"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase =
-  supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
-    : null
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 const LUMA_WEBHOOK_SECRET = process.env.LUMA_WEBHOOK_SECRET
 
 export async function POST(req: NextRequest) {
-  if (!supabase) {
+  let supabase
+  try {
+    supabase = getSupabaseAdmin()
+  } catch (e) {
+    console.error("Supabase not configured:", e instanceof Error ? e.message : e)
     return NextResponse.json({ error: "Supabase not configured" }, { status: 500 })
   }
 

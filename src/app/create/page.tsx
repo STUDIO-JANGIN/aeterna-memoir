@@ -1,5 +1,5 @@
-"use client" // 1순위: 클라이언트 컴포넌트 선언이 가장 먼저!
-export const dynamic = 'force-dynamic' // 2순위: 그 다음에 빌드 설정 추가
+"use client"
+export const dynamic = "force-dynamic"
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { supabase } from "@/lib/supabase"
@@ -33,6 +33,11 @@ function buildTimeString(h: number, m: string): string {
   return `${String(h).padStart(2, "0")}:${m}`
 }
 
+function getRedirectUrl(): string {
+  if (typeof window !== "undefined") return `${window.location.origin}/create`
+  return process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://aeterna.com"
+}
+
 function CreateEventForm() {
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -41,6 +46,7 @@ function CreateEventForm() {
   const [authPassword, setAuthPassword] = useState("")
   const [authError, setAuthError] = useState<string | null>(null)
   const [authSubmitLoading, setAuthSubmitLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   const [memorialType, setMemorialType] = useState<MemorialType | null>(null)
   const [name, setName] = useState("")
@@ -105,11 +111,11 @@ function CreateEventForm() {
     return () => URL.revokeObjectURL(url)
   }, [profileFile])
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://aeterna.com"
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "https://aeterna.com")
   const guestUrl = createdSlug ? `${baseUrl.replace(/\/$/, "")}/p/${createdSlug}` : ""
 
   const getInvitationText = () =>
-    `${name}님을 기리는 추모 공간입니다. 사진과 추억을 나눠 주세요.\n\n${guestUrl}`
+    `A space in loving memory of ${name}. Share photos and stories:\n\n${guestUrl}`
 
   const handleCopyInvitationLink = async () => {
     try {
@@ -130,7 +136,7 @@ function CreateEventForm() {
 
   const shareViaKakao = () => {
     if (typeof window === "undefined" || !guestUrl) return
-    const text = encodeURIComponent(`${name}님 추모 공간 – 사진과 추억을 나눠 주세요`)
+    const text = encodeURIComponent(`In memory of ${name}. Share photos and stories.`)
     const urlEnc = encodeURIComponent(guestUrl)
     window.open(`https://story.kakao.com/share?url=${urlEnc}&text=${text}`, "_blank", "noopener,noreferrer")
   }
@@ -142,8 +148,20 @@ function CreateEventForm() {
 
   const shareViaWhatsApp = () => {
     if (typeof window === "undefined" || !guestUrl) return
-    const text = encodeURIComponent(`${name}님 추모 공간\n${guestUrl}`)
+    const text = encodeURIComponent(`In memory of ${name}\n${guestUrl}`)
     window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer")
+  }
+
+  const handleContinueWithGoogle = async () => {
+    setGoogleLoading(true)
+    setAuthError(null)
+    const redirectTo = getRedirectUrl()
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo },
+    })
+    setGoogleLoading(false)
+    if (error) setAuthError(error.message)
   }
 
   const handleSignOut = async () => {
@@ -195,7 +213,7 @@ function CreateEventForm() {
       }
       setShowSuccessPopup(true)
     } else {
-      setCreateError(result.error ?? "추모 공간 생성에 실패했습니다.")
+      setCreateError(result.error ?? "We couldn't create the memorial space. Please try again.")
     }
     setLoading(false)
   }
@@ -203,7 +221,7 @@ function CreateEventForm() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[var(--aeterna-charcoal)] flex flex-col items-center justify-center p-12 font-serif text-[var(--aeterna-gold-muted)]">
-        <p className="text-[11px] uppercase tracking-[0.3em]">로딩 중…</p>
+        <p className="text-[11px] uppercase tracking-[0.3em]">Loading…</p>
       </div>
     )
   }
@@ -212,7 +230,33 @@ function CreateEventForm() {
     return (
       <div className="min-h-screen bg-[var(--aeterna-charcoal)] flex flex-col items-center justify-center p-6 md:p-12">
         <div className="max-w-md w-full p-8 rounded-[28px] border border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal-soft)]/95">
-          <h1 className="text-2xl font-light text-[var(--aeterna-headline)] mb-6 text-center">시작하기</h1>
+          <h1 className="text-2xl font-light text-[var(--aeterna-headline)] mb-2 text-center">Welcome</h1>
+          <p className="text-sm text-[var(--aeterna-gold-muted)] mb-6 text-center">Sign in to create a memorial space.</p>
+
+          <button
+            type="button"
+            onClick={handleContinueWithGoogle}
+            disabled={googleLoading}
+            className="w-full flex items-center justify-center gap-3 min-h-[52px] py-3 rounded-2xl border-2 border-[var(--border-gold-subtle)] bg-transparent text-[var(--aeterna-headline)] font-medium hover:bg-[var(--aeterna-gold-pale)]/20 hover:border-[var(--aeterna-gold)]/50 transition-colors disabled:opacity-60"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden>
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </svg>
+            {googleLoading ? "Redirecting…" : "Continue with Google"}
+          </button>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[var(--border-gold-subtle)]" />
+            </div>
+            <div className="relative flex justify-center text-[11px] uppercase tracking-wider text-[var(--aeterna-gold-muted)]">
+              <span className="bg-[var(--aeterna-charcoal-soft)] px-3">or</span>
+            </div>
+          </div>
+
           {authView === "signin" ? (
             <form
               onSubmit={async (e) => {
@@ -227,23 +271,23 @@ function CreateEventForm() {
             >
               <input
                 type="email"
-                placeholder="이메일"
+                placeholder="Email"
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
-                className="w-full border-b border-[var(--border-gold-subtle)] py-3 bg-transparent text-[var(--aeterna-headline)]"
+                className="w-full border-b border-[var(--border-gold-subtle)] py-3 bg-transparent text-[var(--aeterna-headline)] placeholder:text-white/40"
                 required
               />
               <input
                 type="password"
-                placeholder="비밀번호"
+                placeholder="Password"
                 value={authPassword}
                 onChange={(e) => setAuthPassword(e.target.value)}
-                className="w-full border-b border-[var(--border-gold-subtle)] py-3 bg-transparent text-[var(--aeterna-headline)]"
+                className="w-full border-b border-[var(--border-gold-subtle)] py-3 bg-transparent text-[var(--aeterna-headline)] placeholder:text-white/40"
                 required
               />
               {authError && <p className="text-red-400 text-sm">{authError}</p>}
-              <button type="submit" disabled={authSubmitLoading} className="w-full py-4 rounded-[24px] bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium">
-                {authSubmitLoading ? "로그인 중…" : "로그인"}
+              <button type="submit" disabled={authSubmitLoading} className="w-full py-4 rounded-[24px] bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium disabled:opacity-60">
+                {authSubmitLoading ? "Signing in…" : "Sign in"}
               </button>
             </form>
           ) : (
@@ -252,37 +296,51 @@ function CreateEventForm() {
                 e.preventDefault()
                 setAuthSubmitLoading(true)
                 setAuthError(null)
-                const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword })
+                const { error } = await supabase.auth.signUp({
+                  email: authEmail,
+                  password: authPassword,
+                  options: { emailRedirectTo: getRedirectUrl() },
+                })
                 setAuthSubmitLoading(false)
-                if (error) setAuthError(error.message)
+                if (error) {
+                  setAuthError(error.message)
+                  return
+                }
+                setAuthError(null)
+                setAuthView("signin")
+                setAuthError("Check your email for the confirmation link.")
               }}
               className="space-y-4"
             >
               <input
                 type="email"
-                placeholder="이메일"
+                placeholder="Email"
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
-                className="w-full border-b border-[var(--border-gold-subtle)] py-3 bg-transparent text-[var(--aeterna-headline)]"
+                className="w-full border-b border-[var(--border-gold-subtle)] py-3 bg-transparent text-[var(--aeterna-headline)] placeholder:text-white/40"
                 required
               />
               <input
                 type="password"
-                placeholder="비밀번호 (6자 이상)"
+                placeholder="Password (min. 6 characters)"
                 value={authPassword}
                 onChange={(e) => setAuthPassword(e.target.value)}
-                className="w-full border-b border-[var(--border-gold-subtle)] py-3 bg-transparent text-[var(--aeterna-headline)]"
+                className="w-full border-b border-[var(--border-gold-subtle)] py-3 bg-transparent text-[var(--aeterna-headline)] placeholder:text-white/40"
                 required
                 minLength={6}
               />
               {authError && <p className="text-red-400 text-sm">{authError}</p>}
-              <button type="submit" disabled={authSubmitLoading} className="w-full py-4 rounded-[24px] bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium">
-                {authSubmitLoading ? "가입 중…" : "가입"}
+              <button type="submit" disabled={authSubmitLoading} className="w-full py-4 rounded-[24px] bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium disabled:opacity-60">
+                {authSubmitLoading ? "Creating account…" : "Create account"}
               </button>
             </form>
           )}
-          <button type="button" onClick={() => setAuthView(authView === "signin" ? "signup" : "signin")} className="mt-4 w-full text-sm text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)]">
-            {authView === "signin" ? "계정이 없으신가요? 가입하기" : "이미 계정이 있으신가요? 로그인"}
+          <button
+            type="button"
+            onClick={() => { setAuthView(authView === "signin" ? "signup" : "signin"); setAuthError(null); }}
+            className="mt-4 w-full text-sm text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)] transition-colors"
+          >
+            {authView === "signin" ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
           </button>
         </div>
       </div>
@@ -295,81 +353,84 @@ function CreateEventForm() {
         <div className="max-w-lg w-full p-8 md:p-12 rounded-[28px] border border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal-soft)]/95 shadow-[var(--shadow-deep)]">
           {memorialType === null ? (
             <div className="py-4">
-              <h1 className="text-2xl md:text-3xl mb-2 font-light tracking-tight text-[var(--aeterna-headline)]">누구를 위한 추모 공간인가요?</h1>
+              <h1 className="text-2xl md:text-3xl mb-2 font-light tracking-tight text-[var(--aeterna-headline)]">Who is this memorial for?</h1>
               <div className="grid grid-cols-2 gap-4 mt-8">
                 <button type="button" onClick={() => setMemorialType("person")} className="flex flex-col items-center justify-center gap-3 min-h-[140px] rounded-2xl border-2 border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)]/80 hover:border-[var(--aeterna-gold)] transition-colors">
                   <span className="text-4xl">🙏</span>
-                  <span className="font-serif text-sm uppercase tracking-[0.2em] text-[var(--aeterna-gold)]">인간</span>
+                  <span className="font-serif text-sm uppercase tracking-[0.2em] text-[var(--aeterna-gold)]">A Loved One</span>
                 </button>
                 <button type="button" onClick={() => setMemorialType("pet")} className="flex flex-col items-center justify-center gap-3 min-h-[140px] rounded-2xl border-2 border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)]/80 hover:border-[var(--aeterna-gold)] transition-colors">
                   <span className="text-4xl">🐾</span>
-                  <span className="font-serif text-sm uppercase tracking-[0.2em] text-[var(--aeterna-gold)]">동물</span>
+                  <span className="font-serif text-sm uppercase tracking-[0.2em] text-[var(--aeterna-gold)]">A Cherished Companion</span>
                 </button>
               </div>
             </div>
           ) : (
             <>
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl md:text-3xl font-light text-[var(--aeterna-headline)]">추모 공간 만들기</h1>
-                <button type="button" onClick={handleSignOut} className="text-[11px] uppercase tracking-wider text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)]">다른 유형 선택</button>
+                <h1 className="text-2xl md:text-3xl font-light text-[var(--aeterna-headline)]">Create a memorial</h1>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--aeterna-gold-muted)] hidden sm:inline">{user.email}</span>
+                  <button type="button" onClick={handleSignOut} className="text-[11px] uppercase tracking-wider text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)]">Switch type</button>
+                </div>
               </div>
               <form onSubmit={handleCreate} className="space-y-6 text-left mt-6">
                 <div>
-                  <label className="text-[11px] uppercase tracking-[0.28em] text-[var(--aeterna-gold-muted)] mb-2 block">이름 *</label>
-                  <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="이름 또는 호칭" className="w-full border-b border-[var(--border-gold-subtle)] py-3 bg-transparent text-[var(--aeterna-headline)] placeholder:text-white/40" />
+                  <label className="text-[11px] uppercase tracking-[0.28em] text-[var(--aeterna-gold-muted)] mb-2 block">Name *</label>
+                  <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Name or how you called them" className="w-full border-b border-[var(--border-gold-subtle)] py-3 bg-transparent text-[var(--aeterna-headline)] placeholder:text-white/40" />
                 </div>
                 <div>
-                  <label className="text-[11px] uppercase tracking-[0.28em] text-[var(--aeterna-gold-muted)] mb-2 block">프로필 사진 (선택)</label>
+                  <label className="text-[11px] uppercase tracking-[0.28em] text-[var(--aeterna-gold-muted)] mb-2 block">Profile photo (optional)</label>
                   <div className="flex items-center gap-4">
                     <button type="button" onClick={() => profileInputRef.current?.click()} className="w-20 h-20 rounded-full border-2 border-dashed border-[var(--border-gold-subtle)] flex items-center justify-center overflow-hidden bg-[var(--aeterna-charcoal)]/60 hover:border-[var(--aeterna-gold)] transition-colors">
                       {profilePreview ? <img src={profilePreview} alt="" className="w-full h-full object-cover" /> : <span className="text-2xl text-[var(--aeterna-gold-muted)]">+</span>}
                     </button>
                     <input ref={profileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => setProfileFile(e.target.files?.[0] ?? null)} />
-                    <span className="text-xs text-[var(--aeterna-gold-muted)]">클릭하여 업로드</span>
+                    <span className="text-xs text-[var(--aeterna-gold-muted)]">Click to upload</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">생년</label>
+                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">Birth year</label>
                     <select value={birthY} onChange={(e) => setBirthY(e.target.value)} className="w-full border border-[var(--border-gold-subtle)] py-2 bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] rounded-lg">
-                      <option value="">연도</option>
+                      <option value="">Year</option>
                       {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">월</label>
+                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">Month</label>
                     <select value={birthM} onChange={(e) => setBirthM(e.target.value)} className="w-full border border-[var(--border-gold-subtle)] py-2 bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] rounded-lg">
-                      <option value="">월</option>
+                      <option value="">Mo</option>
                       {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">일</label>
+                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">Day</label>
                     <select value={birthD} onChange={(e) => setBirthD(e.target.value)} className="w-full border border-[var(--border-gold-subtle)] py-2 bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] rounded-lg">
-                      <option value="">일</option>
+                      <option value="">Day</option>
                       {DAYS.map((d) => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">몰년</label>
+                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">Year passed</label>
                     <select value={deathY} onChange={(e) => setDeathY(e.target.value)} className="w-full border border-[var(--border-gold-subtle)] py-2 bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] rounded-lg">
-                      <option value="">연도</option>
+                      <option value="">Year</option>
                       {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">월</label>
+                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">Month</label>
                     <select value={deathM} onChange={(e) => setDeathM(e.target.value)} className="w-full border border-[var(--border-gold-subtle)] py-2 bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] rounded-lg">
-                      <option value="">월</option>
+                      <option value="">Mo</option>
                       {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">일</label>
+                    <label className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)] mb-1 block">Day</label>
                     <select value={deathD} onChange={(e) => setDeathD(e.target.value)} className="w-full border border-[var(--border-gold-subtle)] py-2 bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] rounded-lg">
-                      <option value="">일</option>
+                      <option value="">Day</option>
                       {DAYS.map((d) => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
@@ -377,31 +438,31 @@ function CreateEventForm() {
                 <div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={showFuneralInfo} onChange={(e) => setShowFuneralInfo(e.target.checked)} className="rounded border-[var(--border-gold-subtle)]" />
-                    <span className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">장례 정보 (선택)</span>
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">Service details (optional)</span>
                   </label>
                   {showFuneralInfo && (
                     <div className="mt-3 space-y-3">
-                      <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="장소" className="w-full border-b border-[var(--border-gold-subtle)] py-2 bg-transparent text-[var(--aeterna-headline)] placeholder:text-white/40" />
+                      <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Venue" className="w-full border-b border-[var(--border-gold-subtle)] py-2 bg-transparent text-[var(--aeterna-headline)] placeholder:text-white/40" />
                       <div className="flex gap-2 items-center">
-                        <span className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">시간</span>
+                        <span className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">Time</span>
                         <select value={ceremonyH} onChange={(e) => setCeremonyH(Number(e.target.value))} className="border border-[var(--border-gold-subtle)] py-2 bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] rounded-lg">
-                          {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}시</option>)}
+                          {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}</option>)}
                         </select>
                         <select value={ceremonyM} onChange={(e) => setCeremonyM(e.target.value)} className="border border-[var(--border-gold-subtle)] py-2 bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] rounded-lg">
-                          {MINUTES.map((m) => <option key={m} value={m}>{m}분</option>)}
+                          {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
                         </select>
                       </div>
                     </div>
                   )}
                 </div>
                 <div>
-                  <label className="text-[11px] uppercase tracking-[0.28em] text-[var(--aeterna-gold-muted)] mb-2 block">사진 수집 기간</label>
+                  <label className="text-[11px] uppercase tracking-[0.28em] text-[var(--aeterna-gold-muted)] mb-2 block">Collection period</label>
                   <select value={collectionPeriod} onChange={(e) => setCollectionPeriod(e.target.value as typeof collectionPeriod)} className="w-full border border-[var(--border-gold-subtle)] py-3 bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] rounded-lg">
-                    <option value="3">3일</option>
-                    <option value="7">7일</option>
-                    <option value="14">14일</option>
-                    <option value="funeral">장례 일정 기준 (몰일 + 7일)</option>
-                    <option value="custom">직접 입력</option>
+                    <option value="3">3 days</option>
+                    <option value="7">7 days</option>
+                    <option value="14">14 days</option>
+                    <option value="funeral">Based on service (7 days after)</option>
+                    <option value="custom">Custom date</option>
                   </select>
                   {collectionPeriod === "custom" && (
                     <input type="datetime-local" value={customExpiredAt} onChange={(e) => setCustomExpiredAt(e.target.value)} className="mt-2 w-full border border-[var(--border-gold-subtle)] py-2 bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] rounded-lg" />
@@ -410,41 +471,41 @@ function CreateEventForm() {
                 <div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={showMemorialFund} onChange={(e) => setShowMemorialFund(e.target.checked)} className="rounded border-[var(--border-gold-subtle)]" />
-                    <span className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">기부금 링크 (선택)</span>
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">Memorial fund link (optional)</span>
                   </label>
                   {showMemorialFund && (
                     <input value={fundLink} onChange={(e) => setFundLink(e.target.value)} placeholder="https://..." className="mt-2 w-full border-b border-[var(--border-gold-subtle)] py-2 bg-transparent text-[var(--aeterna-headline)] placeholder:text-white/40" />
                   )}
                 </div>
                 <div>
-                  <label className="text-[11px] uppercase tracking-[0.28em] text-[var(--aeterna-gold-muted)] mb-2 block">플랜</label>
+                  <label className="text-[11px] uppercase tracking-[0.28em] text-[var(--aeterna-gold-muted)] mb-2 block">Preservation Tiers</label>
                   <div className="space-y-2">
                     <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${storagePlan === "free" ? "border-[var(--aeterna-gold)] bg-[var(--aeterna-gold-pale)]/10" : "border-[var(--border-gold-subtle)]"}`}>
                       <input type="radio" name="plan" value="free" checked={storagePlan === "free"} onChange={() => setStoragePlan("free")} className="mt-1" />
                       <div>
-                        <span className="font-medium text-[var(--aeterna-headline)]">Free</span>
-                        <p className="text-xs text-[var(--aeterna-gold-muted)] mt-0.5">7일 후 삭제, 영상 불가</p>
+                        <span className="font-medium text-[var(--aeterna-headline)]">Sacred space</span>
+                        <p className="text-xs text-[var(--aeterna-gold-muted)] mt-0.5">A sacred space for the first 7 days of remembrance. Preserve their light before the initial archive window closes.</p>
                       </div>
                     </label>
                     <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${storagePlan === "plus" ? "border-[var(--aeterna-gold)] bg-[var(--aeterna-gold-pale)]/10" : "border-[var(--border-gold-subtle)]"}`}>
                       <input type="radio" name="plan" value="plus" checked={storagePlan === "plus"} onChange={() => setStoragePlan("plus")} className="mt-1" />
                       <div>
                         <span className="font-medium text-[var(--aeterna-headline)]">Plus $19.99</span>
-                        <p className="text-xs text-[var(--aeterna-gold-muted)] mt-0.5">영구 보존, 모든 사진 접근</p>
+                        <p className="text-xs text-[var(--aeterna-gold-muted)] mt-0.5">Permanent preservation. Full access to all photos.</p>
                       </div>
                     </label>
                     <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${storagePlan === "premium" ? "border-[var(--aeterna-gold)] bg-[var(--aeterna-gold-pale)]/10" : "border-[var(--border-gold-subtle)]"}`}>
                       <input type="radio" name="plan" value="premium" checked={storagePlan === "premium"} onChange={() => setStoragePlan("premium")} className="mt-1" />
                       <div>
                         <span className="font-medium text-[var(--aeterna-headline)]">Premium $39.99</span>
-                        <p className="text-xs text-[var(--aeterna-gold-muted)] mt-0.5">Plus + Luma AI 헌정 영상 (Top 20장 기반)</p>
+                        <p className="text-xs text-[var(--aeterna-gold-muted)] mt-0.5">Plus + Luma AI tribute film (Top 20 photos).</p>
                       </div>
                     </label>
                   </div>
                 </div>
                 {createError && <p className="text-red-400 text-sm">{createError}</p>}
                 <motion.button type="submit" disabled={loading} className="w-full py-5 rounded-[24px] border border-[var(--aeterna-gold)] text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold-pale)]/20 transition-colors disabled:opacity-60">
-                  {loading ? "생성 중…" : "추모 공간 만들기"}
+                  {loading ? "Creating…" : "Create memorial"}
                 </motion.button>
               </form>
             </>
@@ -456,31 +517,31 @@ function CreateEventForm() {
         {showSuccessPopup && createdSlug && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--aeterna-charcoal)]/90 backdrop-blur-xl p-6 overflow-y-auto">
             <div className="bg-[var(--aeterna-charcoal-soft)] p-8 md:p-12 rounded-[32px] border border-[var(--border-gold)] text-center max-w-lg w-full my-8">
-              <h2 className="text-2xl mb-2">{name}님 추모 공간이 만들어졌어요</h2>
-              <p className="text-sm text-[var(--aeterna-gold-muted)] mb-6">링크를 공유하고 지인들에게 사진과 추억을 부탁해 보세요.</p>
+              <h2 className="text-2xl mb-2">Memorial for {name} is ready</h2>
+              <p className="text-sm text-[var(--aeterna-gold-muted)] mb-6">Share the link and invite loved ones to add photos and stories.</p>
               <div className="flex flex-wrap justify-center gap-2 mb-4">
                 <button type="button" onClick={handleCopyInvitationLink} className="min-h-[44px] px-4 py-2 rounded-full border border-[var(--border-gold-subtle)] text-[var(--aeterna-gold-muted)] font-serif text-[11px] uppercase tracking-[0.16em] hover:bg-[var(--aeterna-gold-pale)] hover:text-[var(--aeterna-gold)] transition-colors">
-                  {copied ? "복사됨!" : "링크 복사"}
+                  {copied ? "Copied!" : "Copy link"}
                 </button>
                 <button type="button" onClick={shareViaKakao} className="min-h-[44px] px-4 py-2 rounded-full border border-[var(--border-gold-subtle)] text-[var(--aeterna-gold-muted)] font-serif text-[11px] uppercase tracking-[0.16em] hover:bg-[var(--aeterna-gold-pale)] hover:text-[var(--aeterna-gold)] transition-colors">
-                  카카오톡
+                  Kakao
                 </button>
                 <button type="button" onClick={shareViaWhatsApp} className="min-h-[44px] px-4 py-2 rounded-full border border-[var(--border-gold-subtle)] text-[var(--aeterna-gold-muted)] font-serif text-[11px] uppercase tracking-[0.16em] hover:bg-[var(--aeterna-gold-pale)] hover:text-[var(--aeterna-gold)] transition-colors">
                   WhatsApp
                 </button>
                 <button type="button" onClick={shareViaInstagram} className="min-h-[44px] px-4 py-2 rounded-full border border-[var(--border-gold-subtle)] text-[var(--aeterna-gold-muted)] font-serif text-[11px] uppercase tracking-[0.16em] hover:bg-[var(--aeterna-gold-pale)] hover:text-[var(--aeterna-gold)] transition-colors">
-                  인스타그램
+                  Instagram
                 </button>
               </div>
               <div className="border-t border-[var(--border-gold-subtle)] pt-6 mt-6">
-                <MemorialQRCard slug={createdSlug} title={`${name}님 추모 공간`} description="QR 코드를 스캔하여 접속" downloadName="aeterna-qr" className="mx-auto" />
+                <MemorialQRCard slug={createdSlug} title={`Memorial for ${name}`} description="Scan to open" downloadName="aeterna-qr" className="mx-auto" />
               </div>
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={() => router.push(`/p/${createdSlug}`)} className="flex-1 min-h-[48px] px-6 py-3 rounded-full bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium hover:bg-[var(--aeterna-gold-light)] transition-colors">
-                  추모 공간 보기
+                  View memorial
                 </button>
                 <button type="button" onClick={() => { setShowSuccessPopup(false); setCreatedSlug(null); setMemorialType(null); setName(""); setProfileFile(null); setBirthY(""); setBirthM(""); setBirthD(""); setDeathY(""); setDeathM(""); setDeathD(""); setLocation(""); setCeremonyH(10); setCeremonyM("00"); setShowFuneralInfo(false); setShowMemorialFund(false); setFundLink(""); setCollectionPeriod("7"); setCustomExpiredAt(""); setStoragePlan("free"); }} className="min-h-[48px] px-6 py-3 rounded-full border border-[var(--border-gold-subtle)] text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)] transition-colors">
-                  새로 만들기
+                  Create another
                 </button>
               </div>
             </div>
@@ -493,7 +554,7 @@ function CreateEventForm() {
 
 export default function CreateEventPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[var(--aeterna-charcoal)] flex items-center justify-center text-[var(--aeterna-gold-muted)] font-serif uppercase tracking-widest">로딩 중...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[var(--aeterna-charcoal)] flex items-center justify-center text-[var(--aeterna-gold-muted)] font-serif uppercase tracking-widest">Loading…</div>}>
       <CreateEventForm />
     </Suspense>
   )

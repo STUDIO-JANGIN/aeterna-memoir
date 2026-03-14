@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { RevealSection } from "@/components/RevealSection"
 
@@ -29,6 +29,10 @@ export default function EventTributePage() {
   const [supportAmount, setSupportAmount] = useState<number | null>(100)
   const [supportLoading, setSupportLoading] = useState(false)
   const [supportError, setSupportError] = useState<string | null>(null)
+  const [bridgeOpen, setBridgeOpen] = useState(false)
+  const [bridgeTipLoading, setBridgeTipLoading] = useState(false)
+
+  const searchParams = useSearchParams()
 
   const fetchData = async () => {
     if (!eventId) {
@@ -67,7 +71,44 @@ export default function EventTributePage() {
     fetchData()
   }, [eventId])
 
+  // After Bridge tip success, redirect to family's link
+  useEffect(() => {
+    const redirect = searchParams.get("redirect")
+    if (searchParams.get("bridge") === "success" && redirect) {
+      try {
+        window.location.href = decodeURIComponent(redirect)
+      } catch {
+        // ignore
+      }
+    }
+  }, [searchParams])
+
   const handleOpenDonations = () => setDonationsOpen(true)
+  const handleOpenFamilyLink = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (event?.flower_link) setBridgeOpen(true)
+  }
+  const handleBridgeSkip = () => {
+    if (event?.flower_link) window.open(event.flower_link, "_blank", "noopener,noreferrer")
+    setBridgeOpen(false)
+    setDonationsOpen(false)
+  }
+  const handleBridgeTip = async (amount: 1 | 2 | 3) => {
+    if (!eventId || !event?.flower_link) return
+    setBridgeTipLoading(true)
+    try {
+      const res = await fetch("/api/bridge-tip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId, amount, redirectUrl: event.flower_link }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.url) throw new Error(data?.error || "Unable to start checkout")
+      window.location.href = data.url
+    } catch {
+      setBridgeTipLoading(false)
+    }
+  }
   const handleSupportFamily = () => setSupportModalOpen(true)
 
   const startSupportCheckout = async () => {
@@ -395,10 +436,56 @@ export default function EventTributePage() {
               <div className="border border-[#E4D7C7] rounded-xl p-4 bg-white">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-gray-500 mb-1">Custom link</p>
                 <p className="text-gray-700 mb-3">Family’s preferred link.</p>
-                {event?.flower_link ? <a href={event.flower_link} target="_blank" rel="noreferrer" className="text-[12px] underline underline-offset-4 decoration-[#D0B898]">Open family’s link</a> : <span className="text-[12px] text-gray-400">Not provided.</span>}
+                {event?.flower_link ? (
+                  <button type="button" onClick={handleOpenFamilyLink} className="text-[12px] underline underline-offset-4 decoration-[#D0B898] hover:no-underline text-left">
+                    Open family’s link
+                  </button>
+                ) : (
+                  <span className="text-[12px] text-gray-400">Not provided.</span>
+                )}
               </div>
             </div>
             <p className="font-sans text-[11px] text-gray-400">Guests can choose any option or use their own florist.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Bridge popup: voluntary tip before opening family’s donation link */}
+      {bridgeOpen && event?.flower_link && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[2rem] max-w-sm w-full p-8 shadow-2xl border border-[#E4D7C7]">
+            <p className="font-sans text-[10px] tracking-[0.28em] uppercase text-gray-400 mb-2">Aeterna</p>
+            <h2 className="text-xl font-light text-gray-800 mb-2">지인들이 남긴 추억을 함께 지켜주세요</h2>
+            <p className="font-sans text-sm text-gray-600 mb-6">
+              자율 팁으로 Aeterna를 지원하시면, 곧 유족이 등록한 링크로 이동합니다.
+            </p>
+            <div className="flex gap-3 mb-4">
+              {([1, 2, 3] as const).map((amount) => (
+                <button
+                  key={amount}
+                  type="button"
+                  onClick={() => handleBridgeTip(amount)}
+                  disabled={bridgeTipLoading}
+                  className="flex-1 min-h-[48px] rounded-xl border-2 border-[#D0B898] text-[#8B6914] font-medium hover:bg-[#FBF7F2] disabled:opacity-50 transition-colors"
+                >
+                  ${amount}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={handleBridgeSkip}
+              className="w-full min-h-[44px] rounded-xl text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              건너뛰고 링크로 이동
+            </button>
+            <button
+              type="button"
+              onClick={() => setBridgeOpen(false)}
+              className="mt-3 w-full text-xs text-gray-400 uppercase tracking-wider hover:text-gray-600"
+            >
+              취소
+            </button>
           </div>
         </div>
       )}

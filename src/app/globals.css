@@ -1,26 +1,277 @@
 @import "tailwindcss";
 
+/*
+  Aeterna design system: Elegant & Serene
+  Deep navy night + warm sand, high-end serif, calm memorial luxury
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Aeterna: Elegant & Serene palette */
+  /* Deep navy night (slate-950 계열) – 고요한 밤하늘 */
+  --aeterna-charcoal: #020617;           /* slate-950 */
+  --aeterna-charcoal-soft: #020617;
+  --aeterna-charcoal-muted: #1e293b;     /* slate-800 */
+  /* Headline #F4F1EA (Warm Off-white) – 부드럽고 품격 있는 목소리 */
+  --aeterna-headline: #F4F1EA;
+  /* Body Text #A0A0A0 (Muted Gray) – 절제된 설명 */
+  --aeterna-body: #A0A0A0;
+  /* Accent/Logo #C5A059 (Champagne Gold) – 변하지 않는 가치 */
+  --aeterna-gold: #C5A059;
+  --aeterna-gold-light: #d4b878;
+  --aeterna-gold-muted: rgba(197, 160, 89, 0.7);
+  --aeterna-gold-pale: rgba(197, 160, 89, 0.15);
+  --aeterna-cream: #F4F1EA;
+  --white: #ffffff;
+  --border-gold: rgba(197, 160, 89, 0.35);
+  --border-gold-subtle: rgba(197, 160, 89, 0.2);
+
+  /* once.film-style: 깊이감 있는 다크 (순수 블랙보다 부드러운 대비) */
+  --once-bg: #020617;
+  --once-bg-elevated: #0b1220;
+  --once-text-primary: rgba(255, 255, 255, 0.95);
+  --once-text-secondary: rgba(255, 255, 255, 0.72);
+  --once-text-muted: rgba(255, 255, 255, 0.5);
+
+  /* Legacy tokens (mapped to Aeterna for compatibility) */
+  --champagne: var(--aeterna-gold);
+  --champagne-light: var(--aeterna-gold-light);
+  --champagne-pale: var(--aeterna-gold-pale);
+  --charcoal: var(--aeterna-charcoal);
+  --charcoal-soft: var(--aeterna-charcoal-soft);
+  --charcoal-muted: var(--aeterna-charcoal-muted);
+  --cream: var(--aeterna-cream);
+  --cream-warm: #f5f2eb;
+  --border-luxury: var(--border-gold-subtle);
+  --border-charcoal: rgba(13, 13, 13, 0.08);
+
+  /* Global background: 깊은 네이비, 카드: 따뜻한 샌드 베이지 */
+  --background: #020617;                 /* slate-950 */
+  --foreground: var(--cream);
+  --card: #f4ebde;                       /* warm sand beige */
+  --card-foreground: #020617;
+  --primary: var(--charcoal);
+  --primary-foreground: var(--cream);
+  --secondary: var(--champagne-pale);
+  --secondary-foreground: var(--charcoal);
+  --muted: var(--cream-warm);
+  --muted-foreground: var(--charcoal-muted);
+  --accent: var(--champagne);
+  --accent-foreground: var(--charcoal);
+  --border: var(--border-luxury);
+  --input: var(--border-luxury);
+  --ring: var(--champagne);
+
+  /* Luxury radius (24px+) and soft shadow */
+  --radius-card: 1.5rem;   /* 24px ≈ rounded-2xl */
+  --radius-button: 1.5rem;
+  --radius-input: 1rem;
+  --shadow-soft: 0 25px 50px -12px rgba(0, 0, 0, 0.2), 0 12px 24px -8px rgba(0, 0, 0, 0.12);
+  /* shadow-xl 느낌의 부드러운 카드 그림자 */
+  --shadow-card: 0 20px 25px -5px rgba(15, 23, 42, 0.6), 0 10px 10px -5px rgba(15, 23, 42, 0.7);
+  --shadow-deep: 0 40px 80px -20px rgba(0, 0, 0, 0.35), 0 20px 40px -16px rgba(0, 0, 0, 0.2);
+  --shadow-button: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+  --shadow-gold: 0 0 40px rgba(197, 160, 89, 0.15);
+
+  /* Typography: Serif as primary (Nanum Myeongjo / high-end serif) */
+  --font-serif: "Nanum Myeongjo", "Noto Serif KR", "Times New Roman", serif;
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Syne", "Inter", system-ui, sans-serif;
 }
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-display: var(--font-display);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    font-family: var(--font-serif);
+    background-color: var(--background);
+    color: var(--foreground);
+    scroll-behavior: smooth;
+  }
+  body {
+    font-family: var(--font-serif);
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  /* Serif for main headings (Nanum Myeongjo / high-end serif) */
+  h1, h2, .font-heading {
+    font-family: var(--font-serif);
+  }
+  *,
+  *:before,
+  *:after {
+    border-color: var(--border);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Utility classes for luxury UI */
+@layer utilities {
+  .luxury-card {
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    background: var(--card);
+  }
+  .luxury-button {
+    border-radius: var(--radius-button);
+    box-shadow: var(--shadow-soft);
+  }
+  .luxury-button-primary {
+    background: var(--charcoal);
+    color: var(--cream);
+    box-shadow: var(--shadow-button);
+    border-radius: var(--radius-button);
+  }
+  .luxury-input {
+    border-radius: var(--radius-input);
+  }
+
+  /* Uppercase labels: luxury brand feel */
+  .label-uppercase {
+    letter-spacing: 0.2em;
+  }
+
+  /* Golden border shimmer on hover for primary buttons */
+  .gold-btn-shimmer {
+    box-shadow: 0 0 0 1px rgba(197, 160, 89, 0.25);
+  }
+  .gold-btn-shimmer:hover {
+    animation: goldBorderShimmer 2s ease-in-out infinite;
+  }
+
+  /* once.film-style: 버튼 눌림/호버 피드백 (네이티브 앱 같은 반응성) */
+  .btn-tap {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+  .btn-tap:hover {
+    transform: scale(1.02);
+  }
+  .btn-tap:active {
+    transform: scale(0.97);
+  }
+  .btn-tap:disabled:hover,
+  .btn-tap:disabled:active {
+    transform: none;
+  }
+
+  /* 하단 고정 요소용 safe-area (주소창 숨김 시에도 바닥에 딱 붙음) */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .bottom-fab {
+    bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+
+  /* once.film-style: 모바일 스크롤 관성 */
+  .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* AI Film: gold loading bar */
+@keyframes goldLoad {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+/* Teaser: B&W to color */
+@keyframes teaserReveal {
+  0% {
+    opacity: 0;
+    filter: grayscale(1);
+  }
+  15% {
+    opacity: 1;
+    filter: grayscale(1);
+  }
+  50% {
+    opacity: 1;
+    filter: grayscale(0);
+  }
+  85% {
+    opacity: 1;
+    filter: grayscale(0);
+  }
+  100% {
+    opacity: 0;
+    filter: grayscale(0);
+  }
+}
+
+/* Full-screen film: Theater Entrance — 서서히 밝아지며 커지는 전환 */
+@keyframes theaterEntrance {
+  from {
+    opacity: 0.5;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Cinematic: gold glow breathing / pulsate */
+@keyframes goldGlowPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Button: subtle golden border shimmer on hover */
+@keyframes goldBorderShimmer {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(197, 160, 89, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 24px 2px rgba(197, 160, 89, 0.45);
+  }
+}
+
+/* Cinematic: fade-in-up (once.film style) */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

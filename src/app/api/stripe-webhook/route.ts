@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { headers } from "next/headers"
+import { createClient } from "@supabase/supabase-js"
+import { notifyAdmin } from "@/lib/notifyAdmin"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -8,8 +10,15 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 const stripe =
   secretKey &&
   new Stripe(secretKey, {
-    apiVersion: "2024-06-20",
+    apiVersion: "2026-02-25.clover", // <-- 여기를 2024-06-20에서 이대로 바꾸세요!
   })
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabase =
+  supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+    : null
 
 export async function POST(req: NextRequest) {
   if (!stripe || !webhookSecret) {
@@ -17,7 +26,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 })
   }
 
-  const sig = headers().get("stripe-signature")
+  const h = await headers()
+  const sig = h.get("stripe-signature")
   if (!sig) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 })
   }
@@ -27,8 +37,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.text()
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
-  } catch (err: any) {
-    console.error("Stripe webhook signature verification failed:", err?.message || err)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error("Stripe webhook signature verification failed:", msg)
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
@@ -36,25 +47,111 @@ export async function POST(req: NextRequest) {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session
 
-      // We store event linkage and payment details in metadata
       const eventId = session.metadata?.eventId
+      const purpose = session.metadata?.purpose
       const amountTotal = session.amount_total ?? 0
       const currency = session.currency ?? "usd"
       const customerEmail = (session.customer_details?.email || session.customer_email) ?? null
 
-      console.log("Support-family payment completed", {
+      console.log("Checkout completed", {
         eventId,
+        purpose,
         amountTotal,
         currency,
         customerEmail,
         sessionId: session.id,
-        paymentIntent: session.payment_intent,
       })
 
-      // TODO: Insert a row into a `contributions` table in Supabase, e.g.
-      // id (uuid), event_id, amount_cents, currency, stripe_session_id, stripe_payment_intent_id, payer_email, status, created_at
-      //
-      // You can call Supabase here using a service role key or use a server-side helper.
+      if (purpose === "premium_film" && eventId && supabase) {
+        const tierFromMeta = session.metadata?.tier as string | undefined
+        const tier =
+          tierFromMeta === "plus" ? "plus" : tierFromMeta === "premium" ? "premium" : "premium"
+
+        await supabase.from("payments").upsert(
+          {
+            event_id: eventId,
+            stripe_session_id: session.id,
+            user_email: customerEmail,
+            status: "completed",
+            purpose: "premium_film",
+            amount_cents: amountTotal,
+            currency,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "stripe_session_id" }
+        )
+
+        // Premium 결제 시 video_credits를 정확히 3회로 설정 (영상 제작권 3회 제공)
+        if (tier === "premium") {
+          await supabase
+            .from("events")
+            .update({ is_paid: true, tier, video_credits: 3 })
+            .eq("id", eventId)
+        } else {
+          await supabase
+            .from("events")
+            .update({ is_paid: true, tier })
+            .eq("id", eventId)
+        }
+
+        // 매출 슬랙 알림 (Plus / Premium 공통)
+        try {
+          const amountMajor =
+            currency.toLowerCase() === "usd" ? `$${(amountTotal / 100).toFixed(2)}` : `${amountTotal} ${currency}`
+
+          const { data: eventRow } = await supabase
+            .from("events")
+            .select("name")
+            .eq("id", eventId)
+            .maybeSingle()
+
+          const familyName = eventRow?.name ?? "이름 미상"
+
+          await notifyAdmin(`💰 [매출 발생] ${amountMajor} 결제 완료! 유족명: ${familyName}`, {
+            eventId,
+            tier,
+            purpose,
+            currency,
+            amount_cents: amountTotal,
+            customerEmail,
+            stripe_session_id: session.id,
+          })
+        } catch (err) {
+          console.error("[stripe-webhook] Failed to send Slack revenue notification:", err)
+        }
+      }
+
+      if (purpose === "platform_tip" && eventId && supabase) {
+        await supabase.from("payments").upsert(
+          {
+            event_id: eventId,
+            stripe_session_id: session.id,
+            user_email: customerEmail,
+            status: "completed",
+            purpose: "platform_tip",
+            amount_cents: amountTotal,
+            currency,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "stripe_session_id" }
+        )
+      }
+
+      if (purpose === "support_family" && eventId && supabase) {
+        await supabase.from("payments").upsert(
+          {
+            event_id: eventId,
+            stripe_session_id: session.id,
+            user_email: customerEmail,
+            status: "completed",
+            purpose: "support_family",
+            amount_cents: amountTotal,
+            currency,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "stripe_session_id" }
+        )
+      }
     }
 
     return NextResponse.json({ received: true }, { status: 200 })

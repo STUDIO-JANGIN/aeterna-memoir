@@ -144,6 +144,7 @@ export async function getStoriesForAdminAction(slug: string): Promise<{
   stories: AdminStory[]
   error?: string
 }> {
+  const supabase = getSupabaseAdmin()
   console.log("[getStoriesForAdminAction] received slug:", slug, "type:", typeof slug)
   const eventData = await getEventBySlug(slug)
 
@@ -191,6 +192,7 @@ export async function getPresentDataAction(slug: string): Promise<{
   stories: PresentStory[]
   error?: string
 }> {
+  const supabase = getSupabaseAdmin()
   const eventData = await getEventBySlug(slug)
   if (!eventData) {
     return { event: null, stories: [], error: "Event not found." }

@@ -26,17 +26,32 @@ function SuccessContent({ slug }: { slug: string }) {
     }
 
     let cancelled = false
-    getPaymentSuccessAction(sessionId, slug).then((result) => {
-      if (cancelled) return
-      if (result.ok) {
-        setDownloadUrl(result.downloadUrl)
-        setEventName(result.eventName)
-        setStatus("success")
-      } else {
-        setErrorMessage(result.error ?? "결제 확인에 실패했습니다.")
-        setStatus("error")
-      }
-    })
+    const maxAttempts = 3
+    const delayMs = 1500
+
+    const attempt = (attemptNumber: number) => {
+      getPaymentSuccessAction(sessionId, slug).then((result) => {
+        if (cancelled) return
+        if (result.ok) {
+          setDownloadUrl(result.downloadUrl)
+          setEventName(result.eventName)
+          setStatus("success")
+          return
+        }
+        const isRetryable =
+          result.error?.includes("not found") ||
+          result.error?.includes("not available") ||
+          result.error?.includes("not completed")
+        if (isRetryable && attemptNumber < maxAttempts) {
+          setTimeout(() => attempt(attemptNumber + 1), delayMs)
+        } else {
+          setErrorMessage(result.error ?? "결제 확인에 실패했습니다.")
+          setStatus("error")
+        }
+      })
+    }
+
+    attempt(1)
     return () => {
       cancelled = true
     }
@@ -47,7 +62,7 @@ function SuccessContent({ slug }: { slug: string }) {
       <div className="max-w-lg w-full text-center">
         {status === "loading" && (
           <p className="text-[var(--aeterna-gold-muted)] tracking-[0.15em] uppercase text-sm">
-            결제 정보를 확인 중입니다...
+            Verifying your payment...
           </p>
         )}
 

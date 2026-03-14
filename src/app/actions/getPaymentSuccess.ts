@@ -42,41 +42,56 @@ export async function getPaymentSuccessAction(
       return { ok: false, error: "Invalid session metadata." }
     }
 
-    // Ensure we have a completed payment record (webhook may have written it)
-    const { data: payment } = await supabase
-      .from("payments")
-      .select("id, status")
-      .eq("stripe_session_id", sessionId)
-      .single()
+    const maxAttempts = 3
+    const retryDelayMs = 2000
+    let lastError: string = "Event not found."
 
-    if (payment && payment.status !== "completed") {
-      await supabase
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      // Ensure we have a completed payment record (webhook may have written it)
+      const { data: payment } = await supabase
         .from("payments")
-        .update({
-          status: "completed",
-          user_email: session.customer_details?.email || session.customer_email || null,
-          updated_at: new Date().toISOString(),
-        })
+        .select("id, status")
         .eq("stripe_session_id", sessionId)
+        .single()
+
+      if (payment && payment.status !== "completed") {
+        await supabase
+          .from("payments")
+          .update({
+            status: "completed",
+            user_email: session.customer_details?.email || session.customer_email || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_session_id", sessionId)
+      }
+
+      // Mark event as paid (idempotent; webhook may have already done this)
+      await supabase.from("events").update({ is_paid: true }).eq("id", eventId)
+
+      // Fetch event: use full_film_url, preview_film_url, or film_url (film may not be ready yet)
+      const { data: event, error: eventError } = await supabase
+        .from("events")
+        .select("full_film_url, preview_film_url, film_url, name")
+        .eq("id", eventId)
+        .single()
+
+      if (!eventError && event) {
+        const downloadUrl =
+          (event.full_film_url ?? event.preview_film_url ?? event.film_url ?? "") || ""
+        return {
+          ok: true,
+          downloadUrl,
+          eventName: event.name ?? null,
+        }
+      }
+
+      lastError = eventError?.message ?? "Event not found."
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs))
+      }
     }
 
-    await supabase.from("events").update({ is_paid: true }).eq("id", eventId)
-
-    const { data: event, error: eventError } = await supabase
-      .from("events")
-      .select("film_url, name")
-      .eq("id", eventId)
-      .single()
-
-    if (eventError || !event?.film_url) {
-      return { ok: false, error: "Download not available yet." }
-    }
-
-    return {
-      ok: true,
-      downloadUrl: event.film_url,
-      eventName: event.name ?? null,
-    }
+    return { ok: false, error: lastError }
   } catch (err) {
     console.error("[getPaymentSuccess]", err)
     return {

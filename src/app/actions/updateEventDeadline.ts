@@ -48,6 +48,7 @@ export async function extendDeadlineAction(
 
 /** 지금 즉시 마감: collection_end_at을 현재 시각(과거)으로 설정 */
 export async function closeDeadlineNowAction(eventId: string, slug?: string): Promise<UpdateDeadlineResult> {
+  const supabase = getSupabaseAdmin()
   const iso = new Date().toISOString()
   const { error } = await supabase
     .from("events")

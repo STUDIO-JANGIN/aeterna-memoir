@@ -8,6 +8,7 @@ const nanum = Nanum_Myeongjo({
   weight: ['400', '700'],
   variable: '--font-serif',
   display: 'swap',
+  preload: false, // avoids Turbopack font resolution errors (module not found)
 })
 
 const inter = Inter({

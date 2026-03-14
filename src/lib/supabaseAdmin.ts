@@ -9,6 +9,10 @@ let _adminClient: SupabaseClient | null = null
  * Server-only Supabase client (service role). Use in Server Actions and API routes.
  * Lazy-initialized so env is read at first use, not at module load (avoids "supabaseKey is required" during prerender).
  * Throws a clear error if env vars are missing.
+ *
+ * RULE (src/app/actions): Every function that uses `supabase` MUST declare it at the start of that function:
+ *   const supabase = getSupabaseAdmin()
+ * Do not use a module-level supabase; each action/function needs its own declaration.
  */
 export function getSupabaseAdmin(): SupabaseClient {
   if (_adminClient) return _adminClient

@@ -88,40 +88,55 @@ export function StoryMemoryDrawer({
     }
   }, [nameStorageKey])
 
-  const loadComments = useCallback(() => {
-    const eid = parseUuidString(memorialEventId)
-    const sid = parseUuidString(photoStoryId)
-    if (!eid || !sid) {
-      setCommentsLoading(false)
-      setComments([])
-      return
-    }
-    setCommentsLoading(true)
-    getStoryCommentsAction(sid, eid).then((res) => {
-      setCommentsLoading(false)
-      if (res.ok) setComments(res.comments)
-      else setComments([])
-    })
-  }, [photoStoryId, memorialEventId])
+  const loadComments = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      const eid = parseUuidString(memorialEventId)
+      const sid = parseUuidString(photoStoryId)
+      if (!eid || !sid) {
+        if (!opts?.silent) setCommentsLoading(false)
+        setComments([])
+        return
+      }
+      if (!opts?.silent) setCommentsLoading(true)
+      try {
+        const res = await getStoryCommentsAction(sid, eid)
+        if (res.ok) {
+          setComments(res.comments)
+        } else {
+          console.error("[StoryMemoryDrawer] loadComments failed", {
+            photoId: sid,
+            eventId: eid,
+            error: res.error,
+          })
+          setComments([])
+        }
+      } finally {
+        if (!opts?.silent) setCommentsLoading(false)
+      }
+    },
+    [photoStoryId, memorialEventId],
+  )
 
   useEffect(() => {
-    loadComments()
+    void loadComments()
   }, [loadComments])
 
   useEffect(() => {
-    if (!memorialEventId || !photoStoryId) return
+    const eid = parseUuidString(memorialEventId)
+    const sid = parseUuidString(photoStoryId)
+    if (!eid || !sid) return
     const channel = supabase
-      .channel(`comments-${memorialEventId}-${photoStoryId}`)
+      .channel(`comments-${eid}-${sid}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "comments",
-          filter: `photo_id=eq.${photoStoryId}`,
+          filter: `photo_id=eq.${sid}`,
         },
         () => {
-          loadComments()
+          void loadComments({ silent: true })
         },
       )
       .subscribe()
@@ -141,21 +156,27 @@ export function StoryMemoryDrawer({
   const handleSend = useCallback(async () => {
     const rawPhoto = photoStoryId
     const rawEvent = memorialEventId
-    if (!rawPhoto || typeof rawPhoto !== "string") {
+    if (!rawPhoto || typeof rawPhoto !== "string" || !rawPhoto.trim()) {
       console.error("Invalid Photo ID:", rawPhoto)
-      setSendError("Something went wrong. Refresh the page and try again.")
+      window.alert("Error: Photo ID missing")
+      setSendError("Error: Photo ID missing")
       return
     }
-    if (!rawEvent || typeof rawEvent !== "string") {
+    if (!rawEvent || typeof rawEvent !== "string" || !rawEvent.trim()) {
       console.error("Invalid Event ID:", rawEvent)
-      setSendError("Something went wrong. Refresh the page and try again.")
+      setSendError("Error: Event ID missing")
       return
     }
     const photoId = parseUuidString(rawPhoto)
     const evId = parseUuidString(rawEvent)
-    if (!photoId || !evId) {
-      console.error("Invalid Photo ID (not UUID):", rawPhoto, "event:", rawEvent)
-      setSendError("Something went wrong. Refresh the page and try again.")
+    if (!photoId) {
+      console.error("Invalid Photo ID (not UUID):", rawPhoto)
+      window.alert("Error: Photo ID missing")
+      setSendError("Error: Photo ID missing")
+      return
+    }
+    if (!evId) {
+      setSendError("Error: Event ID missing")
       return
     }
     if (!body.trim()) return
@@ -164,29 +185,28 @@ export function StoryMemoryDrawer({
     const visitorName =
       authorName.trim() || (sessionUser ? "Guest" : "Anonymous")
     try {
-      console.log("Sending Comment to Photo ID:", photoId)
       const res = await addStoryCommentAction(photoId, evId, visitorName, body)
       if (res.ok) {
-        setComments((prev) => {
-          if (prev.some((c) => c.id === res.comment.id)) return prev
-          return [...prev, res.comment]
-        })
         setBody("")
         persistName(authorName.trim())
+        await loadComments({ silent: true })
       } else {
         setSendError(res.error)
+        if (res.error === "Error: Photo ID missing" || res.error === "Error: Event ID missing") {
+          window.alert(res.error)
+        }
       }
     } finally {
       setSending(false)
     }
-  }, [photoStoryId, memorialEventId, authorName, body, persistName, sessionUser])
+  }, [photoStoryId, memorialEventId, authorName, body, persistName, sessionUser, loadComments])
 
   const handleReport = async (commentId: string) => {
     setReportingId(commentId)
     const res = await reportStoryCommentAction(commentId)
     setReportingId(null)
     if (res.ok) {
-      setComments((prev) => prev.filter((c) => c.id !== commentId))
+      await loadComments({ silent: true })
     }
   }
 

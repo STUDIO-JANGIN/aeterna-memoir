@@ -25,6 +25,10 @@ import {
   getPublicSelectedTeaserStoriesAction,
 } from "@/app/actions/getPublicMemorialPageData"
 import { StoryMemoryDrawer } from "@/components/memorial/StoryMemoryDrawer"
+import {
+  MemorialTrialCountdown,
+  formatMemorialCountdownDisplay,
+} from "@/components/memorial/MemorialTrialCountdown"
 import { buildGlobalShareMessage } from "@/components/MemorialShareActions"
 
 const spring = { type: "spring" as const, stiffness: 300, damping: 30 }
@@ -198,15 +202,6 @@ export default function GuestFeedPage({ params }: PageProps) {
     event?.full_film_url && event.full_film_url.length > 0 ? event.full_film_url : event?.film_url ?? null
   // Show cinematic film when URL exists: Premium can view as soon as Luma finishes; others when collection closed.
   const filmReleased = !!tributeFilmUrl && (isClosed || isPremiumTier)
-  const formatCountdown = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000)
-    const s = totalSeconds % 60
-    const m = Math.floor(totalSeconds / 60) % 60
-    const h = Math.floor(totalSeconds / 3600) % 24
-    const d = Math.floor(totalSeconds / 86400)
-    return `${String(d).padStart(2, "0")}d ${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`
-  }
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const u = data.session?.user
@@ -1013,23 +1008,30 @@ export default function GuestFeedPage({ params }: PageProps) {
             </details>
           ) : null}
 
-          {photoDeadlineRemainingMs !== null && photoDeadlineRemainingMs > 0 && !isPhotoDeadlinePassed ? (
+          {photoDeadlineRemainingMs !== null &&
+          photoDeadlineRemainingMs > 0 &&
+          !isPhotoDeadlinePassed &&
+          isPaidMemorial ? (
             <p className="mt-5 text-[10px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">
               Photo window ·{" "}
-              <span className="font-mono tabular-nums text-[var(--aeterna-gold)]">{formatCountdown(photoDeadlineRemainingMs)}</span>
+              <span className="font-mono tabular-nums text-[var(--aeterna-gold)]">
+                {formatMemorialCountdownDisplay(photoDeadlineRemainingMs)}
+              </span>
             </p>
           ) : null}
         </div>
       </header>
 
-      {/* 7-day deletion warning for free tier while collection is open */}
-      {event && (event.tier === "free" || (!event.is_paid && !event.is_premium)) && photoDeadlineRemainingMs !== null && photoDeadlineRemainingMs > 0 && (
-        <div className="bg-red-950/40 border-y border-red-800/50 px-4 py-3 text-center">
-          <p className="text-sm font-medium text-red-100 tracking-[0.04em]">
-            If you don&apos;t upgrade within 7 days, all data will be permanently deleted.
-          </p>
-        </div>
-      )}
+      {/* Free tier: live trial countdown (creation-aligned deadline, updates every second in parent state) */}
+      {event &&
+        !isPaidMemorial &&
+        photoDeadlineRemainingMs !== null &&
+        photoDeadlineRemainingMs > 0 &&
+        !isPhotoDeadlinePassed && (
+          <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 pt-1 pb-3 sm:pb-4">
+            <MemorialTrialCountdown remainingMs={photoDeadlineRemainingMs} />
+          </div>
+        )}
 
       {/* Full screen cinematic section (when film_url exists) */}
       {filmReleased && (

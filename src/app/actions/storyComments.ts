@@ -66,6 +66,12 @@ export async function addStoryCommentAction(
   visitorName: string,
   text: string,
 ): Promise<AddCommentResult> {
+  const pid = parseUuidString(photoId)
+  const eid = parseUuidString(eventId)
+  if (!pid || !eid) {
+    return { ok: false, error: "Something went wrong. Refresh the page and try again." }
+  }
+
   const name = visitorName.trim().slice(0, MAX_NAME) || "Anonymous"
   const body = text.trim().slice(0, MAX_TEXT)
   if (!body) {
@@ -77,9 +83,9 @@ export async function addStoryCommentAction(
   const { data: story, error: storyErr } = await supabase
     .from("stories")
     .select("id, event_id, is_approved")
-    .eq("id", photoId)
+    .eq("id", pid)
     .single()
-  if (storyErr || !story || story.event_id !== eventId) {
+  if (storyErr || !story || story.event_id !== eid) {
     return { ok: false, error: "Memory not found." }
   }
   if (story.is_approved !== true) {
@@ -89,8 +95,8 @@ export async function addStoryCommentAction(
   const { data: inserted, error: insertErr } = await supabase
     .from("comments")
     .insert({
-      photo_id: photoId,
-      event_id: eventId,
+      photo_id: pid,
+      event_id: eid,
       text: body,
       visitor_name: name,
     })

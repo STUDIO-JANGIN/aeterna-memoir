@@ -1,0 +1,51 @@
+"use server"
+
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+
+export type SubscribeVisitorResult =
+  | { ok: true }
+  | { ok: false; error: string }
+
+export async function subscribeVisitorAction(
+  eventId: string,
+  email: string,
+  provider: string
+): Promise<SubscribeVisitorResult> {
+  const supabase = getSupabaseAdmin()
+  const trimmed = email.trim().toLowerCase()
+  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    return { ok: false, error: "Please enter a valid email address." }
+  }
+
+  try {
+    const { error } = await supabase
+      .from("visitors")
+      .upsert(
+        { event_id: eventId, email: trimmed, provider },
+        { onConflict: "event_id,email", ignoreDuplicates: true }
+      )
+
+    if (error) {
+      if (error.code === "23503") {
+        return { ok: false, error: "We couldn’t find this memorial album." }
+      }
+      return { ok: false, error: error.message }
+    }
+
+    // Optional: also store in notifications table (ignore duplicates).
+    await supabase
+      .from("notifications")
+      .upsert(
+        { event_id: eventId, email: trimmed },
+        { onConflict: "event_id,email", ignoreDuplicates: true }
+      )
+
+    return { ok: true }
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Something went wrong while subscribing for updates.",
+    }
+  }
+}
+

@@ -5,5 +5,9 @@ export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 export default function PublicMemorialSlugLayout({ children }: { children: ReactNode }) {
-  return children
+  return (
+    <div className="min-h-dvh bg-landing aeterna-page-fade text-[var(--landing-text-body)] [font-family:var(--font-sans)] antialiased">
+      {children}
+    </div>
+  )
 }

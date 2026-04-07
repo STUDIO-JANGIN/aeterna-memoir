@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic"
 
 import { useState, useEffect, useRef, Suspense } from "react"
-import { Flower2, Sparkles } from "lucide-react"
+import { Flower2, Gift, MapPin, Sparkles } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
@@ -36,7 +36,7 @@ function parsePlanQueryParam(param: string | null): StoragePlan | null {
   return null
 }
 
-const WIZARD_STEPS_FULL = 10
+const WIZARD_STEPS_FULL = 5
 
 /** Canonical query for Stripe cancel / return links (matches landing `?plan=`). */
 function storagePlanToUrlPlan(p: StoragePlan): "basic" | "premium" | "free" | "forever" | "film" {
@@ -50,25 +50,28 @@ const PLAN_SUMMARY: Record<
   { title: string; price: string; tagline: string; benefits: string[] }
 > = {
   free: {
-    title: "Sacred week",
+    title: "Sacred Window",
     price: "$0",
-    tagline: "A gentle window to gather what matters.",
+    tagline: "7 days to gather memories. A gentle, peaceful start.",
     benefits: [
       "Seven days for family and friends to add photos and stories",
-      "Upgrade anytime to keep their space forever",
+      "Upgrade anytime to preserve the shrine forever",
     ],
   },
   plus: {
-    title: "Forever",
+    title: "Eternal Legacy",
     price: "$19.99",
-    tagline: "Their memories stay with you — always.",
+    tagline: "Keep every photo and story preserved forever. No expiration.",
     benefits: ["Every photo and story preserved for good", "A permanent, shareable memorial home"],
   },
   premium: {
-    title: "Film",
+    title: "The Eternal Film (V2)",
     price: "$39.99",
-    tagline: "Forever storage plus a cinematic tribute.",
-    benefits: ["Everything in Forever", "One AI tribute film woven from the moments you love most"],
+    tagline: "Everything in Legacy, plus priority access to your 1-minute AI tribute film once V2 launches.",
+    benefits: [
+      "Everything in Eternal Legacy",
+      "Priority access to your AI tribute film when V2 launches — pre-order today",
+    ],
   },
 }
 
@@ -135,7 +138,7 @@ function buildCeremonyDisplay(
   return `${long} · ${timeStr}`
 }
 
-/** Footer-only noise: never block Step 9 (account) or Step 10 (plan) with stale sign-in copy. */
+/** Footer-only noise: never block Step 4 (account) or Step 5 (plan) with stale sign-in copy. */
 function isMemorialSignInFooterNoise(message: string | null): boolean {
   if (!message) return false
   const m = message.toLowerCase()
@@ -192,8 +195,6 @@ function CreateEventForm() {
   /** When URL locked a plan, user can open full plan grid to switch. */
   const [showPlanChangeOptions, setShowPlanChangeOptions] = useState(false)
 
-  const [collectionPeriod, setCollectionPeriod] = useState<"3" | "7" | "14" | "custom">("7")
-  const [customExpiredAt, setCustomExpiredAt] = useState("")
   const [storagePlan, setStoragePlan] = useState<StoragePlan>("premium")
   const [loading, setLoading] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
@@ -279,11 +280,6 @@ function CreateEventForm() {
       }
       setFundLink(draft.fundLink)
       setInvitationBio(draft.invitationBio ?? "")
-      {
-        const cp = draft.collectionPeriod as "3" | "7" | "14" | "custom" | "funeral"
-        setCollectionPeriod(cp === "funeral" ? "7" : cp)
-      }
-      setCustomExpiredAt(draft.customExpiredAt)
       if (!locked) setStoragePlan(draft.storagePlan)
     }
 
@@ -333,8 +329,6 @@ function CreateEventForm() {
       ceremonyPeriod,
       fundLink,
       invitationBio,
-      collectionPeriod,
-      customExpiredAt,
       storagePlan,
     }
     const t = window.setTimeout(() => writeCreateDraft(draft), 450)
@@ -356,8 +350,6 @@ function CreateEventForm() {
     ceremonyPeriod,
     fundLink,
     invitationBio,
-    collectionPeriod,
-    customExpiredAt,
     storagePlan,
   ])
 
@@ -374,9 +366,9 @@ function CreateEventForm() {
         await refreshAuthUser()
         router.refresh()
         const draft = readCreateDraft()
-        if (draft?.memorialType && draft.wizardStep === 9) {
-          setWizardStep(10)
-          writeCreateDraft({ ...draft, wizardStep: 10 })
+        if (draft?.memorialType && draft.wizardStep === 4) {
+          setWizardStep(5)
+          writeCreateDraft({ ...draft, wizardStep: 5 })
         }
         // If React state lags behind the new session (common right after OAuth), resync once.
         fallbackTimer = window.setTimeout(async () => {
@@ -408,10 +400,10 @@ function CreateEventForm() {
       if (!session?.user) return
       await refreshAuthUser()
       router.refresh()
-      if (memorialTypeRef.current && wizardStepRef.current === 9) {
-        setWizardStep(10)
+      if (memorialTypeRef.current && wizardStepRef.current === 4) {
+        setWizardStep(5)
         const d = readCreateDraft()
-        if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 10 })
+        if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 5 })
       }
     })
     return () => subscription.unsubscribe()
@@ -451,7 +443,7 @@ function CreateEventForm() {
     clearPendingCheckout()
     setPendingCheckout(null)
     setUser(null)
-    if (wizardStep > 9) setWizardStep(9)
+    if (wizardStep > 5) setWizardStep(4)
   }
 
   const resetFlow = () => {
@@ -477,8 +469,6 @@ function CreateEventForm() {
     setCeremonyPeriod("PM")
     setFundLink("")
     setInvitationBio("")
-    setCollectionPeriod("7")
-    setCustomExpiredAt("")
     const mapped = parsePlanQueryParam(
       typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("plan") : null
     )
@@ -512,8 +502,6 @@ function CreateEventForm() {
       ceremonyPeriod,
       fundLink,
       invitationBio,
-      collectionPeriod,
-      customExpiredAt,
       storagePlan,
     }
   }
@@ -526,16 +514,9 @@ function CreateEventForm() {
       case 2:
       case 3:
         return true
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-      case 9:
-        return authReady
-      case 10:
-        return true
       case 4:
-        if (collectionPeriod === "custom") return customExpiredAt.trim().length > 0
+        return authReady
+      case 5:
         return true
       default:
         return false
@@ -565,11 +546,11 @@ function CreateEventForm() {
     }
   }
 
-  /** After Google OAuth, advance from Claim (9) → Plan (10) as soon as the session is confirmed. */
+  /** After Google OAuth, advance from Claim (4) → Plan (5) as soon as the session is confirmed. */
   useEffect(() => {
-    if (wizardStep !== 9 || !signedIn || !memorialType || !authReady) return
-    setWizardStep(10)
-    const d = buildCreateDraft(10)
+    if (wizardStep !== 4 || !signedIn || !memorialType || !authReady) return
+    setWizardStep(5)
+    const d = buildCreateDraft(5)
     if (d) writeCreateDraft(d)
   }, [wizardStep, signedIn, memorialType, authReady])
 
@@ -619,12 +600,6 @@ function CreateEventForm() {
       return
     }
 
-    let customExpiredIso: string | undefined
-    if (collectionPeriod === "custom" && customExpiredAt.trim()) {
-      const parsed = new Date(customExpiredAt.trim())
-      if (!Number.isNaN(parsed.getTime())) customExpiredIso = parsed.toISOString()
-    }
-
     const result = await createEventAction({
       name: name.trim(),
       birth_date,
@@ -636,15 +611,8 @@ function CreateEventForm() {
       fund_link: fundLink.trim() || undefined,
       creator_email: user.email.trim(),
       memorial_type: memorialType,
-      collection_period:
-        collectionPeriod === "custom"
-          ? "custom"
-          : collectionPeriod === "3"
-            ? "3"
-            : collectionPeriod === "14"
-              ? "14"
-              : "7",
-      custom_expired_at: customExpiredIso,
+      collection_period: "7",
+      custom_expired_at: undefined,
       invitation_bio: invitationBio.trim() ? invitationBio.trim().slice(0, 2000) : undefined,
     })
 
@@ -727,7 +695,7 @@ function CreateEventForm() {
 
   const onPrimaryPress = () => {
     if (!memorialType) return
-    if (wizardStep === 9 && authReady && !signedIn) {
+    if (wizardStep === 4 && authReady && !signedIn) {
       void handleContinueWithGoogle()
       return
     }
@@ -739,7 +707,7 @@ function CreateEventForm() {
 
   const isPlanSummaryView =
     memorialType !== null &&
-    wizardStep === 10 &&
+    wizardStep === 5 &&
     planLockedFromUrl &&
     !showPlanChangeOptions
 
@@ -752,9 +720,9 @@ function CreateEventForm() {
 
   const showFooterCreateError =
     Boolean(createError) &&
-    !(
+      !(
       isMemorialSignInFooterNoise(createError) &&
-      (wizardStep === 9 || wizardStep === 10 || signedIn)
+      (wizardStep === 4 || wizardStep === 5 || signedIn)
     )
 
   return (
@@ -935,6 +903,9 @@ function CreateEventForm() {
                   <div>
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">Their years</h2>
                     <p className="mt-2 text-base text-white/45">Rough is fine. It holds the story.</p>
+                    <p className="mt-3 text-sm text-white/35 leading-relaxed">
+                      Every memorial begins with seven days for loved ones to gather memories—no extra step. Upgrade anytime to preserve the shrine forever.
+                    </p>
                   </div>
                   <div className="space-y-6">
                     <p className="text-xs tracking-[0.2em] text-white/35">Born</p>
@@ -994,249 +965,61 @@ function CreateEventForm() {
                       </select>
                     </div>
                   </div>
-                </div>
-              )}
 
-              {wizardStep === 4 && (
-                <div className="space-y-6 pt-4">
-                  <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">Gathering Duration</h2>
-                  <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
-                    {(
-                      [
-                        { v: "3" as const, n: "3" },
-                        { v: "7" as const, n: "7", recommended: true as const },
-                        { v: "14" as const, n: "14" },
-                        { v: "custom" as const, n: null },
-                      ] as const
-                    ).map((opt) => {
-                      const selected = collectionPeriod === opt.v
-                      const isRec = "recommended" in opt && opt.recommended
-                      const isCustom = opt.v === "custom"
-                      return (
-                        <button
-                          key={opt.v}
-                          type="button"
-                          onClick={() => setCollectionPeriod(opt.v)}
-                          className={`relative flex min-h-[72px] flex-col items-center justify-center rounded-xl px-3 py-3 text-center transition-colors active:scale-[0.98] sm:min-h-[76px] ${
-                            selected
-                              ? "border border-[var(--aeterna-gold)]/45 bg-[var(--aeterna-gold)]/[0.12] ring-1 ring-[var(--aeterna-gold)]/35"
-                              : "border border-white/[0.09] bg-white/[0.025] hover:border-white/[0.14] hover:bg-white/[0.05]"
-                          }`}
-                        >
-                          {isRec && (
-                            <span className="absolute right-2 top-1.5 rounded bg-[var(--aeterna-gold)]/20 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-[var(--aeterna-gold)]">
-                              Recommended
-                            </span>
-                          )}
-                          {isCustom ? (
-                            <span className="text-[15px] font-bold leading-tight text-[#f4f1ea] sm:text-base">Custom Date</span>
-                          ) : (
-                            <div className="flex items-baseline justify-center gap-1">
-                              <span className="text-[1.65rem] font-bold tabular-nums leading-none text-[#f4f1ea] sm:text-[1.85rem]">
-                                {opt.n}
-                              </span>
-                              <span className="text-sm font-semibold text-white/75">Days</span>
-                            </div>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  {collectionPeriod === "custom" && (
-                    <input
-                      type="datetime-local"
-                      value={customExpiredAt}
-                      onChange={(e) => setCustomExpiredAt(e.target.value)}
-                      className={inputBase}
-                    />
-                  )}
-                </div>
-              )}
-
-              {wizardStep === 5 && (
-                <div className="space-y-6 pt-4">
-                  <div>
-                    <p className="text-[10px] tracking-[0.28em] uppercase text-white/40 mb-2">Optional</p>
-                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">Location &amp; support</h2>
-                    <p className="mt-2 text-sm text-white/45 leading-relaxed">
-                      If it helps, share where people can gather and how they can offer support.
-                    </p>
-                  </div>
-                  <div>
-                    <label htmlFor="memorial-location" className={fieldLabelClass}>
-                      Memorial location
-                    </label>
-                    <input
-                      id="memorial-location"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      placeholder="Venue, address, or city"
-                      autoComplete="street-address"
-                      className={inputMemorial}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="support-donation" className={fieldLabelClass}>
-                      Support / donation link
-                    </label>
-                    <input
-                      id="support-donation"
-                      type="text"
-                      inputMode="url"
-                      value={fundLink}
-                      onChange={(e) => setFundLink(e.target.value)}
-                      placeholder="GoFundMe, charity page, or other link"
-                      autoComplete="off"
-                      className={inputMemorial}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {wizardStep === 6 && (
-                <div className="space-y-6 pt-4">
-                  <div>
-                    <p className="text-[10px] tracking-[0.28em] uppercase text-white/40 mb-2">Optional</p>
-                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">Service date &amp; time</h2>
-                    <p className="mt-2 text-sm text-white/45 leading-relaxed">
-                      When you have a date, add it here — it will appear on the invitation.
-                    </p>
-                  </div>
-                  <div>
-                    <label htmlFor="memorial-service-date" className={fieldLabelClass}>
-                      Date
-                    </label>
-                    <input
-                      id="memorial-service-date"
-                      type="date"
-                      value={ceremonyDate}
-                      onChange={(e) => setCeremonyDate(e.target.value)}
-                      className={inputMemorialDate}
-                    />
-                  </div>
-                  <div>
-                    <p className={fieldLabelClass}>Time</p>
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                      <select
-                        value={ceremonyHour12}
-                        onChange={(e) => setCeremonyHour12(Number(e.target.value))}
-                        className={selectMemorial}
-                        aria-label="Hour"
-                      >
-                        {HOURS_12.map((h) => (
-                          <option key={h} value={h}>
-                            {h}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="text-white/35 text-sm">:</span>
-                      <select
-                        value={ceremonyM}
-                        onChange={(e) => setCeremonyM(e.target.value)}
-                        className={selectMemorial}
-                        aria-label="Minutes"
-                      >
-                        {MINUTES.map((m) => (
-                          <option key={m} value={m}>
-                            {m}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="mt-4 w-full max-w-xs">
-                      <p className={`${fieldLabelClass} mb-2`}>AM / PM</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setCeremonyPeriod("AM")}
-                          className={`min-h-[52px] rounded-xl border text-base font-semibold tracking-wide transition-colors ${
-                            ceremonyPeriod === "AM"
-                              ? "border-[var(--aeterna-gold)]/50 bg-[var(--aeterna-gold)]/15 text-[#f4f1ea] shadow-[0_0_0_1px_rgba(197,160,89,0.25)]"
-                              : "border-white/[0.1] bg-white/[0.03] text-white/55 hover:bg-white/[0.06] hover:text-white/80"
-                          }`}
-                        >
-                          AM
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCeremonyPeriod("PM")}
-                          className={`min-h-[52px] rounded-xl border text-base font-semibold tracking-wide transition-colors ${
-                            ceremonyPeriod === "PM"
-                              ? "border-[var(--aeterna-gold)]/50 bg-[var(--aeterna-gold)]/15 text-[#f4f1ea] shadow-[0_0_0_1px_rgba(197,160,89,0.25)]"
-                              : "border-white/[0.1] bg-white/[0.03] text-white/55 hover:bg-white/[0.06] hover:text-white/80"
-                          }`}
-                        >
-                          PM
-                        </button>
+                  <div className="mt-8 rounded-2xl border border-white/[0.07] bg-black/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:mt-10 md:p-5">
+                    <p className="text-[9px] tracking-[0.28em] uppercase text-white/32">Optional</p>
+                    <h3 className="mt-1.5 font-[var(--font-serif)] text-lg font-normal text-[#e8e4dc] md:text-xl">
+                      Service &amp; Support
+                    </h3>
+                    <div className="mt-5 space-y-4">
+                      <div>
+                        <label htmlFor="memorial-location-opt" className={`${fieldLabelClass} mb-1.5 !tracking-[0.18em]`}>
+                          Location
+                        </label>
+                        <div className="relative">
+                          <MapPin
+                            className="pointer-events-none absolute left-3.5 top-1/2 z-[1] h-[18px] w-[18px] -translate-y-1/2 text-[var(--aeterna-gold)]/40"
+                            strokeWidth={1.65}
+                            aria-hidden
+                          />
+                          <input
+                            id="memorial-location-opt"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            placeholder="e.g., St. Jude's Chapel, 2 PM"
+                            autoComplete="off"
+                            className={`${inputMemorial} min-h-[48px] pl-11 text-[15px] md:min-h-[52px] md:text-base`}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="memorial-support-opt" className={`${fieldLabelClass} mb-1.5 !tracking-[0.18em]`}>
+                          Support
+                        </label>
+                        <div className="relative">
+                          <Gift
+                            className="pointer-events-none absolute left-3.5 top-1/2 z-[1] h-[18px] w-[18px] -translate-y-1/2 text-[var(--aeterna-gold)]/40"
+                            strokeWidth={1.65}
+                            aria-hidden
+                          />
+                          <input
+                            id="memorial-support-opt"
+                            type="text"
+                            inputMode="url"
+                            value={fundLink}
+                            onChange={(e) => setFundLink(e.target.value)}
+                            placeholder="Link to memorial fund or charity"
+                            autoComplete="off"
+                            className={`${inputMemorial} min-h-[48px] pl-11 text-[15px] md:min-h-[52px] md:text-base`}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {wizardStep === 7 && (
-                <div className="space-y-6 pt-4">
-                  <div>
-                    <p className="text-[10px] tracking-[0.28em] uppercase text-white/40 mb-2">Optional</p>
-                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">A life remembered</h2>
-                    <p className="mt-3 text-lg text-[#f4f1ea]/90 leading-relaxed">
-                      What&apos;s one thing you want the world to know about them?
-                    </p>
-                    <p className="mt-2 text-sm text-white/45 leading-relaxed">
-                      This message will be the heart of the printable invitation.
-                    </p>
-                  </div>
-                  <div>
-                    <label htmlFor="invitation-bio" className="sr-only">
-                      Words of remembrance
-                    </label>
-                    <textarea
-                      id="invitation-bio"
-                      value={invitationBio}
-                      onChange={(e) => setInvitationBio(e.target.value.slice(0, 2000))}
-                      placeholder="Take your time. A sentence or two is enough."
-                      rows={8}
-                      className={`${textareaMemorial} min-h-[180px] text-base leading-relaxed`}
-                    />
-                    <p className="mt-2 text-right text-[10px] text-white/30 tabular-nums">{invitationBio.length}/2000</p>
-                  </div>
-                </div>
-              )}
-
-              {wizardStep === 8 && (
-                <div className="space-y-6 pt-4">
-                  <div>
-                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">Review</h2>
-                    <p className="mt-2 text-sm text-white/45 leading-relaxed">
-                      Here&apos;s what we&apos;ll place on the invitation. You can always edit details later in your dashboard.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/[0.08] bg-black/[0.18] p-5 md:p-6 space-y-5 text-left">
-                    <div>
-                      <p className={fieldLabelClass}>Memorial location</p>
-                      <p className="text-base text-[#e8e4dc] leading-relaxed">{location.trim() || "—"}</p>
-                    </div>
-                    <div className="border-t border-white/[0.06] pt-5">
-                      <p className={fieldLabelClass}>Support / donation</p>
-                      <p className="text-base text-[#e8e4dc] leading-relaxed break-all">{fundLink.trim() || "—"}</p>
-                    </div>
-                    <div className="border-t border-white/[0.06] pt-5">
-                      <p className={fieldLabelClass}>Service</p>
-                      <p className="text-base text-[#e8e4dc] leading-relaxed">
-                        {invitationCeremony || "—"}
-                      </p>
-                    </div>
-                    <div className="border-t border-white/[0.06] pt-5">
-                      <p className={fieldLabelClass}>Words of remembrance</p>
-                      <p className="text-base text-[#e8e4dc] leading-relaxed whitespace-pre-wrap">
-                        {invitationBio.trim() || "—"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {wizardStep === 9 && (
+              {wizardStep === 4 && (
                 <div className="space-y-8 pt-4 text-center">
                   <div>
                     <p className="text-[10px] tracking-[0.28em] uppercase text-white/40 mb-3">Account</p>
@@ -1336,7 +1119,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 10 && (!isPlanSummaryView || showPlanChangeOptions) && (
+              {wizardStep === 5 && (!isPlanSummaryView || showPlanChangeOptions) && (
                 <div className="space-y-6 pt-4">
                   {planLockedFromUrl && showPlanChangeOptions && (
                     <button
@@ -1359,9 +1142,14 @@ function CreateEventForm() {
                   <div className="flex flex-col gap-3">
                     {(
                       [
-                        { id: "free" as const, title: "Sacred week", sub: "Seven days to gather. Peaceful start.", price: "$0" },
-                        { id: "plus" as const, title: "Forever", sub: "Keep every photo, always.", price: "$19.99" },
-                        { id: "premium" as const, title: "Film", sub: "Everything in Forever, plus one AI tribute film.", price: "$39.99" },
+                        { id: "free" as const, title: "Sacred Window", sub: "7 days to gather. Gentle start.", price: "$0" },
+                        { id: "plus" as const, title: "Eternal Legacy", sub: "Preserved forever. No expiration.", price: "$19.99" },
+                        {
+                          id: "premium" as const,
+                          title: "The Eternal Film (V2)",
+                          sub: "Legacy + AI film pre-order · V2",
+                          price: "$39.99",
+                        },
                       ] as const
                     ).map((p) => (
                       <button
@@ -1416,9 +1204,9 @@ function CreateEventForm() {
               >
                 {loading
                   ? "Creating…"
-                  : wizardStep === 9 && !authReady
+                  : wizardStep === 4 && !authReady
                     ? "Checking account…"
-                    : wizardStep === 9 && !signedIn
+                    : wizardStep === 4 && !signedIn
                       ? "Continue with Google"
                       : wizardStep < effectiveWizardSteps
                     ? "Continue"
@@ -1431,19 +1219,6 @@ function CreateEventForm() {
                         : "Continue to payment"}
               </motion.button>
             </div>
-            {wizardStep >= 5 && wizardStep <= 8 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setCreateError(null)
-                  goNext()
-                }}
-                disabled={loading}
-                className="w-full min-h-[48px] rounded-2xl border border-white/[0.12] bg-transparent px-4 text-sm font-medium tracking-wide text-white/55 transition-colors hover:border-white/[0.2] hover:bg-white/[0.04] hover:text-white/80 disabled:opacity-40"
-              >
-                Maybe later
-              </button>
-            )}
           </div>
         </div>
       )}

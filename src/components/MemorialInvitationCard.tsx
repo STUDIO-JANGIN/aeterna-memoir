@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { Download, Printer } from "lucide-react"
 import { PDFDocument } from "pdf-lib"
 import {
   canvasToPngBlob,
@@ -19,7 +20,6 @@ export type MemorialInvitationCardProps = {
   ceremonyTime?: string | null
   fundLink?: string | null
   profileImageUrl?: string | null
-  /** Words of remembrance — center of printable invitation */
   remembranceBio?: string | null
 }
 
@@ -141,39 +141,38 @@ export function MemorialInvitationCard({
     }
   }, [renderCanvas, slug])
 
+  const btnClass =
+    "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#c5a059]/40 bg-[#f2ebe0]/90 px-5 text-[13px] font-normal tracking-wide text-[#333] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] transition-colors hover:bg-[#ebe3d6] disabled:opacity-40 [font-family:var(--font-sans)]"
+
   return (
-    <div className={`flex flex-col items-center gap-4 py-1 ${className}`}>
+    <div className={`flex flex-col items-center gap-5 py-2 text-center ${className}`}>
       <div
-        className="relative w-full max-w-[min(224px,72vw)] shrink-0 overflow-hidden rounded-2xl border-2 border-[#b8a050]/80 bg-[#f9f9f9] shadow-[0_24px_64px_-20px_rgba(0,0,0,0.35)] sm:max-w-[min(238px,50vw)]"
+        className="relative w-full max-w-[min(200px,38vw)] shrink-0 overflow-hidden rounded-[1.35rem] border border-[rgba(197,160,89,0.38)] bg-[#faf8f5] shadow-[0_20px_50px_-18px_rgba(51,51,51,0.18),0_2px_8px_rgba(51,51,51,0.06)]"
         style={{ aspectRatio: "9 / 16" }}
       >
         {previewSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={previewSrc} alt="" className="h-full w-full object-cover object-top" />
         ) : (
-          <div className="flex h-full min-h-[min(320px,42vh)] w-full items-center justify-center bg-[#f0f0f0] text-sm text-[#666]">
+          <div className="flex h-full min-h-[min(300px,40vh)] w-full items-center justify-center bg-[#f0ebe4] text-sm text-[#6b6b6b] [font-family:var(--font-sans)]">
             Preparing invitation…
           </div>
         )}
       </div>
-      <p className="shrink-0 text-center text-[10px] tracking-[0.22em] uppercase text-white/40">
+
+      <div className="h-px w-20 max-w-[40%] shrink-0 bg-[rgba(197,160,89,0.35)]" aria-hidden />
+
+      <p className="max-w-[min(260px,88vw)] shrink-0 text-[11px] leading-relaxed tracking-[0.28em] text-[#8a857c] uppercase [font-family:var(--font-invitation-serif),Georgia,serif]">
         Printable invitation · 9:16 · ink-friendly
       </p>
-      <div className="flex shrink-0 flex-col items-stretch gap-2.5 sm:flex-row sm:justify-center sm:gap-3">
-        <button
-          type="button"
-          onClick={handleSaveImage}
-          disabled={busy || !previewSrc}
-          className="min-h-[46px] rounded-xl bg-[#1a2332] px-5 text-sm font-semibold tracking-wide text-white shadow-sm transition-opacity hover:bg-[#243044] disabled:opacity-40"
-        >
+
+      <div className="flex w-full max-w-sm shrink-0 flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
+        <button type="button" onClick={handleSaveImage} disabled={busy || !previewSrc} className={btnClass}>
+          <Download className="h-4 w-4 shrink-0" strokeWidth={1} aria-hidden />
           Save image
         </button>
-        <button
-          type="button"
-          onClick={handlePrintPdf}
-          disabled={busy || !previewSrc}
-          className="min-h-[46px] rounded-xl bg-[#1a2332] px-5 text-sm font-semibold tracking-wide text-white shadow-sm transition-opacity hover:bg-[#243044] disabled:opacity-40"
-        >
+        <button type="button" onClick={handlePrintPdf} disabled={busy || !previewSrc} className={btnClass}>
+          <Printer className="h-4 w-4 shrink-0" strokeWidth={1} aria-hidden />
           Print PDF
         </button>
       </div>

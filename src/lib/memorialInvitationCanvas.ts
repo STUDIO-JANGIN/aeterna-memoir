@@ -1,5 +1,5 @@
 /**
- * 9:16 printable invitation — US/AU program style: centered, ink-friendly, portrait-forward.
+ * 9:16 printable invitation — ivory / charcoal / champagne gold, gallery-style spacing.
  */
 
 import QRCode from "qrcode"
@@ -7,12 +7,32 @@ import QRCode from "qrcode"
 const W = 1080
 const H = 1920
 
-const INK = "#2c2c2c"
-const INK_SOFT = "#3d3d3d"
-const INK_MUTED = "#5c5c5c"
-const PAPER = "#fafafa"
-const BORDER_GOLD = "#a89858"
-const BORDER_INNER = "#d4d4d4"
+const PAPER = "#faf8f5"
+const INK = "#333333"
+const INK_SOFT = "#4a4a6a"
+const INK_MUTED = "#6b6b6b"
+const CHAMPAGNE_STROKE = "rgba(197, 160, 89, 0.42)"
+const BORDER_INNER = "#d9d4cc"
+
+const FONT_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif"
+const FONT_SANS = "Inter, system-ui, -apple-system, sans-serif"
+
+async function ensureInvitationFonts(): Promise<void> {
+  if (typeof document === "undefined" || !document.fonts) return
+  try {
+    await Promise.all([
+      document.fonts.load("600 52px 'Playfair Display'"),
+      document.fonts.load("400 28px 'Playfair Display'"),
+      document.fonts.load("italic 400 24px 'Playfair Display'"),
+      document.fonts.load("400 22px Inter"),
+      document.fonts.load("500 21px Inter"),
+      document.fonts.load("600 11px Inter"),
+    ])
+  } catch {
+    /* fall back to system fonts */
+  }
+  await document.fonts.ready
+}
 
 function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const radius = Math.min(r, w / 2, h / 2)
@@ -108,11 +128,12 @@ export type MemorialInvitationCanvasInput = {
   ceremonyTime?: string | null
   fundLink?: string | null
   profileImageUrl?: string | null
-  /** Words of remembrance — center of invitation */
   remembranceBio?: string | null
 }
 
 export async function renderMemorialInvitationCanvas(input: MemorialInvitationCanvasInput): Promise<HTMLCanvasElement> {
+  await ensureInvitationFonts()
+
   const {
     name,
     guestUrl,
@@ -134,45 +155,57 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.fillStyle = PAPER
   ctx.fillRect(0, 0, W, H)
 
-  const margin = 40
-  roundRectPath(ctx, margin, margin, W - margin * 2, H - margin * 2, 10)
-  ctx.strokeStyle = BORDER_GOLD
-  ctx.lineWidth = 2.5
+  const margin = 44
+  roundRectPath(ctx, margin, margin, W - margin * 2, H - margin * 2, 12)
+  ctx.strokeStyle = CHAMPAGNE_STROKE
+  ctx.lineWidth = 1.5
   ctx.stroke()
 
-  const innerM = margin + 20
+  const innerM = margin + 28
   roundRectPath(ctx, innerM, innerM, W - innerM * 2, H - innerM * 2, 8)
   ctx.strokeStyle = BORDER_INNER
   ctx.lineWidth = 1
   ctx.stroke()
 
-  const contentW = W - innerM * 2 - 56
+  const contentW = W - innerM * 2 - 64
   const centerX = W / 2
-  let y = innerM + 48
+  let y = innerM + 56
 
   ctx.textAlign = "center"
   ctx.fillStyle = INK_MUTED
-  ctx.font = "400 22px Georgia, 'Times New Roman', serif"
+  ctx.font = `400 20px ${FONT_SANS}`
   ctx.fillText("In Loving Memory of", centerX, y)
-  y += 36
+  y += 40
 
   ctx.fillStyle = INK
-  ctx.font = "600 44px Georgia, 'Times New Roman', serif"
+  ctx.font = `600 48px ${FONT_SERIF}`
   const displayName = name.trim() || "Beloved"
-  wrapTitle(ctx, displayName, contentW).forEach((line) => {
+  const nameLines = wrapTitle(ctx, displayName, contentW)
+  nameLines.forEach((line) => {
     ctx.fillText(line, centerX, y)
-    y += 52
+    y += 58
   })
-  y += 28
+  y += 32
 
-  /** Hero portrait — ≥60% of content width, centered */
-  const photoW = Math.floor(contentW * 0.62)
-  const photoH = Math.floor(photoW * 1.12)
+  /** Portrait frame ~35% of content width, graceful vertical proportion */
+  const photoW = Math.floor(contentW * 0.36)
+  const photoH = Math.floor(photoW * 1.42)
   const photoX = (W - photoW) / 2
   const photoY = y
+  const photoR = 18
 
   ctx.save()
-  roundRectPath(ctx, photoX, photoY, photoW, photoH, 14)
+  ctx.shadowColor = "rgba(51, 51, 51, 0.1)"
+  ctx.shadowBlur = 32
+  ctx.shadowOffsetY = 12
+  ctx.shadowOffsetX = 0
+  roundRectPath(ctx, photoX, photoY, photoW, photoH, photoR)
+  ctx.fillStyle = "#f0ebe4"
+  ctx.fill()
+  ctx.restore()
+
+  ctx.save()
+  roundRectPath(ctx, photoX, photoY, photoW, photoH, photoR)
   ctx.clip()
   let drewPhoto = false
   if (profileImageUrl?.trim()) {
@@ -190,93 +223,111 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     }
   }
   if (!drewPhoto) {
-    ctx.fillStyle = "#e8e8e8"
+    ctx.fillStyle = "#ebe6df"
     ctx.fillRect(photoX, photoY, photoW, photoH)
     ctx.fillStyle = INK_MUTED
-    ctx.font = "600 72px Georgia, serif"
+    ctx.font = `600 64px ${FONT_SERIF}`
     ctx.textAlign = "center"
-    ctx.fillText(displayName.charAt(0).toUpperCase() || "·", centerX, photoY + photoH / 2 + 8)
+    ctx.fillText(displayName.charAt(0).toUpperCase() || "·", centerX, photoY + photoH / 2 + 6)
   }
   ctx.restore()
 
-  ctx.strokeStyle = BORDER_INNER
-  ctx.lineWidth = 1.5
-  roundRectPath(ctx, photoX, photoY, photoW, photoH, 14)
+  ctx.save()
+  roundRectPath(ctx, photoX, photoY, photoW, photoH, photoR)
+  ctx.strokeStyle = CHAMPAGNE_STROKE
+  ctx.lineWidth = 1.25
+  ctx.stroke()
+  ctx.restore()
+
+  const dividerY = photoY + photoH + 32
+  ctx.beginPath()
+  ctx.strokeStyle = "rgba(197, 160, 89, 0.35)"
+  ctx.lineWidth = 1
+  ctx.moveTo(innerM + 56, dividerY)
+  ctx.lineTo(W - innerM - 56, dividerY)
   ctx.stroke()
 
-  y += photoH + 36
+  y = dividerY + 40
 
   const birth = formatDisplayDate(birthDate)
   const death = formatDisplayDate(deathDate)
   ctx.textAlign = "center"
   ctx.fillStyle = INK_SOFT
-  ctx.font = "400 26px Georgia, 'Times New Roman', serif"
+  ctx.font = `400 24px ${FONT_SANS}`
   ctx.fillText(`${birth}  —  ${death}`, centerX, y)
-  y += 48
+  y += 52
 
   const bioRaw = remembranceBio?.trim()
   if (bioRaw) {
     ctx.fillStyle = INK_MUTED
-    ctx.font = "italic 400 20px Georgia, 'Times New Roman', serif"
-    ctx.fillText("Words of remembrance", centerX, y)
-    y += 32
+    ctx.font = `600 11px ${FONT_SANS}`
+    ctx.letterSpacing = "0.28em"
+    ctx.fillText("WORDS OF REMEMBRANCE", centerX, y)
+    ctx.letterSpacing = "0"
+    y += 36
 
     ctx.fillStyle = INK
-    ctx.font = "400 24px Georgia, 'Times New Roman', serif"
+    ctx.font = `italic 400 24px ${FONT_SERIF}`
     const bioLines = wrapLines(ctx, bioRaw, contentW, 8)
     bioLines.forEach((ln) => {
       ctx.fillText(ln, centerX, y)
-      y += 34
+      y += 38
     })
-    y += 24
+    y += 28
   }
 
-  y += 8
+  y += 12
 
   ctx.textAlign = "center"
   ctx.fillStyle = INK_MUTED
-  ctx.font = "600 18px system-ui, -apple-system, sans-serif"
+  ctx.font = `600 11px ${FONT_SANS}`
+  ctx.letterSpacing = "0.22em"
   ctx.fillText("SERVICE", centerX, y)
-  y += 28
+  ctx.letterSpacing = "0"
+  y += 34
   ctx.fillStyle = INK_SOFT
-  ctx.font = "400 22px Georgia, 'Times New Roman', serif"
+  ctx.font = `400 22px ${FONT_SANS}`
   ctx.fillText(`Location: ${displayLocation(location)}`, centerX, y)
-  y += 32
+  y += 36
   ctx.fillText(`Service time: ${displayService(ceremonyTime)}`, centerX, y)
-  y += 40
+  y += 44
 
   const fund = fundLink?.trim()
   if (fund) {
     ctx.fillStyle = INK_MUTED
-    ctx.font = "600 18px system-ui, -apple-system, sans-serif"
+    ctx.font = `600 11px ${FONT_SANS}`
+    ctx.letterSpacing = "0.22em"
     ctx.fillText("SUPPORT", centerX, y)
-    y += 26
+    ctx.letterSpacing = "0"
+    y += 30
     ctx.fillStyle = INK
-    ctx.font = "400 20px Georgia, 'Times New Roman', serif"
+    ctx.font = `400 20px ${FONT_SANS}`
     const supLines = wrapLines(ctx, fund, contentW, 4)
     supLines.forEach((ln) => {
       ctx.fillText(ln, centerX, y)
-      y += 28
+      y += 30
     })
-    y += 20
+    y += 24
   }
 
-  const qrMax = 280
+  /** QR: ~20% smaller than legacy 280px cap; generous quiet zone */
+  const qrMax = 224
   const reserveBottom = 200
-  y = Math.min(y + 16, H - reserveBottom - qrMax)
+  y = Math.min(y + 20, H - reserveBottom - qrMax - 48)
   const qrSize = Math.min(qrMax, H - y - reserveBottom)
 
   const qrCanvas = document.createElement("canvas")
   await QRCode.toCanvas(qrCanvas, guestUrl, {
     width: qrSize,
-    margin: 2,
-    color: { dark: "#2c2c2c", light: "#ffffff" },
+    margin: 4,
+    color: { dark: "#333333", light: "#ffffff" },
     errorCorrectionLevel: "M",
   })
 
+  const qrPad = 22
   const qrX = (W - qrSize) / 2
   ctx.save()
-  roundRectPath(ctx, qrX - 14, y - 14, qrSize + 28, qrSize + 28, 10)
+  roundRectPath(ctx, qrX - qrPad, y - qrPad, qrSize + qrPad * 2, qrSize + qrPad * 2, 12)
   ctx.fillStyle = "#ffffff"
   ctx.fill()
   ctx.strokeStyle = BORDER_INNER
@@ -285,22 +336,22 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.restore()
   ctx.drawImage(qrCanvas, qrX, y)
 
-  y += qrSize + 22
+  y += qrSize + qrPad + 22
   ctx.textAlign = "center"
   ctx.fillStyle = INK
-  ctx.font = "500 22px Georgia, 'Times New Roman', serif"
+  ctx.font = `500 21px ${FONT_SANS}`
   ctx.fillText("Scan to share a memory", centerX, y)
 
-  y += 36
+  y += 40
   ctx.fillStyle = INK_MUTED
-  ctx.font = "18px ui-monospace, SFMono-Regular, Menlo, monospace"
+  ctx.font = `400 17px ${FONT_SANS}`
   const short = guestUrl.replace(/^https?:\/\//, "")
   const display = short.length > 48 ? `${short.slice(0, 46)}…` : short
   ctx.fillText(display, centerX, y)
 
-  ctx.fillStyle = "#8a8a8a"
-  ctx.font = "15px Georgia, serif"
-  ctx.fillText("Aeterna", centerX, H - innerM - 24)
+  ctx.fillStyle = "#8a857c"
+  ctx.font = `400 14px ${FONT_SERIF}`
+  ctx.fillText("Aeterna", centerX, H - innerM - 28)
 
   return canvas
 }

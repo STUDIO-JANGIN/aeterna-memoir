@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useEffect, useMemo, useRef, useState } from "react"
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
@@ -30,6 +30,7 @@ import {
   formatMemorialCountdownDisplay,
 } from "@/components/memorial/MemorialTrialCountdown"
 import { buildGlobalShareMessage } from "@/components/MemorialShareActions"
+import { openWhatsAppWithPrefilledText } from "@/lib/whatsappInvite"
 import { coerceIdString } from "@/lib/uuid"
 
 const spring = { type: "spring" as const, stiffness: 300, damping: 30 }
@@ -130,6 +131,8 @@ export default function GuestFeedPage({ params }: PageProps) {
   const [platformTipChecked, setPlatformTipChecked] = useState(true)
   const [locale, setLocale] = useState<"ko" | "en">("en")
   const [showUploadSuccessToast, setShowUploadSuccessToast] = useState(false)
+  const [showAfterUploadEmailField, setShowAfterUploadEmailField] = useState(false)
+  const uploadSuccessAutoCloseRef = useRef<number | null>(null)
   const [showAdminForbiddenToast, setShowAdminForbiddenToast] = useState(false)
   const [afterUploadEmail, setAfterUploadEmail] = useState("")
   const [afterUploadLoading, setAfterUploadLoading] = useState(false)
@@ -517,6 +520,36 @@ export default function GuestFeedPage({ params }: PageProps) {
     setShareStep((s) => Math.max(1, s - 1))
   }
 
+  const dismissUploadSuccessToast = useCallback(() => {
+    if (uploadSuccessAutoCloseRef.current) {
+      clearTimeout(uploadSuccessAutoCloseRef.current)
+      uploadSuccessAutoCloseRef.current = null
+    }
+    setShowUploadSuccessToast(false)
+    setShowAfterUploadEmailField(false)
+    setAfterUploadEmail("")
+    setAfterUploadError(null)
+    setAfterUploadDone(false)
+  }, [])
+
+  useEffect(() => {
+    if (!showUploadSuccessToast) return
+    if (uploadSuccessAutoCloseRef.current) {
+      clearTimeout(uploadSuccessAutoCloseRef.current)
+      uploadSuccessAutoCloseRef.current = null
+    }
+    uploadSuccessAutoCloseRef.current = window.setTimeout(() => {
+      uploadSuccessAutoCloseRef.current = null
+      dismissUploadSuccessToast()
+    }, 10000)
+    return () => {
+      if (uploadSuccessAutoCloseRef.current) {
+        clearTimeout(uploadSuccessAutoCloseRef.current)
+        uploadSuccessAutoCloseRef.current = null
+      }
+    }
+  }, [showUploadSuccessToast, dismissUploadSuccessToast])
+
   const handleAfterUploadSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!event) return
@@ -590,8 +623,11 @@ export default function GuestFeedPage({ params }: PageProps) {
         } catch {
           // ignore
         }
+        setAfterUploadEmail("")
+        setAfterUploadError(null)
+        setAfterUploadDone(false)
+        setShowAfterUploadEmailField(false)
         setShowUploadSuccessToast(true)
-        setTimeout(() => setShowUploadSuccessToast(false), 6000)
       }
       handleCloseForm()
       const refreshed = await getPublicApprovedStoriesForEventAction(event.id)
@@ -708,10 +744,10 @@ export default function GuestFeedPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center gap-3 bg-[var(--once-bg)] font-sans text-[var(--once-text-muted)] text-sm label-uppercase tracking-widest uppercase px-6 text-center">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-3 font-sans text-[var(--landing-text-muted)] text-sm label-uppercase tracking-widest uppercase px-6 text-center">
         <span>{loadSyncing ? "Syncing memorial…" : "Loading memorial…"}</span>
         {loadSyncing ? (
-          <span className="text-[11px] normal-case tracking-wide text-[var(--once-text-secondary)] max-w-sm">
+          <span className="text-[11px] normal-case tracking-wide text-[var(--landing-text-body)] max-w-sm">
             Confirming your memorial on our servers. This usually takes a moment after checkout.
           </span>
         ) : null}
@@ -721,8 +757,8 @@ export default function GuestFeedPage({ params }: PageProps) {
 
   if (error || !event) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center bg-[var(--once-bg)] font-serif px-6 text-center text-[var(--once-text-primary)]">
-        <p className="text-sm label-uppercase tracking-widest uppercase text-[var(--once-text-secondary)] mb-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center font-serif px-6 text-center text-[var(--landing-text-hero)]">
+        <p className="text-sm label-uppercase tracking-widest uppercase text-[var(--landing-text-body)] mb-4">
           {error ?? "Page not found."}
         </p>
         <motion.a
@@ -769,7 +805,7 @@ export default function GuestFeedPage({ params }: PageProps) {
   return (
     <LayoutGroup>
     <div
-      className={`min-h-dvh bg-[var(--once-bg)] text-[var(--once-text-primary)] font-sans ${
+      className={`min-h-dvh text-[var(--landing-text-hero)] font-sans ${
         filmReleased || (isLocked && lockedCount > 0 && !filmReleased) ? "pb-28 md:pb-0" : ""
       }`}
     >
@@ -858,8 +894,8 @@ export default function GuestFeedPage({ params }: PageProps) {
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            <div className="rounded-2xl border border-red-500/35 bg-[#1a1512]/95 px-4 py-3 text-center shadow-[0_16px_48px_rgba(0,0,0,0.55)] backdrop-blur-md">
-              <p className="text-[13px] leading-snug text-[#f5e6e6]">
+            <div className="rounded-2xl border border-[var(--border-gold)] bg-[#1e1e1e]/95 px-4 py-3 text-center shadow-[var(--landing-shadow-deep)] backdrop-blur-md">
+              <p className="text-[13px] leading-snug text-[var(--landing-text-body)]">
                 You do not have permission to access the admin settings.
               </p>
             </div>
@@ -888,39 +924,57 @@ export default function GuestFeedPage({ params }: PageProps) {
             exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.48, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            <div className="rounded-2xl border border-white/[0.12] bg-black/72 px-5 py-4 text-center shadow-[0_16px_48px_rgba(0,0,0,0.5)] backdrop-blur-md">
-              <p className="font-[var(--font-serif)] text-[15px] font-medium tracking-tight text-white">
-                Memory shared. <span aria-hidden>✨</span>
+            <div className="rounded-2xl border border-white/[0.12] bg-black/80 px-5 py-4 text-center shadow-[0_16px_48px_rgba(0,0,0,0.5)] backdrop-blur-md">
+              <p className="font-[var(--font-serif)] text-[16px] font-medium tracking-tight text-white">
+                Memory Received
               </p>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-white/78">
-                We&apos;ll notify you when new stories are added.
+              <p className="mt-2 text-[13px] leading-relaxed text-white/75">
+                It will appear on the shrine once approved. Thank you.
               </p>
-              <form
-                onSubmit={handleAfterUploadSubscribe}
-                className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-center sm:gap-3"
-              >
-                <input
-                  type="email"
-                  value={afterUploadEmail}
-                  onChange={(e) => setAfterUploadEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  placeholder="Your email"
-                  className="min-h-[38px] w-full flex-1 rounded-xl border border-white/[0.14] bg-white/[0.06] px-3 text-[13px] text-white placeholder:text-white/38 focus:outline-none focus:ring-1 focus:ring-[var(--aeterna-gold)]/40 sm:min-w-0"
-                />
+              {!afterUploadDone && !showAfterUploadEmailField ? (
                 <button
-                  type="submit"
-                  disabled={afterUploadLoading || afterUploadDone}
-                  className="shrink-0 min-h-[38px] rounded-lg border border-[var(--aeterna-gold)]/35 bg-transparent px-4 text-[12px] font-medium tracking-wide text-[var(--aeterna-gold)] transition-colors hover:bg-[var(--aeterna-gold)]/10 disabled:opacity-50 sm:min-w-[5.5rem]"
+                  type="button"
+                  onClick={() => setShowAfterUploadEmailField(true)}
+                  className="mt-3 block w-full text-center text-[12px] text-[var(--aeterna-gold)]/95 underline-offset-2 hover:underline"
                 >
-                  {afterUploadDone ? "You’re in" : afterUploadLoading ? "Saving…" : "Notify me"}
+                  Get an email when it&apos;s live
                 </button>
-              </form>
-              {afterUploadError && (
-                <p className="mt-2 text-[11px] text-red-300/95" role="alert">
+              ) : null}
+              {showAfterUploadEmailField && !afterUploadDone ? (
+                <form
+                  onSubmit={handleAfterUploadSubscribe}
+                  className="mt-3 flex flex-col gap-2 text-left"
+                >
+                  <input
+                    type="email"
+                    value={afterUploadEmail}
+                    onChange={(e) => setAfterUploadEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    placeholder="Email"
+                    className="min-h-[40px] w-full rounded-xl border border-white/[0.14] bg-white/[0.06] px-3 text-[13px] text-white placeholder:text-white/38 focus:outline-none focus:ring-1 focus:ring-[var(--aeterna-gold)]/40"
+                  />
+                  <button
+                    type="submit"
+                    disabled={afterUploadLoading}
+                    className="min-h-[38px] w-full rounded-lg border border-[var(--aeterna-gold)]/40 bg-[var(--aeterna-gold)]/12 px-3 text-[12px] font-medium text-[var(--aeterna-gold)] transition-colors hover:bg-[var(--aeterna-gold)]/18 disabled:opacity-50"
+                  >
+                    {afterUploadLoading ? "Saving…" : "Save"}
+                  </button>
+                </form>
+              ) : null}
+              {afterUploadError ? (
+                <p className="mt-2 text-[11px] text-[var(--aeterna-gold-muted)]" role="alert">
                   {afterUploadError}
                 </p>
-              )}
+              ) : null}
+              <button
+                type="button"
+                onClick={dismissUploadSuccessToast}
+                className="mt-4 w-full min-h-[40px] rounded-xl border border-white/[0.12] bg-white/[0.06] text-[12px] font-medium tracking-wide text-white/90 transition-colors hover:bg-white/[0.1]"
+              >
+                Close
+              </button>
             </div>
           </motion.div>
         )}
@@ -931,15 +985,15 @@ export default function GuestFeedPage({ params }: PageProps) {
             {profileSrc ? (
               <img src={profileSrc} alt="" className="h-full w-full object-cover" loading="eager" decoding="async" />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-white/[0.06] font-serif text-[clamp(2.5rem,18vw,4rem)] text-[var(--once-text-muted)]">
+              <div className="flex h-full w-full items-center justify-center bg-white/[0.06] font-serif text-[clamp(2.5rem,18vw,4rem)] text-[var(--landing-text-muted)]">
                 {(event.name ?? "?").charAt(0)}
               </div>
             )}
           </div>
-          <h1 className="font-heading max-w-[22ch] font-serif text-2xl font-semibold leading-tight tracking-tight text-[var(--once-text-primary)] sm:text-3xl">
+          <h1 className="font-heading max-w-[22ch] font-serif text-2xl font-semibold leading-tight tracking-tight text-[var(--landing-text-hero)] sm:text-3xl">
             {event.name}
           </h1>
-          <p className="mt-2 text-base font-medium tabular-nums text-[var(--once-text-secondary)] sm:text-lg">
+          <p className="mt-2 text-base font-medium tabular-nums text-[var(--landing-text-body)] sm:text-lg">
             {birth} — {death}
           </p>
 
@@ -973,7 +1027,7 @@ export default function GuestFeedPage({ params }: PageProps) {
 
           {hasDetails ? (
             <details className="mt-6 w-full max-w-md text-left">
-              <summary className="cursor-pointer list-none text-center text-[11px] uppercase tracking-[0.28em] text-[var(--once-text-muted)] transition-colors marker:content-none hover:text-[var(--aeterna-gold-muted)] [&::-webkit-details-marker]:hidden">
+              <summary className="cursor-pointer list-none text-center text-[11px] uppercase tracking-[0.28em] text-[var(--landing-text-muted)] transition-colors marker:content-none hover:text-[var(--aeterna-gold-muted)] [&::-webkit-details-marker]:hidden">
                 <span className="inline-flex items-center justify-center gap-2">
                   View details
                   <span className="text-[10px] opacity-60" aria-hidden>
@@ -981,22 +1035,22 @@ export default function GuestFeedPage({ params }: PageProps) {
                   </span>
                 </span>
               </summary>
-              <div className="mt-4 space-y-3 border-t border-white/[0.08] pt-4 text-left text-sm leading-relaxed text-[var(--once-text-secondary)]">
+              <div className="mt-4 space-y-3 border-t border-white/[0.08] pt-4 text-left text-sm leading-relaxed text-[var(--landing-text-body)]">
                 {locationLine ? (
                   <p>
-                    <span className="text-[var(--once-text-muted)]">Location · </span>
+                    <span className="text-[var(--landing-text-muted)]">Location · </span>
                     {locationLine}
                   </p>
                 ) : null}
                 {ceremonyLine ? (
                   <p>
-                    <span className="text-[var(--once-text-muted)]">Gathering · </span>
+                    <span className="text-[var(--landing-text-muted)]">Gathering · </span>
                     {ceremonyLine}
                   </p>
                 ) : null}
                 {supportLine ? (
                   <p className="break-words">
-                    <span className="text-[var(--once-text-muted)]">Support · </span>
+                    <span className="text-[var(--landing-text-muted)]">Support · </span>
                     {supportLine.startsWith("http") ? (
                       <a
                         href={supportLine}
@@ -1043,7 +1097,7 @@ export default function GuestFeedPage({ params }: PageProps) {
       {/* Full screen cinematic section (when film_url exists) */}
       {filmReleased && (
         <section
-          className="w-full bg-[var(--once-bg)] py-8 md:py-12 animate-[theaterEntrance_1.8s_ease-out_forwards] animate-[fadeInUp_0.85s_ease-out_both]"
+          className="w-full bg-landing py-8 md:py-12 animate-[theaterEntrance_1.8s_ease-out_forwards] animate-[fadeInUp_0.85s_ease-out_both]"
           aria-label="AI Memorial Film"
         >
           {/* Soft gold glow behind video */}
@@ -1089,10 +1143,10 @@ export default function GuestFeedPage({ params }: PageProps) {
                   {checkoutLoading ? "Redirecting to checkout…" : "Download High-Quality Film"}
                 </motion.button>
                 {checkoutError && (
-                  <p className="text-red-400/90 text-sm text-center">{checkoutError}</p>
+                  <p className="text-[var(--aeterna-gold-muted)] text-sm text-center">{checkoutError}</p>
                 )}
               </div>
-              <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border-gold-subtle)]/40 bg-[var(--once-bg)]/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border-gold-subtle)]/40 bg-landing/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <motion.button
                   type="button"
                   onClick={handleDownloadFilm}
@@ -1114,10 +1168,10 @@ export default function GuestFeedPage({ params }: PageProps) {
         <div className="max-w-4xl mx-auto px-4 mb-10 animate-[fadeInUp_0.85s_ease-out_both]">
           {isClosed ? (
             <section
-              className="relative rounded-2xl overflow-hidden border border-[var(--border-gold-subtle)] bg-[var(--once-bg-elevated)]/95 shadow-[var(--shadow-deep)]"
+              className="relative rounded-2xl overflow-hidden border border-[var(--border-gold-subtle)] bg-[#1e1e1e]/95 shadow-[var(--shadow-deep)]"
               aria-label={isPremiumTier ? "AI Memorial Film" : "Memorial collection closed"}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-[var(--once-bg)] via-[var(--once-bg-elevated)] to-[var(--once-bg)] pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-[color:var(--landing-bg)] via-[#141414] to-[color:var(--landing-bg)] pointer-events-none" />
 
               <div className="relative px-6 py-10 md:py-14">
                 <p className="text-center font-heading font-serif text-[var(--aeterna-headline)] text-lg md:text-xl label-uppercase tracking-widest uppercase mb-2">
@@ -1196,7 +1250,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                     </form>
                   )}
                   {notificationError && (
-                    <p className="mt-2 text-center text-red-400/90 text-sm">{notificationError}</p>
+                    <p className="mt-2 text-center text-[var(--aeterna-gold-muted)] text-sm">{notificationError}</p>
                   )}
                 </div>
                 ) : (
@@ -1216,8 +1270,8 @@ export default function GuestFeedPage({ params }: PageProps) {
       {/* Memory grid — flat gallery */}
       <main className="animate-[fadeInUp_0.85s_ease-out_both] border-t border-white/[0.06] pb-[max(6.5rem,env(safe-area-inset-bottom))] pt-1 [animation-delay:0.18s]">
         {stories.length === 0 ? (
-          <div className="mx-auto max-w-xl bg-[var(--once-bg)] px-4 py-10">
-            <p className="text-center text-sm tracking-wide text-[var(--once-text-muted)]">No memories shared yet.</p>
+          <div className="mx-auto max-w-xl bg-landing px-4 py-10">
+            <p className="text-center text-sm tracking-wide text-[var(--landing-text-muted)]">No memories shared yet.</p>
           </div>
         ) : (
           <>
@@ -1241,11 +1295,11 @@ export default function GuestFeedPage({ params }: PageProps) {
                     {checkoutLoading ? "Redirecting…" : "Unlock all memories"}
                   </motion.button>
                   {checkoutError && (
-                    <p className={`text-red-400/90 text-xs ${filmReleased ? "block" : "hidden md:block"}`}>{checkoutError}</p>
+                    <p className={`text-[var(--aeterna-gold-muted)] text-xs ${filmReleased ? "block" : "hidden md:block"}`}>{checkoutError}</p>
                   )}
                 </div>
                 {!filmReleased && (
-                  <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border-gold-subtle)]/40 bg-[var(--once-bg)]/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                  <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border-gold-subtle)]/40 bg-landing/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                     <motion.button
                       type="button"
                       onClick={handleUnlockMemories}
@@ -1256,19 +1310,19 @@ export default function GuestFeedPage({ params }: PageProps) {
                     >
                       {checkoutLoading ? "Redirecting…" : "Unlock all memories"}
                     </motion.button>
-                    {checkoutError && <p className="text-red-400/90 text-xs text-center mt-2">{checkoutError}</p>}
+                    {checkoutError && <p className="text-[var(--aeterna-gold-muted)] text-xs text-center mt-2">{checkoutError}</p>}
                   </div>
                 )}
               </>
             )}
-            <ul className="grid grid-cols-3 gap-[3px] bg-[var(--once-bg)]">
+            <ul className="grid grid-cols-3 gap-[3px] bg-landing">
               {stories.map((story, index) => {
                 const isBlurredByPaywall = isLocked && index >= paywallThreshold
                 const isBlurred = isBlurredByDeadlineOnly(index) || isBlurredByPaywall
                 return (
                   <motion.li
                     key={story.id}
-                    className="relative aspect-square cursor-pointer bg-[var(--once-bg)]"
+                    className="relative aspect-square cursor-pointer bg-landing"
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...spring, delay: 0.04 * Math.min(index, 12) }}
@@ -1320,14 +1374,12 @@ export default function GuestFeedPage({ params }: PageProps) {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation()
-                              const text = dualRouteShareText || (typeof window !== "undefined" ? window.location.href : "")
-                              window.open(
-                                `https://wa.me/?text=${encodeURIComponent(text)}`,
-                                "_blank",
-                                "noopener,noreferrer",
-                              )
+                              const text =
+                                dualRouteShareText ||
+                                (typeof window !== "undefined" ? window.location.href : "")
+                              openWhatsAppWithPrefilledText(text)
                             }}
-                            className="inline-flex min-h-[40px] min-w-[5.25rem] flex-1 items-center justify-center rounded-xl border border-[#25D366]/70 bg-[#25D366]/18 px-2.5 text-[10px] font-semibold text-[#4ADE80] touch-manipulation shadow-[0_2px_12px_rgba(34,197,94,0.2)] active:scale-[0.98] sm:min-h-[36px]"
+                            className="inline-flex min-h-[40px] min-w-[5.25rem] flex-1 items-center justify-center rounded-full border border-[var(--border-gold)] bg-black/30 px-2.5 text-[10px] font-medium tracking-wide text-[var(--aeterna-gold)] touch-manipulation active:scale-[0.98] sm:min-h-[36px] hover:bg-[var(--aeterna-gold)]/10"
                           >
                             WhatsApp
                           </button>
@@ -1338,7 +1390,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                               const text = dualRouteShareText || (typeof window !== "undefined" ? window.location.href : "")
                               window.location.href = `sms:?&body=${encodeURIComponent(text)}`
                             }}
-                            className="inline-flex min-h-[44px] min-w-[6.5rem] flex-[1.15] items-center justify-center gap-1 rounded-xl border-2 border-[#0A84FF] bg-gradient-to-b from-[#0A84FF]/25 to-[#0A84FF]/10 px-3 text-[11px] font-bold uppercase tracking-[0.06em] text-[#7DCBFF] shadow-[0_4px_22px_rgba(10,132,255,0.45)] touch-manipulation active:scale-[0.98] sm:min-h-[40px]"
+                            className="inline-flex min-h-[44px] min-w-[6.5rem] flex-[1.15] items-center justify-center gap-1 rounded-full border border-[var(--border-gold)] bg-black/35 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-hero)] shadow-[0_8px_28px_-8px_rgba(0,0,0,0.55)] touch-manipulation active:scale-[0.98] sm:min-h-[40px] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10"
                           >
                             Message
                           </button>
@@ -1351,7 +1403,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                                 if (typeof window !== "undefined") window.alert("Link copied.")
                               })
                             }}
-                            className="inline-flex min-h-[40px] min-w-[5rem] flex-1 items-center justify-center rounded-xl border border-white/45 bg-white/10 px-2.5 text-[10px] font-medium text-white touch-manipulation active:scale-[0.98] sm:min-h-[36px]"
+                            className="inline-flex min-h-[40px] min-w-[5rem] flex-1 items-center justify-center rounded-full border border-white/20 bg-white/[0.06] px-2.5 text-[10px] font-medium text-[var(--landing-text-body)] touch-manipulation active:scale-[0.98] sm:min-h-[36px] hover:bg-white/10"
                           >
                             Copy link
                           </button>
@@ -1373,7 +1425,7 @@ export default function GuestFeedPage({ params }: PageProps) {
             </h2>
             <p className="text-[10px] text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-4">Card · Apple Pay · Google Pay</p>
             {hasDonatedForBank || revealedBankWithoutDonation ? (
-              <div className="rounded-2xl border border-[var(--border-gold-subtle)] bg-[var(--once-bg-elevated)]/80 p-6">
+              <div className="rounded-2xl border border-[var(--border-gold-subtle)] bg-[#1e1e1e]/80 p-6">
                 {hasDonatedForBank && (
                   <p className="text-[var(--aeterna-gold-muted)] text-xs leading-relaxed mb-4">
                     Your support helps Aeterna preserve memories for longer.
@@ -1384,12 +1436,12 @@ export default function GuestFeedPage({ params }: PageProps) {
                 </p>
               </div>
             ) : (
-              <div className="rounded-2xl border border-[var(--border-gold-subtle)] bg-[var(--once-bg-elevated)]/80 p-6 md:p-8">
+              <div className="rounded-2xl border border-[var(--border-gold-subtle)] bg-[#1e1e1e]/80 p-6 md:p-8">
                 <div className="relative">
                   <p className="text-[var(--aeterna-headline)] whitespace-pre-line font-sans text-sm leading-relaxed blur-md select-none min-h-[80px]">
                     {event.bank_info}
                   </p>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[var(--once-bg-elevated)]/95 rounded-xl py-6 px-4">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#1e1e1e]/95 rounded-xl py-6 px-4">
                     <p className="text-[var(--aeterna-body)] text-sm text-center px-2">
                       To view the condolence account details, please unlock with a small support payment.
                     </p>
@@ -1440,7 +1492,7 @@ export default function GuestFeedPage({ params }: PageProps) {
               </div>
             )}
             {checkoutError && (
-              <p className="mt-3 text-red-400/90 text-sm text-center">{checkoutError}</p>
+              <p className="mt-3 text-[var(--aeterna-gold-muted)] text-sm text-center">{checkoutError}</p>
             )}
           </section>
         )}
@@ -1481,7 +1533,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         >
           <div className="pointer-events-auto max-w-lg w-full flex justify-center">
             {isClosed ? (
-              <div className="rounded-full border border-white/15 bg-[var(--once-bg)]/95 px-5 py-2.5 text-center text-[10px] uppercase tracking-[0.14em] text-[var(--once-text-muted)] shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md">
+              <div className="rounded-full border border-white/15 bg-landing/95 px-5 py-2.5 text-center text-[10px] uppercase tracking-[0.14em] text-[var(--landing-text-muted)] shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md">
                 Submissions closed
               </div>
             ) : showAddStoryCta ? (
@@ -1531,7 +1583,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           aria-labelledby="form-title"
         >
           <motion.div
-            className="w-full max-w-md rounded-2xl border border-[var(--border-gold-subtle)] bg-[var(--once-bg-elevated)] shadow-[var(--shadow-deep)] overflow-hidden"
+            className="w-full max-w-md rounded-2xl border border-[var(--border-gold-subtle)] bg-[#1e1e1e] shadow-[var(--shadow-deep)] overflow-hidden"
             initial={{ opacity: 0, scale: 0.98, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
@@ -1561,7 +1613,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                 <motion.button
                   type="button"
                   onClick={handleCloseForm}
-                  className="shrink-0 p-2 text-[var(--once-text-secondary)] hover:text-[var(--once-text-primary)] rounded-lg"
+                  className="shrink-0 p-2 text-[var(--landing-text-body)] hover:text-[var(--landing-text-hero)] rounded-lg"
                   aria-label="Close"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -1662,7 +1714,7 @@ export default function GuestFeedPage({ params }: PageProps) {
               </AnimatePresence>
 
               {submitError && (
-                <p className="mt-5 text-center font-sans text-sm text-red-400/95" role="alert">
+                <p className="mt-5 text-center font-sans text-sm text-[var(--aeterna-gold-muted)]" role="alert">
                   {submitError}
                 </p>
               )}
@@ -1673,7 +1725,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                     type="button"
                     onClick={goShareBack}
                     disabled={submitLoading}
-                    className="min-h-[52px] flex-1 rounded-xl border border-[var(--border-gold-subtle)] font-sans text-sm text-[var(--once-text-secondary)] transition-colors hover:bg-white/5 disabled:opacity-50"
+                    className="min-h-[52px] flex-1 rounded-xl border border-[var(--border-gold-subtle)] font-sans text-sm text-[var(--landing-text-body)] transition-colors hover:bg-white/5 disabled:opacity-50"
                     whileHover={{ scale: submitLoading ? 1 : 1.01 }}
                     whileTap={{ scale: submitLoading ? 1 : 0.99 }}
                     transition={spring}

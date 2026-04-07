@@ -7,7 +7,7 @@ export type MemorialType = "person" | "pet"
 export type StoragePlan = "free" | "plus" | "premium"
 
 export type CreateDraftV1 = {
-  /** `2` = current flow (includes auth step 9 + plan step 10). Reads still accept legacy `1`. */
+  /** `2` = current flow (auth step 4 + plan step 5). Reads still accept legacy `1`. */
   v: 2
   memorialType: MemorialType | null
   wizardStep: number
@@ -27,8 +27,9 @@ export type CreateDraftV1 = {
   fundLink: string
   /** Words of remembrance for printable invitation */
   invitationBio: string
-  collectionPeriod: "3" | "7" | "14" | "custom"
-  customExpiredAt: string
+  /** @deprecated Removed from UI; always 7-day gathering server-side */
+  collectionPeriod?: "3" | "7" | "14" | "custom"
+  customExpiredAt?: string
   storagePlan: StoragePlan
 }
 
@@ -62,7 +63,21 @@ export function clearPendingCheckout(): void {
   localStorage.removeItem(LS_PENDING_CHECKOUT_KEY)
 }
 
-const DRAFT_MAX_STEP = 10
+/** Create wizard: 1 name → 2 photo → 3 years → 4 account → 5 plan (7-day gathering is default). */
+const DRAFT_MAX_STEP = 5
+
+/** Map drafts from older 10-step wizard into the current 5-step flow. */
+function migrateWizardStep(rawStep: number, ver: unknown): number {
+  let step = rawStep
+  if (ver === 1) {
+    if (step === 6) step = 10
+  }
+  if (step <= 3) return step
+  if (step === 4) return 4
+  if (step >= 5 && step <= 9) return 4
+  if (step === 10) return 5
+  return Math.min(Math.max(1, step), DRAFT_MAX_STEP)
+}
 
 export function readCreateDraft(): CreateDraftV1 | null {
   if (typeof window === "undefined") return null
@@ -72,14 +87,8 @@ export function readCreateDraft(): CreateDraftV1 | null {
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const ver = parsed.v
     if (ver !== 1 && ver !== 2) return null
-    let step = typeof parsed.wizardStep === "number" ? (parsed.wizardStep as number) : 1
-    // Legacy v1: old "plan" step mapped to 10. Step 9 in the current flow is "Claim account" — keep it so Google OAuth returns to plan (10), not a false plan-without-session.
-    if (ver === 1) {
-      if (step === 6) {
-        step = 10
-      }
-    }
-    step = Math.min(Math.max(1, step), DRAFT_MAX_STEP)
+    const rawStep = typeof parsed.wizardStep === "number" ? (parsed.wizardStep as number) : 1
+    const step = migrateWizardStep(rawStep, ver)
     return { ...(parsed as unknown as Partial<CreateDraftV1>), v: 2, wizardStep: step } as CreateDraftV1
   } catch {
     return null

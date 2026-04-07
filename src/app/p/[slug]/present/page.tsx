@@ -141,8 +141,8 @@ export default function PresentPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-dvh w-screen flex items-center justify-center bg-[#050712] text-white font-serif">
-        <p className="font-sans text-[11px] tracking-[0.32em] uppercase text-gray-500">
+      <div className="min-h-dvh w-screen flex items-center justify-center bg-landing text-[var(--landing-text-hero)] font-serif aeterna-page-fade">
+        <p className="font-sans text-[11px] tracking-[0.32em] uppercase text-[var(--landing-text-muted)]">
           Preparing memorial presentation…
         </p>
       </div>
@@ -151,17 +151,17 @@ export default function PresentPage({ params }: PageProps) {
 
   if (!slug || error || !event) {
     return (
-      <div className="min-h-dvh w-screen flex flex-col items-center justify-center bg-[#050712] text-white font-serif px-6 text-center">
-        <p className="font-sans text-[11px] tracking-[0.32em] uppercase text-gray-500 mb-3">
+      <div className="min-h-dvh w-screen flex flex-col items-center justify-center bg-landing text-[var(--landing-text-hero)] font-serif px-6 text-center aeterna-page-fade">
+        <p className="font-sans text-[11px] tracking-[0.32em] uppercase text-[var(--landing-text-muted)] mb-3">
           Presentation not available
         </p>
         <p className="text-2xl font-light mb-4">Memorial not found</p>
-        <p className="font-sans text-sm text-gray-400 max-w-md mb-6">
+        <p className="font-sans text-sm text-[var(--landing-text-body)] max-w-md mb-6">
           {error || "This presentation link may be incorrect, or the memorial has been removed."}
         </p>
         <a
           href="/"
-          className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 rounded-full bg-white text-black font-sans text-sm"
+          className="btn-landing-primary inline-flex items-center justify-center min-h-[44px] px-6 py-3 font-sans text-sm"
         >
           Return home
         </a>
@@ -171,25 +171,25 @@ export default function PresentPage({ params }: PageProps) {
 
   if (!started) {
     return (
-      <div className="min-h-dvh w-screen bg-[#050712] text-white font-serif flex items-center justify-center px-6">
+      <div className="min-h-dvh w-screen bg-landing text-[var(--landing-text-hero)] font-serif flex items-center justify-center px-6 aeterna-page-fade">
         <div className="max-w-xl w-full text-center">
-          <p className="font-sans text-[11px] tracking-[0.32em] uppercase text-gray-500 mb-4">
+          <p className="font-sans text-[11px] tracking-[0.32em] uppercase text-[var(--landing-text-muted)] mb-4">
             Memorial Presentation
           </p>
-          <h1 className="text-3xl md:text-4xl font-light mb-3">
+          <h1 className="text-3xl md:text-4xl font-light mb-3 text-[var(--landing-text-title)]">
             Start the tribute for{" "}
-            <span className="underline decoration-white/30 decoration-[4px] underline-offset-4">
+            <span className="underline decoration-[var(--aeterna-gold)]/40 decoration-[4px] underline-offset-4">
               {event.name || "your loved one"}
             </span>
           </h1>
-          <p className="font-sans text-sm text-gray-400 mb-8 max-w-md mx-auto">
+          <p className="font-sans text-sm text-[var(--landing-text-body)] mb-8 max-w-md mx-auto">
             When you're ready in the chapel or reception, press the button below. The slideshow and
             background music will begin on this screen.
           </p>
           <button
             type="button"
             onClick={handleStart}
-            className="inline-flex items-center justify-center min-h-[52px] px-10 py-4 rounded-full bg-white text-black font-sans text-sm md:text-base tracking-[0.2em] uppercase shadow-[0_20px_80px_rgba(0,0,0,0.6)] hover:bg-gray-100 transition-colors"
+            className="btn-landing-gold inline-flex items-center justify-center min-h-[52px] px-10 py-4 font-sans text-sm md:text-base tracking-[0.2em] uppercase"
           >
             Start Memorial Presentation
           </button>
@@ -202,7 +202,7 @@ export default function PresentPage({ params }: PageProps) {
   const hasContentAfterStart = !!current
 
   return (
-    <div className="min-h-dvh w-screen bg-[#050712] text-white font-serif overflow-hidden relative">
+    <div className="min-h-dvh w-screen bg-landing text-[var(--landing-text-hero)] font-serif overflow-hidden relative">
       <div className="fixed inset-0 flex items-center justify-center">
         {hasContentAfterStart && current ? (
           <div className="max-w-6xl w-full px-10 flex flex-col md:flex-row items-center gap-16">
@@ -308,7 +308,7 @@ export default function PresentPage({ params }: PageProps) {
             <img
               src={qrUrl}
               alt="QR code to open tribute page"
-              className="w-12 h-12 rounded-md bg-white p-1"
+              className="w-12 h-12 rounded-md bg-[#f4f1ea] p-1 ring-1 ring-[var(--border-gold-subtle)]"
             />
           )}
         </div>

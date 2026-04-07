@@ -115,19 +115,24 @@ export function StepScreenMemorialShare() {
           <p className="text-[6px] text-[var(--once-text-secondary)]">Share photos & stories</p>
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-2 pb-2 pt-1">
-        <p className="mb-1.5 text-center text-[6px] uppercase tracking-[0.22em] text-white/40">Scan to contribute</p>
-        <div className="relative w-[90%] max-w-[220px] overflow-hidden rounded-xl bg-white p-2.5 shadow-xl ring-1 ring-black/25">
-          <div className="origin-center scale-[1.05]">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-3 pb-3 pt-1">
+        <p className="text-center text-[6px] uppercase tracking-[0.24em] text-white/45">Scan to contribute</p>
+        <div className="relative w-[45%] max-w-[110px] overflow-hidden rounded-lg bg-white p-1.5 shadow-lg ring-1 ring-black/20">
+          <div className="origin-center">
             <QrGrid />
           </div>
           <div
-            className="pointer-events-none absolute inset-2.5 rounded-md border-2 border-[var(--aeterna-gold)]/40"
+            className="pointer-events-none absolute inset-1.5 rounded-[0.2rem] border border-[var(--aeterna-gold)]/50"
             aria-hidden
           />
         </div>
-        <p className="mt-2 max-w-[200px] text-center text-[6px] leading-relaxed text-white/40">Scan or share link · no app</p>
-        <div className="mt-2 flex h-6 w-full max-w-[150px] items-center justify-center rounded-full border border-[var(--border-gold)]/45 bg-black/55 text-[6px] font-medium uppercase tracking-[0.14em] text-[var(--aeterna-gold)]">
+        <p className="max-w-[14rem] text-center text-[7px] leading-[1.55] tracking-[0.02em] text-white/50">
+          Scan or share link · no app
+        </p>
+        <div
+          className="flex min-h-[30px] w-full max-w-[min(100%,11rem)] cursor-default items-center justify-center rounded-xl bg-[var(--aeterna-gold)] px-4 py-2 text-center text-[7px] font-semibold uppercase tracking-[0.14em] text-[#0a0a0a] shadow-[0_10px_28px_-6px_rgba(197,160,89,0.55)] ring-1 ring-black/15"
+          role="presentation"
+        >
           Copy link
         </div>
       </div>
@@ -162,15 +167,72 @@ export function StepScreenShareMemory() {
   )
 }
 
-/** Four distinct moments — same warm grandmother, varied poses (inclusive gallery). */
-const CONNECT_THUMBS: { src: string; position: string }[] = [
-  { src: "/landing-connect-grandma-01.png", position: "center 28%" },
-  { src: "/landing-connect-grandma-02.png", position: "center 32%" },
-  { src: "/landing-connect-grandma-03.png", position: "center 25%" },
-  { src: "/landing-connect-grandma-04.png", position: "center 30%" },
+/**
+ * Grandma Legacy Series — six facets of one life (Connect & Vote landing mockup).
+ * Alt text carries the narrative; assets are existing art (filters differentiate tone where needed).
+ */
+const CONNECT_MOMENTS: {
+  id: string
+  src: string
+  position: string
+  hearts: number
+  alt: string
+  caption: string
+  imgClassName?: string
+}[] = [
+  {
+    id: "dignified-elder",
+    src: "/landing-connect-grandma-01.png",
+    position: "center 28%",
+    hearts: 42,
+    alt: "Warm studio portrait of a dignified elder grandmother with a gentle smile — the anchor photo for her memorial.",
+    caption: "The Main · Dignified Elder",
+  },
+  {
+    id: "avid-gardener",
+    src: "/landing-connect-grandma-02.png",
+    position: "center 30%",
+    hearts: 18,
+    alt: "Grandma in a straw hat, laughing with a bright sunflower — a vibrant hobby moment.",
+    caption: "The Hobby · The Avid Gardener",
+  },
+  {
+    id: "best-friends",
+    src: "/landing-connect-grandma-03.png",
+    position: "center 28%",
+    hearts: 31,
+    alt: "Best friends — a candid hug with her golden retriever, showing how Aeterna honors people and pets together.",
+    caption: "The Companion · Best Friends",
+  },
+  {
+    id: "younger-days",
+    src: "/landing-connect-grandma-04.png",
+    position: "center 32%",
+    hearts: 9,
+    alt: "Restored sepia-toned photo from her twenties — a life remembered across decades on Aeterna.",
+    caption: "The Memory · Younger Days",
+    imgClassName: "grayscale contrast-[1.08] sepia-[0.42] brightness-[0.98]",
+  },
+  {
+    id: "peace-sign",
+    src: "/landing-hero-grandmother.png",
+    position: "center 35%",
+    hearts: 56,
+    alt: "Playful birthday snapshot — grandma flashing a peace sign, slightly soft like a phone photo.",
+    caption: "The Silly Moment · Grandma's Peace Sign",
+    imgClassName: "scale-105 brightness-[1.06] saturate-[1.12] blur-[0.5px]",
+  },
+  {
+    id: "teachers-desk",
+    src: "/hero-elder-portrait.png",
+    position: "center 30%",
+    hearts: 24,
+    alt: "Grandma seated thoughtfully with a book in her library — calm, intellectual, full of wisdom.",
+    caption: "The Wisdom · The Teacher's Desk",
+  },
 ]
 
-/** Memorial grid with hearts — warm portraits (human connection). */
+/** Memorial grid with hearts — Grandma Legacy Series (vote counts vary per card). */
 export function StepScreenConnectVote() {
   return (
     <div className="absolute inset-0 flex flex-col bg-[#050712] text-white">
@@ -178,29 +240,29 @@ export function StepScreenConnectVote() {
         <p className="text-center font-[var(--font-serif)] text-[8px] text-[#e8e4dc]">Memories</p>
         <p className="text-center text-[6px] text-white/40">Heart the moments that matter</p>
       </div>
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-px bg-black/50 p-1.5">
-        {CONNECT_THUMBS.map((thumb, i) => (
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-px overflow-y-auto bg-black/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {CONNECT_MOMENTS.map((moment, i) => (
           <div
-            key={thumb.src}
+            key={moment.id}
+            title={`${moment.caption} · ${moment.hearts} hearts`}
             className={`relative aspect-square overflow-hidden rounded-md ring-1 ring-white/[0.06] ${
-              i === 0 ? "ring-[var(--aeterna-gold)]/45" : ""
+              i === 0 ? "ring-[var(--aeterna-gold)]/50" : ""
             }`}
           >
             <img
-              src={thumb.src}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-              style={{ objectPosition: thumb.position }}
+              src={moment.src}
+              alt={moment.alt}
+              className={`absolute inset-0 h-full w-full object-cover ${moment.imgClassName ?? ""}`}
+              style={{ objectPosition: moment.position }}
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
-            {i === 0 && (
-              <span className="absolute bottom-1 right-1 rounded-full bg-black/70 px-1 py-0.5 text-[6px] font-medium text-red-300 tabular-nums">
-                ♥ 24
-              </span>
-            )}
-            {i === 1 && (
-              <span className="absolute bottom-1 right-1 text-[6px] text-white/60 tabular-nums">♥ 8</span>
-            )}
+            <span
+              className={`absolute bottom-0.5 right-0.5 rounded-full px-1 py-0.5 text-[5.5px] font-medium tabular-nums ${
+                i === 0 ? "bg-black/75 text-red-300" : "bg-black/60 text-white/75"
+              }`}
+            >
+              ♥ {moment.hearts}
+            </span>
           </div>
         ))}
       </div>

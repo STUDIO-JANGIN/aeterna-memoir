@@ -3,21 +3,17 @@
 import { use, useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Star } from "lucide-react"
+import { MemorialTrialCountdown } from "@/components/memorial/MemorialTrialCountdown"
 import {
   getStoriesForAdminAction,
   setStorySelectedAction,
   type AdminEvent,
   type AdminStory,
 } from "@/app/actions/setStorySelected"
-import { approveStoryAction } from "@/app/actions/approveStory"
+import { approveStoryAction, unapproveStoryAction } from "@/app/actions/approveStory"
 import { extendDeadlineAction, closeDeadlineNowAction } from "@/app/actions/updateEventDeadline"
 import { deleteStoryAction } from "@/app/actions/deleteStory"
-import { createCheckoutSessionAction } from "@/app/actions/createCheckoutSession"
-import { createPremiumCheckoutSessionAction } from "@/app/actions/createPremiumCheckoutSession"
-import { createPremiumUsdCheckoutSessionAction } from "@/app/actions/createPremiumUsdCheckoutSession"
-import { createFinalWarningCheckoutSessionAction } from "@/app/actions/createFinalWarningCheckoutSession"
 import { createPlusCheckoutSessionAction } from "@/app/actions/createPlusCheckoutSession"
-import { createPremiumTierCheckoutSessionAction } from "@/app/actions/createPremiumTierCheckoutSession"
 import { autoSelectTop20ByLikesAction } from "@/app/actions/autoSelectTop20ByLikes"
 import { savePreviewFilmAction } from "@/app/actions/savePreviewFilm"
 import { requestFullFilmAction } from "@/app/actions/requestFullFilm"
@@ -54,8 +50,6 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [premiumCheckoutLoading, setPremiumCheckoutLoading] = useState(false)
   const [premiumCheckoutError, setPremiumCheckoutError] = useState<string | null>(null)
-  const [premiumUsdCheckoutLoading, setPremiumUsdCheckoutLoading] = useState(false)
-  const [premiumUsdCheckoutError, setPremiumUsdCheckoutError] = useState<string | null>(null)
   const [showPaymentComingSoon, setShowPaymentComingSoon] = useState(false)
   const [countdownNow, setCountdownNow] = useState(() => Date.now())
   const [approvedSort, setApprovedSort] = useState<"likes" | "recent">("likes")
@@ -92,6 +86,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   const hasShownMoreThemesNudge = useRef(false)
   const [showFilmArrivedLayer, setShowFilmArrivedLayer] = useState(false)
   const hasShownFilmArrived = useRef(false)
+  const [adminToast, setAdminToast] = useState<string | null>(null)
 
   const pending = stories.filter((s) => !s.is_approved)
   const approvedRaw = stories.filter((s) => s.is_approved)
@@ -124,11 +119,23 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   }, [slug])
 
   const deadlineAt = event?.expired_at ?? event?.collection_end_at
-  const nowMs = countdownNow
+  const deadlineMs = deadlineAt ? new Date(deadlineAt).getTime() : null
+  const trialRemainingMs = deadlineMs !== null ? Math.max(0, deadlineMs - countdownNow) : 0
 
   useEffect(() => {
     if (slug) loadData()
   }, [slug, loadData])
+
+  useEffect(() => {
+    const id = window.setInterval(() => setCountdownNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    if (!adminToast) return
+    const t = window.setTimeout(() => setAdminToast(null), 3200)
+    return () => clearTimeout(t)
+  }, [adminToast])
 
   const filmProcessing =
     currentTier === "premium" &&
@@ -160,19 +167,6 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     }
   }
 
-  const handlePremiumUpgrade = async () => {
-    if (!event || !slug) return
-    setPremiumUsdCheckoutLoading(true)
-    setPremiumUsdCheckoutError(null)
-    const result: any = await createPremiumTierCheckoutSessionAction(event.id, slug)
-    setPremiumUsdCheckoutLoading(false)
-    if (result.ok && result.url) {
-      window.location.href = result.url
-    } else {
-      setPremiumUsdCheckoutError(result.error || "Unable to start checkout.")
-    }
-  }
-
   const handleFilmPhotoToggle = async (story: AdminStory) => {
     if (!story.image_url || filmProcessing || event?.full_film_url) return
     const isSel = story.is_selected === true
@@ -189,6 +183,23 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     }
     await setStorySelectedAction(story.id, true)
     await loadData()
+  }
+
+  const handleUnapprove = async (storyId: string) => {
+    const res = await unapproveStoryAction(storyId)
+    if (res.ok) {
+      await loadData()
+      setAdminToast("Photo moved back to pending.")
+    }
+  }
+
+  const confirmAndDelete = (storyId: string) => {
+    if (
+      !window.confirm("Are you sure you want to permanently delete this memory? This cannot be undone.")
+    ) {
+      return
+    }
+    void deleteStoryAction(storyId).then(() => loadData())
   }
 
   const handleGenerateFilm = async () => {
@@ -210,7 +221,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center gap-3 bg-landing px-6">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-3 px-6">
         <p className="text-landing-label text-[var(--aeterna-gold)]">Loading</p>
         <p className="text-landing-body max-w-xs text-center">Preparing your memorial dashboard…</p>
       </div>
@@ -237,85 +248,80 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-dvh bg-landing text-[var(--landing-text-hero)] font-[var(--font-sans)] antialiased p-6 md:p-10 md:pb-16">
+    <div className="min-h-dvh p-6 md:p-10 md:pb-16">
       <div className="max-w-4xl mx-auto">
-        <header className="mb-10 md:mb-12 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 md:gap-8">
-          <div className="space-y-2 min-w-0">
-            <p className="text-landing-label">Dashboard</p>
-            <h1 className="font-[var(--font-serif)] text-[clamp(1.5rem,4vw,2.125rem)] font-normal leading-tight tracking-[-0.02em] text-[var(--landing-text-title)]">
-              {event.name}
-            </h1>
-            <p className="text-landing-body text-left pt-1 max-w-xl">
-              Curate submissions, upgrade your plan, and share the memorial with those who loved them.
-            </p>
+        <header className="mb-8 md:mb-10">
+          <div className="card-landing-airy p-6 md:p-10">
+            <p className="text-landing-label mb-5">Dashboard</p>
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
+              <div className="space-y-2 min-w-0 flex-1">
+                <h1 className="font-[var(--font-serif)] text-[clamp(1.5rem,4vw,2.125rem)] font-normal leading-tight tracking-[-0.02em] text-[var(--landing-text-title)]">
+                  {event.name}
+                </h1>
+                <p className="text-landing-body pt-1 max-w-xl leading-relaxed">
+                  Curate submissions, protect this space, and share the memorial with those who loved them.
+                </p>
+              </div>
+              <Link
+                href={`/p/${slug}`}
+                className="btn-landing-outline-gold shrink-0 w-full lg:w-auto lg:min-w-[12.5rem] justify-center"
+              >
+                Back to feed
+              </Link>
+            </div>
           </div>
-          <Link
-            href={`/p/${slug}`}
-            className="btn-landing-primary shrink-0 self-start sm:self-center"
-          >
-            Back to feed
-          </Link>
         </header>
+
+        {currentTier === "free" && trialRemainingMs > 0 && (
+          <div className="mb-8 md:mb-10">
+            <MemorialTrialCountdown remainingMs={trialRemainingMs} />
+          </div>
+        )}
 
         <div className="card-landing-airy p-6 md:p-10 mb-10 md:mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/[0.08]">
             <span className="text-landing-label">Current plan</span>
-            <span className="inline-flex items-center justify-center min-h-[36px] px-4 py-1.5 bg-[var(--aeterna-gold)]/15 text-[var(--aeterna-gold)] text-[10px] font-medium rounded-full uppercase tracking-[0.2em] ring-1 ring-[var(--aeterna-gold)]/35">
+            <span className="inline-flex items-center justify-center min-h-[36px] px-4 py-1.5 bg-[var(--aeterna-gold)]/12 text-[var(--aeterna-gold)] text-[10px] font-medium rounded-full uppercase tracking-[0.2em] ring-1 ring-[var(--aeterna-gold)]/35">
               {currentTier}
             </span>
           </div>
 
-          <p className="text-landing-body mb-8 max-w-2xl">
-            <span className="font-[var(--font-serif)] text-lg text-[var(--landing-text-hero)] not-italic tabular-nums">
+          <p className="text-landing-body mb-8 max-w-2xl leading-relaxed">
+            <span className="font-[var(--font-serif)] text-xl text-[var(--landing-text-hero)] not-italic tabular-nums">
               {stories.length}
             </span>{" "}
-            precious memories have been collected.
+            Heartfelt Contribution{stories.length === 1 ? "" : "s"} Collected
           </p>
 
           {currentTier === "free" && (
-            <div className="flex flex-col sm:flex-row items-stretch justify-center gap-4 sm:gap-5">
+            <div className="flex flex-col items-stretch justify-center sm:items-center">
               <button
                 type="button"
                 onClick={handlePlusCheckout}
                 disabled={plusCheckoutLoading}
-                className="flex flex-1 min-w-0 min-h-[52px] items-center justify-center px-5 btn-landing-gold disabled:pointer-events-none"
+                className="w-full sm:max-w-md min-h-[52px] items-center justify-center px-6 btn-landing-gold disabled:pointer-events-none inline-flex"
               >
-                {plusCheckoutLoading ? "Processing…" : "Upgrade — $19.99 · Forever"}
-              </button>
-              <button
-                type="button"
-                onClick={handlePremiumUpgrade}
-                disabled={premiumUsdCheckoutLoading}
-                className="flex flex-1 min-w-0 min-h-[52px] items-center justify-center px-5 btn-landing-outline-gold disabled:pointer-events-none"
-              >
-                {premiumUsdCheckoutLoading ? "Processing…" : "Premium — $39.99 · AI film"}
+                {plusCheckoutLoading ? "Processing…" : "Preserve Forever — $19.99"}
               </button>
             </div>
           )}
 
           {currentTier === "plus" && (
-            <div className="flex flex-col sm:flex-row items-center justify-center">
-              <button
-                type="button"
-                onClick={handlePremiumUpgrade}
-                disabled={premiumUsdCheckoutLoading}
-                className="w-full sm:max-w-md min-h-[52px] flex items-center justify-center px-6 btn-landing-outline-gold disabled:pointer-events-none"
-              >
-                {premiumUsdCheckoutLoading ? "Processing…" : "Upgrade to Premium — $39.99 · AI tribute film"}
-              </button>
-            </div>
-          )}
-
-          {(plusCheckoutError || premiumUsdCheckoutError) && (
-            <p className="mt-6 text-sm text-red-400/90 text-center" role="alert">
-              {plusCheckoutError || premiumUsdCheckoutError}
+            <p className="text-landing-body max-w-2xl leading-relaxed">
+              Your memorial is preserved — every story and photo remains here for as long as you need.
             </p>
           )}
+
+          {plusCheckoutError ? (
+            <p className="mt-6 text-sm text-[var(--aeterna-gold-muted)] text-center" role="alert">
+              {plusCheckoutError}
+            </p>
+          ) : null}
         </div>
 
         {currentTier === "premium" && (
           <section
-            className="card-landing-airy p-6 md:p-10 mb-10 md:mb-12 border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.03] shadow-[0_0_80px_-24px_rgba(197,160,89,0.35)]"
+            className="card-landing-airy p-6 md:p-10 mb-10 md:mb-12 ring-1 ring-[var(--aeterna-gold)]/20"
             aria-labelledby="ai-tribute-heading"
           >
             <div className="mb-8 pb-6 border-b border-white/[0.08]">
@@ -326,17 +332,15 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
               >
                 Create Your AI Cinematic Tribute
               </h2>
-              <p className="text-landing-body mt-3 max-w-2xl">
+              <p className="text-landing-body mt-3 max-w-2xl leading-relaxed">
                 Choose {MIN_FILM_PHOTOS}–{MAX_FILM_PHOTOS} approved photos. Our AI weaves them into a gentle, cinematic memorial film powered by Luma.
               </p>
             </div>
 
             {event.full_film_url ? (
               <div className="space-y-6">
-                <p className="text-landing-body text-[var(--landing-text-muted)]">
-                  Your tribute is live on the memorial and ready to share.
-                </p>
-                <div className="rounded-2xl overflow-hidden border border-white/[0.1] ring-1 ring-[var(--aeterna-gold)]/20 shadow-[var(--landing-shadow-deep)] bg-black/40">
+                <p className="text-landing-body">Your tribute is live on the memorial and ready to share.</p>
+                <div className="rounded-2xl overflow-hidden border border-white/[0.08] ring-1 ring-[var(--aeterna-gold)]/20 shadow-[var(--landing-shadow-deep)] bg-black/50">
                   <video
                     src={event.full_film_url}
                     controls
@@ -360,7 +364,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                 <p className="font-[var(--font-serif)] text-lg text-[var(--landing-text-hero)] leading-relaxed">
                   Our AI is crafting your masterpiece… this may take 1–2 minutes.
                 </p>
-                <p className="text-landing-body">
+                <p className="text-landing-body leading-relaxed">
                   You can leave this page — we&apos;ll update the memorial when the film is ready. This page refreshes automatically.
                 </p>
                 <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden ring-1 ring-white/[0.06]">
@@ -368,13 +372,13 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                 </div>
               </div>
             ) : event.video_status === "failed" ? (
-              <p className="text-sm text-red-400/90">
+              <p className="text-sm text-[var(--aeterna-gold-muted)]">
                 Something went wrong during rendering. Please contact support — we can restore your film credit and help you retry.
               </p>
             ) : (
               <div className="space-y-8">
                 {approvedRaw.filter((s) => s.image_url).length === 0 ? (
-                  <p className="text-landing-body text-[var(--landing-text-muted)]">
+                  <p className="text-landing-body text-[var(--landing-text-muted)] leading-relaxed">
                     Approve guest photos in the Memories section below, then return here to build your film.
                   </p>
                 ) : (
@@ -396,10 +400,10 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                               key={story.id}
                               type="button"
                               onClick={() => void handleFilmPhotoToggle(story)}
-                              className={`relative aspect-square rounded-2xl overflow-hidden border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--aeterna-gold)] ${
+                              className={`relative aspect-square rounded-2xl overflow-hidden border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--aeterna-gold)] bg-app-soft-surface ${
                                 selected
                                   ? "ring-2 ring-[var(--aeterna-gold)] border-[var(--aeterna-gold)]/60 shadow-[0_0_32px_-8px_rgba(197,160,89,0.45)]"
-                                  : "border-white/[0.1] hover:border-white/25 opacity-90 hover:opacity-100"
+                                  : "border-white/[0.08] hover:border-[var(--aeterna-gold)]/35 opacity-95 hover:opacity-100"
                               }`}
                             >
                               <img src={story.image_url || ""} alt="" className="h-full w-full object-cover" />
@@ -418,7 +422,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                     </div>
                     {(filmSelectionHint || generateFilmError) && (
                       <p
-                        className={`text-sm ${generateFilmError ? "text-red-400/90" : "text-amber-200/90"}`}
+                        className={`text-sm ${generateFilmError ? "text-[var(--aeterna-gold-muted)]" : "text-[var(--landing-text-muted)]"}`}
                         role="status"
                       >
                         {filmSelectionHint || generateFilmError}
@@ -438,7 +442,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                         Generate AI Tribute Film
                       </button>
                       {selectedCount < MIN_FILM_PHOTOS && (
-                        <p className="text-landing-body text-center text-[var(--landing-text-muted)] text-sm">
+                        <p className="text-center text-[var(--landing-text-muted)] text-sm">
                           Select at least {MIN_FILM_PHOTOS} photos to continue.
                         </p>
                       )}
@@ -450,7 +454,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
           </section>
         )}
 
-        <div className="mb-6 md:mb-8">
+        <div className="card-landing-airy p-6 md:p-8 mb-6 md:mb-8">
           <h2 className="font-[var(--font-serif)] text-xl md:text-2xl font-normal tracking-[-0.02em] text-[var(--landing-text-title)] mb-6">
             Memories
           </h2>
@@ -487,50 +491,78 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
-          {(tab === "pending" ? pending : approved).map((story) => (
-            <div
-              key={story.id}
-              className="relative aspect-square bg-black/35 rounded-2xl overflow-hidden group border border-white/[0.08] shadow-[var(--landing-shadow-deep)] ring-1 ring-white/[0.04]"
-            >
-              <img src={story.image_url || ""} alt="" className="w-full h-full object-cover opacity-85 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300" />
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 px-2">
-                {tab === "pending" ? (
-                  <button
-                    type="button"
-                    onClick={() => approveStoryAction(story.id).then(() => loadData())}
-                    className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-4 text-[9px] font-medium uppercase tracking-[0.14em] text-[#0a0a0a] shadow-[0_8px_24px_-6px_rgba(197,160,89,0.45)] hover:bg-[var(--aeterna-gold-light)] transition-colors"
-                  >
-                    Approve
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setStorySelectedAction(story.id, !story.is_selected).then(() => loadData())}
-                    className={
-                      story.is_selected
-                        ? "inline-flex min-h-[40px] items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-4 text-[9px] font-medium uppercase tracking-[0.14em] text-[#0a0a0a] shadow-[0_8px_24px_-6px_rgba(197,160,89,0.45)]"
-                        : "inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/25 bg-black/45 px-4 text-[9px] font-medium uppercase tracking-[0.14em] text-white backdrop-blur-sm hover:bg-white/15"
-                    }
-                  >
-                    {story.is_selected ? "Selected" : "Select"}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => deleteStoryAction(story.id).then(() => loadData())}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-600/95 text-white shadow-lg hover:bg-red-500 transition-colors"
-                  aria-label="Delete"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+        {tab === "approved" && approved.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-white/[0.12] bg-[color:var(--landing-surface)] px-6 py-12 text-center text-landing-body leading-relaxed text-[var(--landing-text-muted)]">
+            No memories approved yet. Review pending submissions to build the shrine.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
+            {(tab === "pending" ? pending : approved).map((story) => (
+              <div
+                key={story.id}
+                className="flex flex-col rounded-2xl overflow-hidden border border-white/[0.08] bg-app-soft-surface shadow-[var(--landing-shadow-deep)]"
+              >
+                <div className="relative aspect-square bg-black/50">
+                  <img src={story.image_url || ""} alt="" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex flex-col gap-2 p-3 border-t border-white/[0.06] bg-black/25">
+                  {tab === "pending" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => approveStoryAction(story.id).then(() => loadData())}
+                        className="btn-landing-gold w-full min-h-[44px] justify-center"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => confirmAndDelete(story.id)}
+                        className="btn-landing-outline-gold w-full min-h-[40px] justify-center gap-2"
+                        aria-label="Delete memory"
+                      >
+                        <svg className="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void handleUnapprove(story.id)}
+                        className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.04] px-4 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--landing-text-hero)] transition-colors hover:bg-white/[0.08] hover:border-white/25"
+                      >
+                        Unapprove
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => confirmAndDelete(story.id)}
+                        className="btn-landing-outline-gold w-full min-h-[40px] justify-center gap-2"
+                        aria-label="Permanently delete memory"
+                      >
+                        <svg className="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {adminToast ? (
+          <div
+            role="status"
+            className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-[80] w-[min(calc(100vw-2rem),20rem)] -translate-x-1/2 rounded-xl border border-white/[0.1] bg-[#1e1e1e] px-4 py-3 text-center text-[13px] text-[var(--landing-text-hero)] shadow-[var(--landing-shadow-deep)]"
+          >
+            {adminToast}
+          </div>
+        ) : null}
       </div>
     </div>
   )

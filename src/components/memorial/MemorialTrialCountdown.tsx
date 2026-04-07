@@ -22,7 +22,7 @@ type MemorialTrialCountdownProps = {
 }
 
 /**
- * Conversion-focused trial timer: creation-aligned deadline (from parent), updates every second via parent state.
+ * Preservation window — aligned to landing: dark surface, gold accents, generous spacing.
  */
 export function MemorialTrialCountdown({ remainingMs, className = "" }: MemorialTrialCountdownProps) {
   const urgent = remainingMs > 0 && remainingMs < TWENTY_FOUR_H_MS
@@ -32,45 +32,32 @@ export function MemorialTrialCountdown({ remainingMs, className = "" }: Memorial
     <motion.div
       role="timer"
       aria-live="polite"
-      animate={
-        urgent
-          ? { opacity: [1, 0.88, 1] }
-          : { opacity: 1 }
-      }
-      transition={
-        urgent
-          ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
-          : { duration: 0.2 }
-      }
-      className={`
-        relative overflow-hidden rounded-2xl border border-[var(--aeterna-gold)]/25
-        bg-gradient-to-b from-[var(--once-bg-elevated)]/95 to-black/40
-        px-3 py-3 sm:px-5 sm:py-4
-        shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.55)]
-        ${urgent ? "ring-1 ring-[var(--aeterna-gold)]/20" : ""}
-        ${className}
-      `}
+      animate={urgent ? { opacity: [1, 0.96, 1] } : { opacity: 1 }}
+      transition={urgent ? { duration: 3, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
+      className={`relative overflow-hidden rounded-2xl card-landing-airy px-5 py-5 sm:px-7 sm:py-6 ${className}`}
     >
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        className="pointer-events-none absolute inset-0 opacity-[0.06]"
         style={{
           background:
-            "repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(197,160,89,0.15) 1px, rgba(197,160,89,0.15) 2px)",
+            "repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(197,160,89,0.12) 1px, rgba(197,160,89,0.12) 2px)",
         }}
         aria-hidden
       />
       <div className="relative text-center">
-        <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-[0.28em] text-[var(--aeterna-gold-muted)] mb-1.5 sm:mb-2">
-          Secure these memories in:
+        <p className="font-[var(--font-serif)] text-base sm:text-lg font-normal tracking-[-0.02em] text-[var(--landing-text-title)] mb-2">
+          Preserve this legacy
         </p>
+        <p className="text-landing-label mb-2">Time remaining in this gathering window</p>
         <p
-          className="font-mono tabular-nums tracking-tight text-[clamp(0.65rem,2.8vw,0.95rem)] leading-none text-[var(--aeterna-gold)] whitespace-nowrap mx-auto max-w-[100vw] px-1"
+          className="font-mono tabular-nums tracking-tight text-[clamp(0.7rem,2.8vw,1rem)] leading-none text-[var(--aeterna-gold)] whitespace-nowrap mx-auto max-w-[100vw] px-1"
           style={{ fontFeatureSettings: '"tnum" 1' }}
         >
           {line}
         </p>
-        <p className="mt-2 sm:mt-2.5 text-[10px] sm:text-[11px] leading-snug text-[var(--once-text-secondary)] max-w-md mx-auto px-1">
-          Upgrade to a permanent plan before the timer hits zero to preserve this legacy forever.
+        <p className="mt-4 text-sm leading-relaxed text-[var(--landing-text-body)] max-w-md mx-auto px-1">
+          To keep these memories alive forever, please upgrade within 7 days. After this window, the shrine will gently
+          close to protect the privacy of the data.
         </p>
       </div>
     </motion.div>

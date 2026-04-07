@@ -4,6 +4,9 @@ import { getEventBySlug } from "@/app/actions/setStorySelected"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import GuestFeedPage from "./MemorialGuestFeedClient"
 
+/** Guest memorial feed loads story comments via client + server actions; avoid stale empty lists from ISR. */
+export const revalidate = 0
+
 type Props = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -49,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default function MemorialPage(props: Props) {
   return (
-    <Suspense fallback={<div className="min-h-dvh bg-[var(--once-bg)]" aria-hidden />}>
+    <Suspense fallback={<div className="min-h-dvh bg-landing aeterna-page-fade" aria-hidden />}>
       <GuestFeedPage {...props} />
     </Suspense>
   )

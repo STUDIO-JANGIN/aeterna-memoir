@@ -407,6 +407,26 @@
     cursor: not-allowed;
     transform: none;
   }
+
+  /**
+   * Admin / memorial: soft panel (#1E1E1E) + page fade — uses landing border/shadow tokens only.
+   * Does not alter .bg-landing, .card-landing-airy, or landing text utilities above.
+   */
+  .bg-app-soft-surface {
+    background-color: #1e1e1e;
+  }
+  .aeterna-page-fade {
+    animation: aeternaPageFade 0.3s ease-out both;
+  }
+}
+
+@keyframes aeternaPageFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeIn {

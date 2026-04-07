@@ -2,6 +2,7 @@
 
 import { useCallback, useState, type ReactNode } from "react"
 import { Copy, MessageSquare } from "lucide-react"
+import { openWhatsAppWithPrefilledText } from "@/lib/whatsappInvite"
 
 function IconWhatsApp({ className }: { className?: string }) {
   return (
@@ -54,13 +55,13 @@ export function memorialUploadUrlFromPageUrl(memorialPageUrl: string): string {
 }
 
 /**
- * SMS / WhatsApp / copy — concise English for U.S., Australia, and other English-speaking guests.
+ * SMS / copy / feed share — premium invitation wording.
  * Link opens the memorial with the upload flow (`?share=1`).
  */
 export function buildGlobalShareMessage(name: string, memorialPageUrl: string): string {
   const n = name.trim() || "our loved one"
   const link = memorialUploadUrlFromPageUrl(memorialPageUrl.trim())
-  return `We are celebrating the life of ${n}. Please share your photos and memories here: ${link}`
+  return `You are invited to contribute to the digital shrine of ${n}. Please share your favorite photos and stories here: ${link}`
 }
 
 type MemorialShareActionsProps = {
@@ -106,12 +107,8 @@ export function MemorialShareActions({ name, guestUrl, className = "" }: Memoria
     }
   }, [getMessage])
 
-  const shareViaWhatsApp = useCallback(async () => {
-    const text = getMessage()
-    const r = await tryNativeShareText(text)
-    if (r === "shared" || r === "aborted") return
-    if (typeof window === "undefined") return
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer")
+  const shareViaWhatsApp = useCallback(() => {
+    openWhatsAppWithPrefilledText(getMessage())
   }, [getMessage])
 
   const shareViaMessage = useCallback(async () => {

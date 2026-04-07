@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Nanum_Myeongjo, Inter, Syne } from 'next/font/google'
+import { Nanum_Myeongjo, Inter, Syne, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import { SmoothScrollProvider } from '@/components/SmoothScrollProvider'
 import { getAppBaseUrl } from '@/lib/appUrl'
@@ -22,6 +22,13 @@ const syne = Syne({
   subsets: ['latin'],
   weight: ['600', '700', '800'],
   variable: '--font-display',
+  display: 'swap',
+})
+
+const playfairInvitation = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-invitation-serif',
   display: 'swap',
 })
 
@@ -65,7 +72,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${nanum.variable} ${inter.variable} ${syne.variable}`}>
+    <html
+      lang="en"
+      className={`${nanum.variable} ${inter.variable} ${syne.variable} ${playfairInvitation.variable}`}
+    >
       <body className="antialiased bg-[color:var(--landing-bg)]">
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>

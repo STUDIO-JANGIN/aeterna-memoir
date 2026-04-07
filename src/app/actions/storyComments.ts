@@ -24,27 +24,52 @@ export async function getStoryCommentsAction(
 ): Promise<StoryCommentsResult> {
   noStore()
 
-  const photoIdUuid = parseUuidString(photoId)
-  const eventIdUuid = parseUuidString(eventId)
+  const rawPhoto =
+    photoId != null && typeof photoId === "string"
+      ? photoId.trim()
+      : String(photoId ?? "").trim()
+  const rawEvent =
+    eventId != null && typeof eventId === "string"
+      ? eventId.trim()
+      : String(eventId ?? "").trim()
+  const photoIdUuid = parseUuidString(rawPhoto)
+  const eventIdUuid = parseUuidString(rawEvent)
   if (!photoIdUuid || !eventIdUuid) {
     return { ok: true, comments: [] }
   }
+
+  /** Trimmed UUID strings for PostgREST `.eq` — must match `uuid` columns in the DB. */
+  const photoIdEq = rawPhoto.trim()
+  const eventIdEq = rawEvent.trim()
 
   const supabase = getSupabaseAdmin()
   const { data: storyRow, error: storyErr } = await supabase
     .from("stories")
     .select("id, event_id, is_approved")
-    .eq("id", photoIdUuid)
+    .eq("id", photoIdEq)
     .maybeSingle()
-  if (storyErr || !storyRow || storyRow.event_id !== eventIdUuid || storyRow.is_approved !== true) {
+  if (storyErr || !storyRow) {
+    return { ok: true, comments: [] }
+  }
+
+  /** Supabase may return UUID columns as uppercase strings; must normalize before JS `===`. */
+  const rowStoryId = parseUuidString(String(storyRow.id))
+  const rowEventId = parseUuidString(String(storyRow.event_id))
+  if (
+    !rowStoryId ||
+    !rowEventId ||
+    rowStoryId !== photoIdUuid ||
+    rowEventId !== eventIdUuid ||
+    storyRow.is_approved !== true
+  ) {
     return { ok: true, comments: [] }
   }
 
   const { data, error } = await supabase
     .from("comments")
     .select("id, visitor_name, text, created_at")
-    .eq("photo_id", photoIdUuid)
-    .eq("event_id", eventIdUuid)
+    .eq("photo_id", photoIdEq)
+    .eq("event_id", eventIdEq)
     .eq("is_reported", false)
     .order("created_at", { ascending: true })
 
@@ -58,12 +83,6 @@ export async function getStoryCommentsAction(
   }
 
   const rows = (data ?? []) as StoryCommentPublic[]
-  if (rows.length === 0) {
-    console.debug("[getStoryComments] empty comments (query ok; compare photoId to DB if rows expected)", {
-      photoId: photoIdUuid,
-      eventId: eventIdUuid,
-    })
-  }
   return { ok: true, comments: rows }
 }
 
@@ -137,8 +156,6 @@ export async function addStoryCommentAction(
   if (story.is_approved !== true) {
     return { ok: false, error: "You can share a memory once this photo has been approved." }
   }
-
-  console.log("CRITICAL DEBUG - Photo ID being sent:", photoId)
 
   const { data: inserted, error: insertErr } = await supabase
     .from("comments")

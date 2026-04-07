@@ -2,12 +2,12 @@
 
 import { useState, type ReactNode } from "react"
 import Link from "next/link"
-import { Clapperboard, Clock, Heart, QrCode } from "lucide-react"
+import { Clock, Heart, QrCode, Sparkles } from "lucide-react"
 import { RevealSection } from "@/components/RevealSection"
 import {
   IPhoneShell,
   StepScreenConnectVote,
-  StepScreenFilmTribute,
+  StepScreenCreate,
   StepScreenMemorialShare,
 } from "@/components/landing/IPhoneMockup"
 
@@ -17,48 +17,93 @@ const LANDING_BACKGROUND_POSTER_URL =
   process.env.NEXT_PUBLIC_LANDING_BACKGROUND_POSTER_URL ?? "/hero-fallback.jpg"
 
 const FAQ_ITEMS = [
-  { q: "How does Aeterna work?", a: "We know how overwhelming loss can be. Aeterna gives you a gentle way to gather memories: create a space, share a link or QR with family and friends, and they can add one photo and a short story. Others can like and vote. When you’re ready, the top 20 can become a Luma AI tribute film—so their light stays with you, in a way that feels dignified and lasting." },
-  { q: "What happens with the free tier?", a: "We wanted the first 7 days to feel sacred and unpressured. Your memorial is a safe place to collect photos and stories. If you’d like to keep it forever—and, with Premium, add an AI tribute film—you can upgrade when the time feels right. There’s no wrong choice; we’re here to support you." },
-  { q: "What is the Luma AI tribute film?", a: "It’s a short, cinematic film made from the top 20 most-loved photos—peaceful, slow, and dignified. Many families tell us it feels like a final gift: a way to see their person or pet in motion again, and to keep that moment forever. Premium includes one film per memorial." },
-  { q: "Can guests participate without an app?", a: "Yes. We made it simple for everyone. Anyone with the link or QR code can open the memorial in their browser, add a photo and story, and leave a like—no app download. We wanted even the least tech-savvy relative to be able to contribute without stress." },
-  { q: "What about donations (memorial fund)?", a: "If you choose to accept donations, they can be given by card, Apple Pay, or Google Pay. We’re transparent: a 1% platform fee helps us keep Aeterna running and support more families. Every contribution goes to the cause you set." },
-  { q: "Why Aeterna?", a: "Aeterna means 'eternal' in Latin. We built it because we believe the people and pets we love deserve more than a folder of photos—they deserve a place that feels sacred, shared, and lasting. However you choose to remember them, we’re here to hold that space with you." },
+  {
+    q: "How does Aeterna work?",
+    a: "Aeterna is a digital shrine. Create a space, share a QR or link, and let family and friends add photos and stories. No app needed; they just scan and contribute. The first 7 days are a free window to gather memories. Upgrade anytime to preserve the shrine forever.",
+  },
+  {
+    q: "Is it for pets too?",
+    a: "Yes. We believe every soul that leaves footprints on our hearts—human or pet—deserves a sacred space.",
+  },
+  {
+    q: "Can guests participate without an app?",
+    a: "Absolutely. Anyone with the link or QR can open it in their browser, upload a photo, and leave a heart or comment instantly.",
+  },
+  {
+    q: "What is the 'AI Tribute Film'?",
+    a: "It's our upcoming V2 feature. It will transform the community's most-loved photos into a cinematic 1-minute film. Pre-order is available with The Eternal Film (V2) tier.",
+  },
 ]
 
 /** Screen-reader summaries (match column mockups + copy). */
 const STEP_FLOW_LABELS = [
-  "Scan and Share: guests open your memorial with a QR code or link and upload a photo and story from the phone—no app required.",
-  "Connect and Vote: a shared memorial space where visitors heart their favorite memories so the community’s favorites rise to the top.",
-  "AI Tribute Film: the most-loved photos can become a cinematic one-minute tribute film.",
+  "Create a digital shrine: a dignified memorial for your loved one or pet.",
+  "Scan and share: QR at the service or a link—guests upload photos and stories, no app required.",
+  "Connect and relive: the community hearts favorite memories; the most-loved stories rise to the top.",
 ] as const
 
 const HOW_IT_WORKS_STEPS = [
   {
+    title: "Create a Digital Shrine",
+    description:
+      "Build a dignified memorial space for your loved one or pet in seconds.",
+    Icon: Sparkles,
+    mockup: "create" as const,
+  },
+  {
     title: "Scan & Share",
     description:
-      "Simple QR access for friends to upload photos and stories instantly.",
+      "Place a QR code at the service or share a link. Guests upload photos and stories instantly—no app required.",
     Icon: QrCode,
     mockup: "qr" as const,
   },
   {
-    title: "Connect & Vote",
+    title: "Connect & Relive",
     description:
-      "A shared space to celebrate favorite memories together—with hearts so the community’s favorites rise to the top.",
+      "The community hearts their favorite memories, and the most-loved stories rise to the top.",
     Icon: Heart,
     mockup: "connect" as const,
   },
-  {
-    title: "AI Tribute Film",
-    description: "Watch the most-loved photos turn into a cinematic 1-minute tribute film.",
-    Icon: Clapperboard,
-    mockup: "film" as const,
-  },
 ] as const
 
-const PLANS = [
-  { price: "$0", value: "Gather & remember", cta: "Start", href: "/create?plan=free", emphasis: "subtle" as const },
-  { price: "$19.99", value: "Forever preserved", cta: "Select", href: "/create?plan=forever", emphasis: "gold" as const },
-  { price: "$39.99", value: "AI tribute film included", cta: "Select", href: "/create?plan=film", emphasis: "subtle" as const },
+type PlanRow = {
+  tierName: string
+  price: string
+  value: string
+  cta: string
+  href: string
+  emphasis: "subtle" | "gold"
+  planLabel?: string
+  statusTag?: string
+}
+
+const PLANS: PlanRow[] = [
+  {
+    tierName: "Sacred Window",
+    price: "$0",
+    value: "7 days to gather memories. A gentle, peaceful start.",
+    cta: "Start",
+    href: "/create?plan=free",
+    emphasis: "subtle",
+  },
+  {
+    tierName: "Eternal Legacy",
+    price: "$19.99",
+    value: "Keep every photo and story preserved forever. No expiration.",
+    cta: "Select",
+    href: "/create?plan=forever",
+    emphasis: "gold",
+  },
+  {
+    tierName: "The Eternal Film (V2)",
+    statusTag: "PRE-ORDER / COMING SOON",
+    price: "$39.99",
+    value:
+      "Everything in Legacy, plus priority access to your 1-minute AI tribute film once V2 launches.",
+    cta: "Select",
+    href: "/create?plan=film",
+    emphasis: "subtle",
+  },
 ]
 
 /** Same footprint + shared baseline: phones align on one horizontal line on md+. */
@@ -79,6 +124,14 @@ function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_STEPS)[numb
     </div>
   )
 
+  if (mockup === "create") {
+    return phone(
+      <IPhoneShell className={`relative z-10 mx-auto w-full ${shellClass}`}>
+        <StepScreenCreate />
+      </IPhoneShell>,
+    )
+  }
+
   if (mockup === "qr") {
     return phone(
       <IPhoneShell className={`relative z-10 mx-auto w-full ${shellClass}`}>
@@ -87,17 +140,9 @@ function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_STEPS)[numb
     )
   }
 
-  if (mockup === "connect") {
-    return phone(
-      <IPhoneShell className={`relative z-10 mx-auto w-full ${shellClass}`}>
-        <StepScreenConnectVote />
-      </IPhoneShell>,
-    )
-  }
-
   return phone(
     <IPhoneShell className={`relative z-10 mx-auto w-full ${shellClass}`}>
-      <StepScreenFilmTribute />
+      <StepScreenConnectVote />
     </IPhoneShell>,
   )
 }
@@ -171,26 +216,26 @@ export default function LandingPage() {
 
       <div className="relative z-10 pt-[76px]">
         {/* Hero: copy + mockups */}
-        <main className="px-5 md:px-10 pt-16 pb-24 md:pt-20 md:pb-32">
+        <main className="px-5 md:px-10 pt-10 pb-20 md:pt-20 md:pb-32">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-12 xl:gap-16 lg:items-center">
+            <div className="grid grid-cols-1 gap-y-12 lg:grid-cols-2 lg:gap-12 xl:gap-16 lg:items-center lg:gap-y-0">
               {/* Value proposition — always on top on mobile; left column on desktop */}
-              <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-left px-1 sm:px-2 pb-10 lg:pb-0">
-                <RevealSection className="w-full max-w-xl mx-auto lg:mx-0 lg:max-w-xl">
-                  <h1 className="text-landing-hero font-semibold text-balance leading-[1.08]">
-                    A Living Space for Eternal Memories.
+              <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-left px-1 sm:px-2 pb-4 sm:pb-10 lg:pb-0">
+                <RevealSection className="w-full max-w-xl mx-auto lg:mx-0 lg:max-w-xl space-y-0">
+                  <h1 className="text-landing-hero font-semibold text-balance max-md:!text-[clamp(1.35rem,4vw,1.7rem)] max-md:!leading-[1.3] max-md:tracking-[-0.015em] md:leading-[1.1]">
+                    A Digital Shrine for Sacred Memory
                   </h1>
-                  <p className="mt-6 md:mt-8 text-base md:text-lg leading-relaxed text-[#b8b8b8] font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance">
-                    For the loved ones and pets we miss. Create a memorial, gather memories via QR, and transform them into AI films.
+                  <p className="mt-5 md:mt-8 text-sm md:text-lg leading-[1.68] md:leading-relaxed text-[#b8b8b8] font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance">
+                    A lasting space for people and pets—preserved with dignity. Share instantly by QR or link: no app, no friction; guests add photos and stories from any phone. A gentle memorial feed where visitors heart and comment on each memory—like a sacred timeline of their legacy.
                   </p>
-                  <p className="mt-4 text-xs md:text-sm leading-relaxed font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance italic text-[#f5f0e8] [text-shadow:0px_2px_10px_rgba(0,0,0,0.8)]">
-                    For those who left footprints on our hearts (People & Pets)
+                  <p className="mt-5 md:mt-4 text-[11px] md:text-sm leading-[1.62] md:leading-relaxed font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance italic text-[#f0ebe3] [text-shadow:0px_2px_10px_rgba(0,0,0,0.8)]">
+                    Footprints, remembrance, and preservation—in one hallowed place.
                   </p>
                 </RevealSection>
-                <RevealSection className="mt-10 w-full max-w-xl mx-auto lg:mx-0">
+                <RevealSection className="mt-12 w-full max-w-xl mx-auto lg:mx-0 pt-2 md:mt-10 md:pt-0 border-t border-white/[0.06] md:border-0">
                   <Link
                     href="/create"
-                    className="inline-flex min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-10 md:px-14 text-[11px] font-semibold tracking-[0.16em] uppercase text-[#0c0c0c] border border-[var(--aeterna-gold)] shadow-[0_16px_50px_-6px_rgba(197,160,89,0.42)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_20px_56px_-4px_rgba(197,160,89,0.5)] transition-all duration-300"
+                    className="inline-flex min-h-[50px] md:min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-8 md:px-14 text-[10px] md:text-[11px] font-semibold tracking-[0.16em] uppercase text-[#0c0c0c] border border-[var(--aeterna-gold)] shadow-[0_16px_50px_-6px_rgba(197,160,89,0.42)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_20px_56px_-4px_rgba(197,160,89,0.5)] transition-all duration-300"
                   >
                     Create a Memorial Now
                   </Link>
@@ -245,16 +290,21 @@ export default function LandingPage() {
         {/* How it works — 3-column scan (icons + bold headers + mockups) */}
         <section
           id="how-it-works"
-          className="scroll-mt-24 bg-landing px-5 py-20 md:px-10 md:py-28"
+          className="scroll-mt-24 bg-landing px-5 py-16 md:px-10 md:py-28"
         >
           <div className="max-w-6xl mx-auto">
-            <RevealSection className="text-center mb-14 md:mb-20">
-              <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">How it works</p>
-              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[#e8e4dc] font-normal tracking-tight text-balance">
-                Scan. Connect. Relive on film.
+            <RevealSection className="text-center mb-12 md:mb-20">
+              <p className="text-[9px] md:text-[10px] tracking-[0.32em] md:tracking-[0.35em] uppercase text-[#737373] mb-5 md:mb-4">
+                How it works
+              </p>
+              <h2 className="font-[var(--font-serif)] text-[1.35rem] leading-[1.35] sm:text-2xl md:text-[2rem] md:leading-tight text-[#e8e4dc] font-normal tracking-tight text-balance px-1">
+                Shrine · Share · Gather
               </h2>
+              <p className="mt-5 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance">
+                Three pillars: a digital shrine for humans and pets; zero-friction access by QR or link with no app; and a community memorial where visitors heart and comment—so the moments that matter stay in view.
+              </p>
               <p className="sr-only">
-                Three ideas: QR and link for guests to share photos and stories; a space to heart and discuss favorites; an optional AI tribute film from the most-loved moments.
+                Core flow in seconds: create a digital shrine, share by QR or link with no download, guests upload from mobile; community hearts and comments on memories.
               </p>
             </RevealSection>
 
@@ -298,7 +348,7 @@ export default function LandingPage() {
               <span className="text-[10px] tracking-[0.3em] uppercase">First seven days</span>
             </div>
             <p className="font-[var(--font-serif)] text-lg md:text-xl text-[#a3a3a3] leading-relaxed">
-              A gentle window to gather what matters. Upgrade when you&apos;re ready to keep their light forever.
+              The first 7 days are a free window to gather memories. Upgrade anytime to preserve the shrine forever.
             </p>
           </RevealSection>
         </section>
@@ -311,7 +361,7 @@ export default function LandingPage() {
           <div className="max-w-3xl mx-auto">
             <RevealSection className="text-center mb-14">
               <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">Pricing</p>
-              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[#e8e4dc] font-normal">Simple. One-time.</h2>
+              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[#e8e4dc] font-normal">Sacred preservation. One-time.</h2>
             </RevealSection>
 
             <p className="text-center text-xs text-[#737373] mb-8">All prices in US dollars (USD).</p>
@@ -325,7 +375,23 @@ export default function LandingPage() {
                         : "border-white/[0.06] bg-white/[0.02]"
                     }`}
                   >
-                    <p className="font-[var(--font-serif)] text-3xl md:text-4xl text-[#f4f1ea] tabular-nums">{plan.price}</p>
+                    <p className="font-[var(--font-display)] text-[10px] tracking-[0.18em] text-[#c4a86a] uppercase mb-1">
+                      {plan.tierName}
+                    </p>
+                    {plan.planLabel ? (
+                      <p className="font-[var(--font-display)] text-[9px] tracking-[0.22em] text-[#9a8a6e] uppercase mb-2">
+                        {plan.planLabel}
+                      </p>
+                    ) : null}
+                    {plan.statusTag ? (
+                      <span className="mb-3 inline-flex max-w-[14rem] items-center justify-center self-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]">
+                        {plan.statusTag}
+                      </span>
+                    ) : null}
+                    <p className="font-[var(--font-serif)] text-3xl md:text-4xl text-[#f4f1ea] tabular-nums">
+                      {plan.price}{" "}
+                      <span className="text-lg font-normal text-white/35 md:text-xl">USD</span>
+                    </p>
                     <p className="mt-4 font-[var(--font-sans)] text-sm text-[#a3a3a3] leading-snug">{plan.value}</p>
                     <div className="flex-1" />
                     <Link
@@ -353,7 +419,7 @@ export default function LandingPage() {
           <div className="max-w-2xl mx-auto">
             <RevealSection className="text-center mb-12">
               <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">FAQ</p>
-              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[#e8e4dc] font-normal">Questions</h2>
+              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[#e8e4dc] font-normal">Guidance</h2>
             </RevealSection>
             <div className="space-y-2">
               {FAQ_ITEMS.map((faq, i) => (

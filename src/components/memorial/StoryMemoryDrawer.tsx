@@ -10,6 +10,7 @@ import {
   reportStoryCommentAction,
   type StoryCommentPublic,
 } from "@/app/actions/storyComments"
+import { parseUuidString } from "@/lib/uuid"
 
 type Story = {
   id: string
@@ -84,13 +85,15 @@ export function StoryMemoryDrawer({
   }, [nameStorageKey])
 
   const loadComments = useCallback(() => {
-    if (!eventId) {
+    const eid = parseUuidString(eventId)
+    const sid = parseUuidString(story.id)
+    if (!eid || !sid) {
       setCommentsLoading(false)
       setComments([])
       return
     }
     setCommentsLoading(true)
-    getStoryCommentsAction(story.id, eventId).then((res) => {
+    getStoryCommentsAction(sid, eid).then((res) => {
       setCommentsLoading(false)
       if (res.ok) setComments(res.comments)
       else setComments([])
@@ -132,13 +135,21 @@ export function StoryMemoryDrawer({
   }, [nameStorageKey])
 
   const handleSend = useCallback(async () => {
-    if (!eventId || !body.trim()) return
+    const photoId = parseUuidString(story?.id)
+    const evId = parseUuidString(eventId)
+    if (!photoId || !evId) {
+      setSendError("Something went wrong. Refresh the page and try again.")
+      return
+    }
+    if (!body.trim()) return
     setSendError(null)
     setSending(true)
     const visitorName =
       authorName.trim() || (sessionUser ? "Guest" : "Anonymous")
     try {
-      const res = await addStoryCommentAction(story.id, eventId, visitorName, body)
+      // TODO: remove after verifying FK + IDs in production (temporary diagnostics).
+      console.log("Sending Comment to Photo ID:", photoId)
+      const res = await addStoryCommentAction(photoId, evId, visitorName, body)
       if (res.ok) {
         setComments((prev) => {
           if (prev.some((c) => c.id === res.comment.id)) return prev
@@ -152,7 +163,7 @@ export function StoryMemoryDrawer({
     } finally {
       setSending(false)
     }
-  }, [story.id, eventId, authorName, body, persistName, sessionUser])
+  }, [story?.id, eventId, authorName, body, persistName, sessionUser])
 
   const handleReport = async (commentId: string) => {
     setReportingId(commentId)

@@ -1,6 +1,5 @@
-/** RFC 4122 UUID (any version), case-insensitive. */
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+/** Standard 8-4-4-4-12 hex UUID, case-insensitive (matches Postgres uuid). */
+const UUID_RE = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
 
 /**
  * Returns a lowercase canonical UUID string, or null if the value is missing or not a valid UUID.

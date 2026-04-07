@@ -7,10 +7,13 @@ import { supabase } from "@/lib/supabase/browser"
 /**
  * Single source of truth for the browser Supabase user.
  * Prefer getUser() (validates JWT) over getSession() alone (can be briefly stale after OAuth).
+ *
+ * `ready` becomes true after the first auth resolution attempt and stays true after OAuth
+ * (SIGNED_IN / TOKEN_REFRESHED) so UI never sticks on “Checking your account…”.
  */
 export function useSupabaseUser() {
   const [user, setUser] = useState<User | null>(null)
-  /** True after the first getUser() + subscription setup completes. */
+  /** True after initial auth check completes; also asserted on every auth state change. */
   const [ready, setReady] = useState(false)
 
   const refresh = useCallback(async (): Promise<User | null> => {
@@ -28,20 +31,39 @@ export function useSupabaseUser() {
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      await refresh()
-      if (!cancelled) setReady(true)
-    })()
+
+    const init = async () => {
+      try {
+        await refresh()
+      } catch {
+        // Network or transient errors — still unblock UI; listener will sync session.
+      } finally {
+        if (!cancelled) setReady(true)
+      }
+    }
+    void init()
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_OUT" || !session) {
         setUser(null)
+        setReady(true)
         return
       }
-      const { data } = await supabase.auth.getUser()
-      setUser(data.user ?? session.user)
+
+      // OAuth return, refresh, tab focus: always re-resolve user and unblock UI.
+      try {
+        const { data, error } = await supabase.auth.getUser()
+        if (error) {
+          setUser(session.user)
+        } else {
+          setUser(data.user ?? session.user)
+        }
+      } catch {
+        setUser(session.user)
+      }
+      setReady(true)
     })
 
     return () => {

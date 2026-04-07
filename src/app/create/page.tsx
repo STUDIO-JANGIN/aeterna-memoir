@@ -203,12 +203,22 @@ function CreateEventForm() {
   const [showResumeToast, setShowResumeToast] = useState(false)
   const resumeToastAfterAuthRef = useRef(false)
   const profileInputRef = useRef<HTMLInputElement>(null)
+  const wizardStepRef = useRef(wizardStep)
+  const memorialTypeRef = useRef(memorialType)
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const planParam = searchParams.get("plan")?.trim().toLowerCase() ?? null
   const planLockedFromUrl = parsePlanQueryParam(planParam) !== null
   const effectiveWizardSteps = WIZARD_STEPS_FULL
+
+  useEffect(() => {
+    wizardStepRef.current = wizardStep
+  }, [wizardStep])
+
+  useEffect(() => {
+    memorialTypeRef.current = memorialType
+  }, [memorialType])
 
   useEffect(() => {
     const mapped = parsePlanQueryParam(planParam)
@@ -355,24 +365,57 @@ function CreateEventForm() {
     const code = searchParams.get("code")
     if (!code) return
     let cancelled = false
+    let fallbackTimer: number | undefined
     const planQs = searchParams.get("plan")
+
     supabase.auth.exchangeCodeForSession(code).then(async ({ error }) => {
       if (cancelled) return
       if (!error) {
         await refreshAuthUser()
+        router.refresh()
         const draft = readCreateDraft()
         if (draft?.memorialType && draft.wizardStep === 9) {
           setWizardStep(10)
           writeCreateDraft({ ...draft, wizardStep: 10 })
         }
+        // If React state lags behind the new session (common right after OAuth), resync once.
+        fallbackTimer = window.setTimeout(async () => {
+          if (cancelled) return
+          const { data: udata } = await supabase.auth.getUser()
+          if (udata.user) {
+            await refreshAuthUser()
+            router.refresh()
+          } else {
+            window.location.reload()
+          }
+        }, 2000)
       }
       const path = planQs ? `/create?plan=${encodeURIComponent(planQs)}` : "/create"
       window.history.replaceState({}, "", path)
     })
     return () => {
       cancelled = true
+      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer)
     }
-  }, [searchParams, refreshAuthUser])
+  }, [searchParams, refreshAuthUser, router])
+
+  /** Wizard-level listener: Google popup closes with SIGNED_IN before React state catches up. */
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event !== "SIGNED_IN") return
+      if (!session?.user) return
+      await refreshAuthUser()
+      router.refresh()
+      if (memorialTypeRef.current && wizardStepRef.current === 9) {
+        setWizardStep(10)
+        const d = readCreateDraft()
+        if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 10 })
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [refreshAuthUser, router])
 
   useEffect(() => {
     if (!profileFile) {

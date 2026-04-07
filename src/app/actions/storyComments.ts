@@ -1,6 +1,7 @@
 "use server"
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { parseUuidString } from "@/lib/uuid"
 
 const MAX_TEXT = 500
 const MAX_NAME = 60
@@ -20,7 +21,9 @@ export async function getStoryCommentsAction(
   photoId: string,
   eventId: string,
 ): Promise<StoryCommentsResult> {
-  if (!photoId?.trim() || !eventId?.trim()) {
+  const pid = parseUuidString(photoId)
+  const eid = parseUuidString(eventId)
+  if (!pid || !eid) {
     return { ok: true, comments: [] }
   }
 
@@ -28,17 +31,17 @@ export async function getStoryCommentsAction(
   const { data: storyRow, error: storyErr } = await supabase
     .from("stories")
     .select("id, event_id, is_approved")
-    .eq("id", photoId.trim())
+    .eq("id", pid)
     .maybeSingle()
-  if (storyErr || !storyRow || storyRow.event_id !== eventId.trim() || storyRow.is_approved !== true) {
+  if (storyErr || !storyRow || storyRow.event_id !== eid || storyRow.is_approved !== true) {
     return { ok: true, comments: [] }
   }
 
   const { data, error } = await supabase
     .from("comments")
     .select("id, visitor_name, text, created_at")
-    .eq("photo_id", photoId)
-    .eq("event_id", eventId)
+    .eq("photo_id", pid)
+    .eq("event_id", eid)
     .eq("is_reported", false)
     .order("created_at", { ascending: true })
 

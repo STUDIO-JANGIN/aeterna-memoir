@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { ArrowUp, Flag } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
@@ -10,7 +10,7 @@ import {
   reportStoryCommentAction,
   type StoryCommentPublic,
 } from "@/app/actions/storyComments"
-import { parseUuidString } from "@/lib/uuid"
+import { coerceIdString, parseUuidString } from "@/lib/uuid"
 
 type Story = {
   id: string
@@ -67,6 +67,10 @@ export function StoryMemoryDrawer({
   const [sendError, setSendError] = useState<string | null>(null)
   const [reportingId, setReportingId] = useState<string | null>(null)
 
+  /** stories.id from DB (UUID text) — never pass objects/numbers raw into server actions */
+  const photoStoryId = useMemo(() => coerceIdString(story?.id), [story?.id])
+  const memorialEventId = useMemo(() => coerceIdString(eventId), [eventId])
+
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)")
     setIsDesktop(mq.matches)
@@ -85,8 +89,8 @@ export function StoryMemoryDrawer({
   }, [nameStorageKey])
 
   const loadComments = useCallback(() => {
-    const eid = parseUuidString(eventId)
-    const sid = parseUuidString(story.id)
+    const eid = parseUuidString(memorialEventId)
+    const sid = parseUuidString(photoStoryId)
     if (!eid || !sid) {
       setCommentsLoading(false)
       setComments([])
@@ -98,23 +102,23 @@ export function StoryMemoryDrawer({
       if (res.ok) setComments(res.comments)
       else setComments([])
     })
-  }, [story.id, eventId])
+  }, [photoStoryId, memorialEventId])
 
   useEffect(() => {
     loadComments()
   }, [loadComments])
 
   useEffect(() => {
-    if (!eventId || !story.id) return
+    if (!memorialEventId || !photoStoryId) return
     const channel = supabase
-      .channel(`comments-${eventId}-${story.id}`)
+      .channel(`comments-${memorialEventId}-${photoStoryId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "comments",
-          filter: `photo_id=eq.${story.id}`,
+          filter: `photo_id=eq.${photoStoryId}`,
         },
         () => {
           loadComments()
@@ -124,7 +128,7 @@ export function StoryMemoryDrawer({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [eventId, story.id, loadComments])
+  }, [memorialEventId, photoStoryId, loadComments])
 
   const persistName = useCallback((name: string) => {
     try {
@@ -135,9 +139,22 @@ export function StoryMemoryDrawer({
   }, [nameStorageKey])
 
   const handleSend = useCallback(async () => {
-    const photoId = parseUuidString(story?.id)
-    const evId = parseUuidString(eventId)
+    const rawPhoto = photoStoryId
+    const rawEvent = memorialEventId
+    if (!rawPhoto || typeof rawPhoto !== "string") {
+      console.error("Invalid Photo ID:", rawPhoto)
+      setSendError("Something went wrong. Refresh the page and try again.")
+      return
+    }
+    if (!rawEvent || typeof rawEvent !== "string") {
+      console.error("Invalid Event ID:", rawEvent)
+      setSendError("Something went wrong. Refresh the page and try again.")
+      return
+    }
+    const photoId = parseUuidString(rawPhoto)
+    const evId = parseUuidString(rawEvent)
     if (!photoId || !evId) {
+      console.error("Invalid Photo ID (not UUID):", rawPhoto, "event:", rawEvent)
       setSendError("Something went wrong. Refresh the page and try again.")
       return
     }
@@ -147,7 +164,6 @@ export function StoryMemoryDrawer({
     const visitorName =
       authorName.trim() || (sessionUser ? "Guest" : "Anonymous")
     try {
-      // TODO: remove after verifying FK + IDs in production (temporary diagnostics).
       console.log("Sending Comment to Photo ID:", photoId)
       const res = await addStoryCommentAction(photoId, evId, visitorName, body)
       if (res.ok) {
@@ -163,7 +179,7 @@ export function StoryMemoryDrawer({
     } finally {
       setSending(false)
     }
-  }, [story?.id, eventId, authorName, body, persistName, sessionUser])
+  }, [photoStoryId, memorialEventId, authorName, body, persistName, sessionUser])
 
   const handleReport = async (commentId: string) => {
     setReportingId(commentId)

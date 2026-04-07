@@ -66,9 +66,19 @@ export async function addStoryCommentAction(
   visitorName: string,
   text: string,
 ): Promise<AddCommentResult> {
+  if (!photoId || typeof photoId !== "string") {
+    console.error("Invalid Photo ID:", photoId)
+    return { ok: false, error: "Invalid photo. Refresh the page and try again." }
+  }
+  if (!eventId || typeof eventId !== "string") {
+    console.error("Invalid Event ID:", eventId)
+    return { ok: false, error: "Invalid event. Refresh the page and try again." }
+  }
+
   const pid = parseUuidString(photoId)
   const eid = parseUuidString(eventId)
   if (!pid || !eid) {
+    console.error("Invalid Photo ID (not a UUID):", photoId, "event:", eventId)
     return { ok: false, error: "Something went wrong. Refresh the page and try again." }
   }
 
@@ -90,6 +100,11 @@ export async function addStoryCommentAction(
   }
   if (story.is_approved !== true) {
     return { ok: false, error: "You can share a memory once this photo has been approved." }
+  }
+
+  if (!pid || typeof pid !== "string") {
+    console.error("Invalid Photo ID:", pid)
+    return { ok: false, error: "Invalid photo. Refresh the page and try again." }
   }
 
   const { data: inserted, error: insertErr } = await supabase

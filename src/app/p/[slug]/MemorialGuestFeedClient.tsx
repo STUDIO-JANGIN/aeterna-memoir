@@ -30,6 +30,7 @@ import {
   formatMemorialCountdownDisplay,
 } from "@/components/memorial/MemorialTrialCountdown"
 import { buildGlobalShareMessage } from "@/components/MemorialShareActions"
+import { coerceIdString } from "@/lib/uuid"
 
 const spring = { type: "spring" as const, stiffness: 300, damping: 30 }
 const springJelly = { type: "spring" as const, stiffness: 400, damping: 22 }
@@ -363,10 +364,16 @@ export default function GuestFeedPage({ params }: PageProps) {
           bank_info: eventData.bank_info ?? null,
           invite_pdf_url: eventData.invite_pdf_url ?? null,
         })
-        setStories(list)
+        const storiesNormalized: Story[] = list.map((s) => ({
+          ...s,
+          id: coerceIdString(s.id),
+          created_at:
+            typeof s.created_at === "string" ? s.created_at : String(s.created_at ?? ""),
+        }))
+        setStories(storiesNormalized)
         const map: Record<string, number> = {}
-        list.forEach((s) => {
-          map[s.id] = s.likes_count ?? 0
+        storiesNormalized.forEach((s) => {
+          if (s.id) map[s.id] = s.likes_count ?? 0
         })
         setLikesMap(map)
       }
@@ -1501,9 +1508,9 @@ export default function GuestFeedPage({ params }: PageProps) {
       <AnimatePresence mode="wait">
         {viewerStory && event?.id && (
           <StoryMemoryDrawer
-            key="story-viewer"
+            key={`story-viewer-${coerceIdString(viewerStory.id)}`}
             story={viewerStory}
-            eventId={event.id}
+            eventId={coerceIdString(event.id)}
             sessionUser={sessionUser}
             likesCount={likesMap[viewerStory.id] ?? viewerStory.likes_count ?? 0}
             isHearted={heartedIds.has(viewerStory.id)}

@@ -147,7 +147,21 @@ export async function getPublicMemorialPageDataAction(slug: string): Promise<Get
       if (storiesError) {
         logSupabaseDetailedError("getPublicMemorialPageDataAction.stories", storiesError)
       }
-      const stories = (storiesError ? [] : (storiesData ?? [])) as PublicMemorialStory[]
+      const rawStories = storiesError ? [] : (storiesData ?? [])
+      const stories: PublicMemorialStory[] = rawStories.map((row: Record<string, unknown>) => ({
+        id: String(row.id ?? ""),
+        author_name: (row.author_name as string | null) ?? null,
+        story_text: (row.story_text as string | null) ?? null,
+        image_url: (row.image_url as string | null) ?? null,
+        thumb_url: (row.thumb_url as string | null) ?? undefined,
+        likes_count: (row.likes_count as number | null) ?? null,
+        created_at:
+          typeof row.created_at === "string"
+            ? row.created_at
+            : row.created_at != null
+              ? String(row.created_at)
+              : new Date().toISOString(),
+      }))
 
       return {
         ok: true,

@@ -29,7 +29,6 @@ import {
 } from "@/lib/createFlowStorage"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
 import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
-import type { User } from "@supabase/supabase-js"
 
 /** URL `plan=` → internal tier. Legacy: `basic` = Plus; marketing: `forever` = Plus, `film` = Premium. */
 function parsePlanQueryParam(param: string | null): StoragePlan | null {
@@ -41,7 +40,15 @@ function parsePlanQueryParam(param: string | null): StoragePlan | null {
   return null
 }
 
-const WIZARD_STEPS_FULL = 6
+const WIZARD_STEPS_FULL = 7
+
+/** Matches pricing cards on the landing page (`statusTag`). */
+const stepOptionalTagClass =
+  "mb-2 inline-flex items-center justify-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]"
+
+/** Inline pill next to plan titles (e.g. Eternal Film). */
+const planStatusTagClass =
+  "inline-flex shrink-0 items-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]"
 
 /** 1 = forward (enter from right), -1 = back (enter from left). Drives X-axis spring slides. */
 const WIZARD_STEP_SLIDE_VARIANTS: Variants = {
@@ -86,9 +93,9 @@ const PLAN_SUMMARY: Record<
     benefits: ["Every photo and story preserved for good", "A permanent, shareable memorial home"],
   },
   premium: {
-    title: "The Eternal Film (V2)",
+    title: "The Eternal Film",
     price: "$39.99",
-    tagline: "Everything in Legacy, plus priority access to your 1-minute AI tribute film once V2 launches.",
+    tagline: "Eternal Legacy + AI Film Pre-Order",
     benefits: [
       "Everything in Eternal Legacy",
       "Priority access to your AI tribute film when V2 launches — pre-order today",
@@ -189,25 +196,6 @@ function focusNextField(el: HTMLElement | null) {
   }, 300)
 }
 
-function firstNameFromUser(u: User | null | undefined): string {
-  if (!u) return "friend"
-  const meta = u.user_metadata as { full_name?: string; name?: string } | undefined
-  const full =
-    typeof meta?.full_name === "string"
-      ? meta.full_name
-      : typeof meta?.name === "string"
-        ? meta.name
-        : ""
-  const first = full.trim().split(/\s+/)[0]
-  if (first) return first
-  const email = u.email
-  if (email?.includes("@")) {
-    const local = email.split("@")[0]?.replace(/\./g, " ").trim() ?? ""
-    if (local) return local.split(/\s+/)[0] ?? "friend"
-  }
-  return "friend"
-}
-
 const stepPresence = artisanPresence
 
 function CreateEventForm() {
@@ -253,14 +241,14 @@ function CreateEventForm() {
   /** When URL locked a plan, user can open full plan grid to switch. */
   const [showPlanChangeOptions, setShowPlanChangeOptions] = useState(false)
 
-  const [storagePlan, setStoragePlan] = useState<StoragePlan>("premium")
+  const [storagePlan, setStoragePlan] = useState<StoragePlan>("plus")
   const [loading, setLoading] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [showSuccessPopup, setShowSuccessPopup] = useState(false)
   const [createdSlug, setCreatedSlug] = useState<string | null>(null)
   const [pendingCheckout, setPendingCheckout] = useState<PendingCheckoutV1 | null>(null)
   const [showResumeToast, setShowResumeToast] = useState(false)
-  const [welcomeHome, setWelcomeHome] = useState<{ name: string } | null>(null)
+  const [welcomeSacredOverlay, setWelcomeSacredOverlay] = useState(false)
   const resumeToastAfterAuthRef = useRef(false)
   const welcomeLastShownAtRef = useRef(0)
   const profileInputRef = useRef<HTMLInputElement>(null)
@@ -275,7 +263,7 @@ function CreateEventForm() {
   const deathDRef = useRef<HTMLSelectElement>(null)
   const wizardStepRef = useRef(wizardStep)
   const memorialTypeRef = useRef(memorialType)
-  /** When user taps Back from Plan (6) → Account (5), skip the OAuth auto-advance effect so they can stay on 5. */
+  /** When user taps Back from Plan (7) → Account (6), skip the OAuth auto-advance effect so they can stay on 6. */
   const blockPlanAutoAdvanceRef = useRef(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -293,6 +281,7 @@ function CreateEventForm() {
     const t = window.setTimeout(() => {
       if (wizardStep === 1) nameInputRef.current?.focus()
       if (wizardStep === 4) locationInputRef.current?.focus()
+      if (wizardStep === 5) fundInputRef.current?.focus()
     }, 80)
     return () => window.clearTimeout(t)
   }, [wizardStep, memorialType])
@@ -405,10 +394,10 @@ function CreateEventForm() {
   }, [showResumeToast])
 
   useEffect(() => {
-    if (!welcomeHome) return
-    const t = window.setTimeout(() => setWelcomeHome(null), 2800)
+    if (!welcomeSacredOverlay) return
+    const t = window.setTimeout(() => setWelcomeSacredOverlay(false), 2800)
     return () => window.clearTimeout(t)
-  }, [welcomeHome])
+  }, [welcomeSacredOverlay])
 
   useEffect(() => {
     if (!pendingCheckout) return
@@ -422,7 +411,7 @@ function CreateEventForm() {
     if (typeof window === "undefined") return
     if (!memorialType) return
     const draft: CreateDraftV1 = {
-      v: 3,
+      v: 4,
       memorialType,
       wizardStep,
       name,
@@ -476,10 +465,10 @@ function CreateEventForm() {
         await refreshAuthUser()
         router.refresh()
         const draft = readCreateDraft()
-        if (draft?.memorialType && draft.wizardStep === 5) {
+        if (draft?.memorialType && draft.wizardStep === 6) {
           setStepSlideDir(1)
-          setWizardStep(6)
-          writeCreateDraft({ ...draft, wizardStep: 6 })
+          setWizardStep(7)
+          writeCreateDraft({ ...draft, wizardStep: 7 })
         }
         // If React state lags behind the new session (common right after OAuth), resync once.
         fallbackTimer = window.setTimeout(async () => {
@@ -512,15 +501,15 @@ function CreateEventForm() {
       const now = Date.now()
       if (now - welcomeLastShownAtRef.current > 800) {
         welcomeLastShownAtRef.current = now
-        setWelcomeHome({ name: firstNameFromUser(session.user) })
+        setWelcomeSacredOverlay(true)
       }
       await refreshAuthUser()
       router.refresh()
-      if (memorialTypeRef.current && wizardStepRef.current === 5) {
+      if (memorialTypeRef.current && wizardStepRef.current === 6) {
         setStepSlideDir(1)
-        setWizardStep(6)
+        setWizardStep(7)
         const d = readCreateDraft()
-        if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 6 })
+        if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 7 })
       }
     })
     return () => subscription.unsubscribe()
@@ -568,9 +557,9 @@ function CreateEventForm() {
     clearPendingCheckout()
     setPendingCheckout(null)
     setUser(null)
-    if (wizardStep > 6) {
+    if (wizardStep >= 7) {
       setStepSlideDir(1)
-      setWizardStep(5)
+      setWizardStep(6)
     }
   }
 
@@ -602,7 +591,7 @@ function CreateEventForm() {
     const mapped = parsePlanQueryParam(
       typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("plan") : null
     )
-    setStoragePlan(mapped ?? "premium")
+    setStoragePlan(mapped ?? "plus")
     setCreateError(null)
   }
 
@@ -653,7 +642,7 @@ function CreateEventForm() {
   const buildCreateDraft = (stepForDraft: number): CreateDraftV1 | null => {
     if (!memorialType) return null
     return {
-      v: 3,
+      v: 4,
       memorialType,
       wizardStep: stepForDraft,
       name,
@@ -682,10 +671,11 @@ function CreateEventForm() {
       case 2:
       case 3:
       case 4:
-        return true
       case 5:
-        return authReady
+        return true
       case 6:
+        return authReady
+      case 7:
         return true
       default:
         return false
@@ -701,8 +691,8 @@ function CreateEventForm() {
     setCreateError(null)
     if (!memorialType) return
 
-    /** Step 6 + URL-locked plan: first Back closes the plan grid and returns to summary. */
-    if (wizardStep === 6 && planLockedFromUrl && showPlanChangeOptions) {
+    /** Step 7 + URL-locked plan: first Back closes the plan grid and returns to summary. */
+    if (wizardStep === 7 && planLockedFromUrl && showPlanChangeOptions) {
       setShowPlanChangeOptions(false)
       window.scrollTo({ top: 0, behavior: "smooth" })
       return
@@ -711,7 +701,7 @@ function CreateEventForm() {
     if (wizardStep > 1) {
       setStepSlideDir(-1)
       const nextStep = wizardStep - 1
-      if (wizardStep === 6 && nextStep === 5) {
+      if (wizardStep === 7 && nextStep === 6) {
         blockPlanAutoAdvanceRef.current = true
       }
       const d = buildCreateDraft(nextStep)
@@ -729,7 +719,7 @@ function CreateEventForm() {
     if (!canContinue() || !memorialType) return
     setCreateError(null)
     if (wizardStep < effectiveWizardSteps) {
-      if (wizardStep === 5) blockPlanAutoAdvanceRef.current = false
+      if (wizardStep === 6) blockPlanAutoAdvanceRef.current = false
       setStepSlideDir(1)
       const d = buildCreateDraft(wizardStep + 1)
       if (d) writeCreateDraft(d)
@@ -737,13 +727,13 @@ function CreateEventForm() {
     }
   }
 
-  /** After Google OAuth, advance from Account (5) → Plan (6) as soon as the session is confirmed. */
+  /** After Google OAuth, advance from Account (6) → Plan (7) as soon as the session is confirmed. */
   useEffect(() => {
-    if (wizardStep !== 5 || !signedIn || !memorialType || !authReady) return
+    if (wizardStep !== 6 || !signedIn || !memorialType || !authReady) return
     if (blockPlanAutoAdvanceRef.current) return
     setStepSlideDir(1)
-    setWizardStep(6)
-    const d = buildCreateDraft(6)
+    setWizardStep(7)
+    const d = buildCreateDraft(7)
     if (d) writeCreateDraft(d)
   }, [wizardStep, signedIn, memorialType, authReady])
 
@@ -890,7 +880,7 @@ function CreateEventForm() {
 
   const onPrimaryPress = () => {
     if (!memorialType) return
-    if (wizardStep === 5 && authReady && !signedIn) {
+    if (wizardStep === 6 && authReady && !signedIn) {
       void handleContinueWithGoogle()
       return
     }
@@ -902,7 +892,7 @@ function CreateEventForm() {
 
   const isPlanSummaryView =
     memorialType !== null &&
-    wizardStep === 6 &&
+    wizardStep === 7 &&
     planLockedFromUrl &&
     !showPlanChangeOptions
 
@@ -917,7 +907,7 @@ function CreateEventForm() {
     Boolean(createError) &&
       !(
       isMemorialSignInFooterNoise(createError) &&
-      (wizardStep === 5 || wizardStep === 6 || signedIn)
+      (wizardStep === 6 || wizardStep === 7 || signedIn)
     )
 
   return (
@@ -943,7 +933,7 @@ function CreateEventForm() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {welcomeHome && (
+        {welcomeSacredOverlay && (
           <motion.div
             role="status"
             aria-live="polite"
@@ -960,7 +950,7 @@ function CreateEventForm() {
               transition={ARTISAN_SPRING}
               className="max-w-md text-center font-[var(--font-serif)] text-2xl font-normal tracking-[0.04em] text-[#f4f1ea] md:text-[1.65rem]"
             >
-              Welcome home, {welcomeHome.name}
+              Welcome to your sacred space.
             </motion.p>
           </motion.div>
         )}
@@ -1290,54 +1280,74 @@ function CreateEventForm() {
               {wizardStep === 4 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
                   <div className="space-y-3">
-                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
-                      Memorial Service &amp; Support Family
-                    </h2>
-                    <p className="text-base text-white/45 leading-relaxed">
-                      Service details or a support link. You can skip and add these later.
-                    </p>
+                    <div className="flex flex-col items-center text-center">
+                      <span className={stepOptionalTagClass}>Optional</span>
+                      <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
+                        Memorial Service
+                      </h2>
+                      <p className="mt-3 text-base text-white/45 leading-relaxed max-w-md">
+                        Please input service details. You can skip and add later.
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-10">
-                    <div className="space-y-6">
-                      <h3 className={stepSectionTitleClass}>Location</h3>
-                      <input
-                        ref={locationInputRef}
-                        id="memorial-location-opt"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && location.trim()) {
-                            e.preventDefault()
-                            focusNextField(fundInputRef.current)
-                          }
-                        }}
-                        placeholder="Place and time — or city"
-                        autoComplete="off"
-                        className={ghostLineInputClass}
-                        aria-label="Location"
-                      />
-                    </div>
-                    <div className="space-y-6">
-                      <h3 className={stepSectionTitleClass}>Support</h3>
-                      <input
-                        ref={fundInputRef}
-                        id="memorial-support-opt"
-                        type="text"
-                        inputMode="url"
-                        value={fundLink}
-                        onChange={(e) => setFundLink(e.target.value)}
-                        placeholder="Fund or charity link"
-                        autoComplete="off"
-                        className={ghostLineInputClass}
-                        aria-label="Support"
-                      />
-                    </div>
+                  <div className="space-y-6">
+                    <h3 className={stepSectionTitleClass}>Location</h3>
+                    <input
+                      ref={locationInputRef}
+                      id="memorial-location-opt"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          goNext()
+                        }
+                      }}
+                      placeholder="Place and time — or city"
+                      autoComplete="off"
+                      className={ghostLineInputClass}
+                      aria-label="Location"
+                    />
                   </div>
                 </div>
               )}
 
               {wizardStep === 5 && (
-                <div className="space-y-8 pt-4 text-center">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                  <div className="space-y-3 text-center">
+                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
+                      Support Family
+                    </h2>
+                    <p className="text-base text-white/45 leading-relaxed max-w-md mx-auto">
+                      Please add a support link. You can skip and add later.
+                    </p>
+                  </div>
+                  <div className="space-y-6">
+                    <h3 className={stepSectionTitleClass}>Support</h3>
+                    <input
+                      ref={fundInputRef}
+                      id="memorial-support-opt"
+                      type="text"
+                      inputMode="url"
+                      value={fundLink}
+                      onChange={(e) => setFundLink(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          goNext()
+                        }
+                      }}
+                      placeholder="Fund or charity link"
+                      autoComplete="off"
+                      className={ghostLineInputClass}
+                      aria-label="Support"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 6 && (
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-8 pt-4 text-center">
                   <div>
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
                       Claim your memorial
@@ -1389,7 +1399,7 @@ function CreateEventForm() {
               )}
 
               {isPlanSummaryView && (
-                <div className="space-y-6 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-6 pt-4">
                   <div>
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
                       You&apos;re almost there
@@ -1406,7 +1416,14 @@ function CreateEventForm() {
                         <p className="text-[10px] tracking-[0.32em] uppercase text-[var(--aeterna-gold)]/85">Your selected plan</p>
                         <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
                           <div>
-                            <p className="font-[var(--font-serif)] text-2xl md:text-3xl text-[#f4f1ea] tracking-tight">{summary.title}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-[var(--font-serif)] text-2xl md:text-3xl text-[#f4f1ea] tracking-tight">
+                                {summary.title}
+                              </p>
+                              {storagePlan === "premium" && (
+                                <span className={planStatusTagClass}>Coming Soon</span>
+                              )}
+                            </div>
                             <p className="mt-1 text-sm text-white/50">{summary.tagline}</p>
                           </div>
                           <div className="text-right">
@@ -1435,8 +1452,8 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 6 && (!isPlanSummaryView || showPlanChangeOptions) && (
-                <div className="space-y-6 pt-4">
+              {wizardStep === 7 && (!isPlanSummaryView || showPlanChangeOptions) && (
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-6 pt-4">
                   {planLockedFromUrl && showPlanChangeOptions && (
                     <button
                       type="button"
@@ -1462,8 +1479,8 @@ function CreateEventForm() {
                         { id: "plus" as const, title: "Eternal Legacy", sub: "Preserved forever. No expiration.", price: "$19.99" },
                         {
                           id: "premium" as const,
-                          title: "The Eternal Film (V2)",
-                          sub: "Legacy + AI film pre-order · V2",
+                          title: "The Eternal Film",
+                          sub: "Eternal Legacy + AI Film Pre-Order",
                           price: "$39.99",
                         },
                       ] as const
@@ -1477,8 +1494,13 @@ function CreateEventForm() {
                         }`}
                       >
                         <div className="flex items-baseline justify-between gap-2">
-                          <span className="text-lg text-[#f4f1ea]">{p.title}</span>
-                          <span className="text-[var(--aeterna-gold)] tabular-nums">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <span className="text-lg text-[#f4f1ea]">{p.title}</span>
+                            {p.id === "premium" ? (
+                              <span className={planStatusTagClass}>Coming Soon</span>
+                            ) : null}
+                          </div>
+                          <span className="shrink-0 text-[var(--aeterna-gold)] tabular-nums">
                             {p.price} <span className="text-[10px] font-normal text-white/35">USD</span>
                           </span>
                         </div>
@@ -1494,8 +1516,8 @@ function CreateEventForm() {
         )}
       </div>
 
-      {/* Fixed thumb zone */}
-      {memorialType !== null && (
+      {/* Fixed thumb zone — hidden on “Invitation ready” so it doesn’t stack above the success overlay */}
+      {memorialType !== null && !showSuccessPopup && (
         <div className="!pointer-events-auto fixed bottom-0 left-0 right-0 !z-[9999] border-t-[0.5px] border-[rgba(255,255,255,0.1)] bg-[rgba(3,3,3,0.96)] px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] backdrop-blur-[20px]">
           <div className="mx-auto w-full max-w-lg space-y-3">
             {showFooterCreateError && (
@@ -1521,9 +1543,9 @@ function CreateEventForm() {
               >
                 {loading
                   ? "Creating…"
-                  : wizardStep === 5 && !authReady
+                  : wizardStep === 6 && !authReady
                     ? "Checking account…"
-                    : wizardStep === 5 && !signedIn
+                    : wizardStep === 6 && !signedIn
                       ? "Continue the Story with Google"
                       : wizardStep < effectiveWizardSteps
                     ? "Continue the Story"

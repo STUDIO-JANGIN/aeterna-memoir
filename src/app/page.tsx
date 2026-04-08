@@ -64,14 +64,14 @@ const HOW_IT_WORKS_STEPS = [
     mockup: "create" as const,
   },
   {
-    title: "Scan & Share",
+    title: "Scan · Share",
     description:
       "Place a QR code at the service or share a link. Guests upload photos and stories instantly—no app required.",
     Icon: QrCode,
     mockup: "qr" as const,
   },
   {
-    title: "Connect & Relive",
+    title: "Connect · Relive",
     description:
       "The community hearts their favorite memories, and the most-loved stories rise to the top.",
     Icon: Heart,

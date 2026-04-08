@@ -7,8 +7,8 @@ export type MemorialType = "person" | "pet"
 export type StoragePlan = "free" | "plus" | "premium"
 
 export type CreateDraftV1 = {
-  /** `3` = 6-step flow (name → photo → dates → service → account → plan). Older stored `v: 2` drafts are migrated on read. */
-  v: 3
+  /** `4` = 7-step flow (… service → support → account → plan). `3` = legacy 6-step; migrated on read. */
+  v: 3 | 4
   memorialType: MemorialType | null
   wizardStep: number
   name: string
@@ -63,8 +63,9 @@ export function clearPendingCheckout(): void {
   localStorage.removeItem(LS_PENDING_CHECKOUT_KEY)
 }
 
-/** Create wizard: 6 steps — service/location is step 4; account 5; plan 6. */
-const DRAFT_MAX_STEP = 6
+/** Create wizard: 7 steps — service 4; support 5; account 6; plan 7. */
+const DRAFT_MAX_STEP = 7
+const LEGACY_V3_MAX_STEP = 6
 
 /** Map drafts from older 10-step wizard into the current flow. */
 function migrateV1WizardStep(rawStep: number): number {
@@ -74,7 +75,7 @@ function migrateV1WizardStep(rawStep: number): number {
   if (step === 4) return 4
   if (step >= 5 && step <= 9) return 4
   if (step === 10) return 6
-  return Math.min(Math.max(1, step), DRAFT_MAX_STEP)
+  return Math.min(Math.max(1, step), LEGACY_V3_MAX_STEP)
 }
 
 /** 5-step drafts (v2): account was 4 → plan 5. Shift +1 for new service step. */
@@ -82,7 +83,7 @@ function migrateV2WizardStepToV3(rawStep: number): number {
   if (rawStep <= 3) return rawStep
   if (rawStep === 4) return 5
   if (rawStep === 5) return 6
-  return Math.min(Math.max(1, rawStep), DRAFT_MAX_STEP)
+  return Math.min(Math.max(1, rawStep), LEGACY_V3_MAX_STEP)
 }
 
 export function readCreateDraft(): CreateDraftV1 | null {
@@ -92,14 +93,19 @@ export function readCreateDraft(): CreateDraftV1 | null {
     if (!raw) return null
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const ver = parsed.v
-    if (ver !== 1 && ver !== 2 && ver !== 3) return null
+    if (ver !== 1 && ver !== 2 && ver !== 3 && ver !== 4) return null
     const rawStep = typeof parsed.wizardStep === "number" ? (parsed.wizardStep as number) : 1
     let step: number
     if (ver === 1) step = migrateV1WizardStep(rawStep)
     else if (ver === 2) step = migrateV2WizardStepToV3(rawStep)
+    else if (ver === 3) step = Math.min(Math.max(1, rawStep), LEGACY_V3_MAX_STEP)
     else step = Math.min(Math.max(1, rawStep), DRAFT_MAX_STEP)
 
-    return { ...(parsed as unknown as Partial<CreateDraftV1>), v: 3, wizardStep: step } as CreateDraftV1
+    /** Legacy 6-step drafts: account was 5, plan was 6 → shift to 6 and 7. */
+    if (ver <= 3 && step >= 5) step += 1
+    step = Math.min(step, DRAFT_MAX_STEP)
+
+    return { ...(parsed as unknown as Partial<CreateDraftV1>), v: 4, wizardStep: step } as CreateDraftV1
   } catch {
     return null
   }

@@ -190,25 +190,28 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   })
   y += 32
 
-  /** Portrait frame ~35% of content width, graceful vertical proportion */
-  const photoW = Math.floor(contentW * 0.36)
-  const photoH = Math.floor(photoW * 1.42)
-  const photoX = (W - photoW) / 2
+  /** Circular portrait — slightly smaller than legacy rectangular frame */
+  const photoD = Math.floor(contentW * 0.28)
+  const photoX = (W - photoD) / 2
   const photoY = y
-  const photoR = 18
+  const photoCx = centerX
+  const photoCy = photoY + photoD / 2
+  const photoRadius = photoD / 2
 
   ctx.save()
   ctx.shadowColor = "rgba(51, 51, 51, 0.1)"
-  ctx.shadowBlur = 32
-  ctx.shadowOffsetY = 12
+  ctx.shadowBlur = 28
+  ctx.shadowOffsetY = 10
   ctx.shadowOffsetX = 0
-  roundRectPath(ctx, photoX, photoY, photoW, photoH, photoR)
+  ctx.beginPath()
+  ctx.arc(photoCx, photoCy, photoRadius, 0, Math.PI * 2)
   ctx.fillStyle = "#f0ebe4"
   ctx.fill()
   ctx.restore()
 
   ctx.save()
-  roundRectPath(ctx, photoX, photoY, photoW, photoH, photoR)
+  ctx.beginPath()
+  ctx.arc(photoCx, photoCy, photoRadius, 0, Math.PI * 2)
   ctx.clip()
   let drewPhoto = false
   if (profileImageUrl?.trim()) {
@@ -216,54 +219,61 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     if (img && img.complete && img.naturalWidth > 0) {
       const iw = img.naturalWidth
       const ih = img.naturalHeight
-      const scale = Math.max(photoW / iw, photoH / ih)
+      const scale = Math.max(photoD / iw, photoD / ih)
       const dw = iw * scale
       const dh = ih * scale
       const px = Math.min(100, Math.max(0, profileImagePan?.x ?? 50))
       const py = Math.min(100, Math.max(0, profileImagePan?.y ?? 50))
-      const dx = photoX + (photoW - dw) + (px / 100) * (dw - photoW)
-      const dy = photoY + (photoH - dh) + (py / 100) * (dh - photoH)
+      const dx = photoX + (photoD - dw) + (px / 100) * (dw - photoD)
+      const dy = photoY + (photoD - dh) + (py / 100) * (dh - photoD)
       ctx.drawImage(img, dx, dy, dw, dh)
       drewPhoto = true
     }
   }
   if (!drewPhoto) {
     ctx.fillStyle = "#ebe6df"
-    ctx.fillRect(photoX, photoY, photoW, photoH)
+    ctx.beginPath()
+    ctx.rect(photoX, photoY, photoD, photoD)
+    ctx.fill()
     ctx.fillStyle = INK_MUTED
-    ctx.font = `600 64px ${FONT_SERIF}`
+    ctx.font = `600 56px ${FONT_SERIF}`
     ctx.textAlign = "center"
-    ctx.fillText(displayName.charAt(0).toUpperCase() || "·", centerX, photoY + photoH / 2 + 6)
+    ctx.fillText(displayName.charAt(0).toUpperCase() || "·", photoCx, photoCy + 6)
   }
   ctx.restore()
 
   ctx.save()
-  roundRectPath(ctx, photoX, photoY, photoW, photoH, photoR)
+  ctx.beginPath()
+  ctx.arc(photoCx, photoCy, photoRadius, 0, Math.PI * 2)
   ctx.strokeStyle = CHAMPAGNE_STROKE
   ctx.lineWidth = 1.25
   ctx.stroke()
   ctx.restore()
 
-  const dividerY = photoY + photoH + 32
-  ctx.beginPath()
-  ctx.strokeStyle = "rgba(197, 160, 89, 0.35)"
-  ctx.lineWidth = 1
-  ctx.moveTo(innerM + 56, dividerY)
-  ctx.lineTo(W - innerM - 56, dividerY)
-  ctx.stroke()
-
-  y = dividerY + 40
-
   const birth = formatDisplayDate(birthDate)
   const death = formatDisplayDate(deathDate)
+  y = photoY + photoD + 28
   ctx.textAlign = "center"
   ctx.fillStyle = INK_SOFT
   ctx.font = `400 24px ${FONT_SANS}`
   ctx.fillText(`${birth}  —  ${death}`, centerX, y)
-  y += 52
+  y += 44
+
+  const drawGoldDivider = (dividerY: number) => {
+    ctx.beginPath()
+    ctx.strokeStyle = "rgba(197, 160, 89, 0.35)"
+    ctx.lineWidth = 1
+    ctx.moveTo(innerM + 56, dividerY)
+    ctx.lineTo(W - innerM - 56, dividerY)
+    ctx.stroke()
+  }
 
   const bioRaw = remembranceBio?.trim()
   if (bioRaw) {
+    let dividerY = y + 12
+    drawGoldDivider(dividerY)
+    y = dividerY + 36
+
     ctx.fillStyle = INK_MUTED
     ctx.font = `600 11px ${FONT_SANS}`
     ctx.letterSpacing = "0.28em"
@@ -273,15 +283,21 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
 
     ctx.fillStyle = INK
     ctx.font = `italic 400 24px ${FONT_SERIF}`
-    const bioLines = wrapLines(ctx, bioRaw, contentW, 8)
+    const bioLines = wrapLines(ctx, bioRaw, contentW, 10)
     bioLines.forEach((ln) => {
       ctx.fillText(ln, centerX, y)
       y += 38
     })
-    y += 28
-  }
+    y += 24
 
-  y += 12
+    dividerY = y + 8
+    drawGoldDivider(dividerY)
+    y = dividerY + 36
+  } else {
+    const dividerY = y + 12
+    drawGoldDivider(dividerY)
+    y = dividerY + 36
+  }
 
   ctx.textAlign = "center"
   ctx.fillStyle = INK_MUTED
@@ -295,16 +311,16 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.fillText(`Location: ${displayLocation(location)}`, centerX, y)
   y += 36
   ctx.fillText(`Service time: ${displayService(ceremonyTime)}`, centerX, y)
-  y += 44
+  y += 40
 
   const fund = fundLink?.trim()
   if (fund) {
     ctx.fillStyle = INK_MUTED
     ctx.font = `600 11px ${FONT_SANS}`
-    ctx.letterSpacing = "0.22em"
-    ctx.fillText("SUPPORT", centerX, y)
+    ctx.letterSpacing = "0.18em"
+    ctx.fillText("MEMORIAL FUND", centerX, y)
     ctx.letterSpacing = "0"
-    y += 30
+    y += 28
     ctx.fillStyle = INK
     ctx.font = `400 20px ${FONT_SANS}`
     const supLines = wrapLines(ctx, fund, contentW, 4)
@@ -312,11 +328,11 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
       ctx.fillText(ln, centerX, y)
       y += 30
     })
-    y += 24
+    y += 20
   }
 
-  /** QR: ~20% smaller than legacy 280px cap; generous quiet zone */
-  const qrMax = 224
+  /** QR — compact for print */
+  const qrMax = 176
   const reserveBottom = 200
   y = Math.min(y + 20, H - reserveBottom - qrMax - 48)
   const qrSize = Math.min(qrMax, H - y - reserveBottom)

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react"
 import Link from "next/link"
 import { Clock, Heart, QrCode, Sparkles } from "lucide-react"
+import { Navbar, NavbarCreateLink } from "@/components/Layout/Navbar"
 import { RevealSection } from "@/components/RevealSection"
 import {
   IPhoneShell,
@@ -171,31 +172,19 @@ export default function LandingPage() {
   return (
     <div className="relative min-h-dvh w-full bg-landing text-[#f5f5f7] leading-[1.6]">
       {/* once.film–inspired: calm, editorial, lots of air — nav centered, logo / CTA balanced */}
-      <header className="fixed top-0 left-0 right-0 z-40 grid grid-cols-[1fr_auto_1fr] items-center px-5 md:px-10 py-5 bg-[color:var(--landing-bg)]/90 backdrop-blur-md border-b border-white/[0.06]">
-        <div className="flex items-center gap-2 justify-self-start min-w-0">
-          <img src="/aeterna-logo.png" alt="Aeterna" className="w-7 h-7 md:w-8 md:h-8 object-contain opacity-90" />
-          <span className="font-[var(--font-display)] text-sm md:text-base tracking-[0.12em] uppercase text-[#e8e4dc]">Aeterna</span>
-        </div>
-        <nav className="flex items-center justify-center gap-3 sm:gap-5 md:gap-10 justify-self-center min-w-0">
-          <button type="button" onClick={() => scrollTo("how-it-works")} className="text-landing-nav hover:text-[#e8e4dc] transition-colors">
-            How it works
-          </button>
-          <button type="button" onClick={() => scrollTo("pricing")} className="text-landing-nav hover:text-[#e8e4dc] transition-colors">
-            Pricing
-          </button>
-          <button type="button" onClick={() => scrollTo("faq")} className="text-landing-nav hover:text-[#e8e4dc] transition-colors">
-            FAQ
-          </button>
-        </nav>
-        <div className="flex items-center justify-end justify-self-end shrink-0">
-          <Link
-            href="/create"
-            className="cta-silk inline-flex min-h-[34px] md:min-h-[40px] items-center rounded-full border border-white/[0.1] bg-black px-3 sm:px-4 md:px-5 text-[9px] sm:text-[10px] font-medium tracking-[0.14em] sm:tracking-[0.16em] uppercase text-[#f5f5f4] hover:bg-neutral-950 hover:border-white/[0.18]"
-          >
-            Create
-          </Link>
-        </div>
-      </header>
+      <Navbar
+        end={<NavbarCreateLink />}
+      >
+        <button type="button" onClick={() => scrollTo("how-it-works")} className="text-landing-nav hover:text-[#e8e4dc] transition-colors">
+          How it works
+        </button>
+        <button type="button" onClick={() => scrollTo("pricing")} className="text-landing-nav hover:text-[#e8e4dc] transition-colors">
+          Pricing
+        </button>
+        <button type="button" onClick={() => scrollTo("faq")} className="text-landing-nav hover:text-[#e8e4dc] transition-colors">
+          FAQ
+        </button>
+      </Navbar>
 
       {/* Background */}
       <div className="absolute inset-0 z-0 min-h-dvh pointer-events-none">
@@ -454,7 +443,7 @@ export default function LandingPage() {
             <div className="space-y-3 md:space-y-4">
               {FAQ_ITEMS.map((faq, i) => (
                 <RevealSection key={i}>
-                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setOpenFaq(openFaq === i ? null : i)}

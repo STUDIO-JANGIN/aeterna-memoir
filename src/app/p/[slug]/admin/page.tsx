@@ -340,12 +340,12 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
             {event.full_film_url ? (
               <div className="space-y-6">
                 <p className="text-landing-body">Your tribute is live on the memorial and ready to share.</p>
-                <div className="rounded-2xl overflow-hidden border border-white/[0.08] ring-1 ring-[var(--aeterna-gold)]/20 shadow-[var(--landing-shadow-deep)] bg-black/50">
+                <div className="rounded-2xl overflow-hidden border border-white/[0.08] ring-1 ring-[var(--aeterna-gold)]/20 shadow-[var(--landing-shadow-deep)] bg-[#030303]/50">
                   <video
                     src={event.full_film_url}
                     controls
                     playsInline
-                    className="w-full max-h-[min(56vh,520px)] object-contain bg-black"
+                    className="w-full max-h-[min(56vh,520px)] object-contain bg-[#030303]"
                   >
                     Your browser does not support video playback.
                   </video>
@@ -411,7 +411,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                                 className={`absolute top-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-full shadow-lg backdrop-blur-md ${
                                   selected
                                     ? "bg-[var(--aeterna-gold)] text-[#0a0a0a]"
-                                    : "bg-black/50 text-white/90 border border-white/20"
+                                    : "bg-[#030303]/50 text-white/90 border border-white/20"
                                 }`}
                               >
                                 <Star className={`h-4 w-4 ${selected ? "fill-[#0a0a0a]" : ""}`} strokeWidth={1.75} />
@@ -502,10 +502,10 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                 key={story.id}
                 className="flex flex-col rounded-2xl overflow-hidden border border-white/[0.08] bg-app-soft-surface shadow-[var(--landing-shadow-deep)]"
               >
-                <div className="relative aspect-square bg-black/50">
+                <div className="relative aspect-square bg-[#030303]/50">
                   <img src={story.image_url || ""} alt="" className="w-full h-full object-cover" />
                 </div>
-                <div className="flex flex-col gap-2 p-3 border-t border-white/[0.06] bg-black/25">
+                <div className="flex flex-col gap-2 p-3 border-t border-white/[0.06] bg-[#030303]/25">
                   {tab === "pending" ? (
                     <>
                       <button

@@ -111,7 +111,7 @@ export default function ArchivePage() {
               {memories[0] && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 items-start">
                   {memories[0].image && (
-                    <div className="sm:col-span-2 rounded-3xl overflow-hidden border border-[#DECBB4] bg-black/5">
+                    <div className="sm:col-span-2 rounded-3xl overflow-hidden border border-[#DECBB4] bg-[#030303]/5">
                       <img
                         src={memories[0].image as string}
                         alt={memories[0].name ?? "Memory photo"}
@@ -146,7 +146,7 @@ export default function ArchivePage() {
                     className="bg-white/80 rounded-2xl border border-[#E0D4C8] overflow-hidden flex flex-col"
                   >
                     {mem.image && (
-                      <div className="h-40 bg-black/5">
+                      <div className="h-40 bg-[#030303]/5">
                         <img
                           src={mem.image as string}
                           alt={mem.name ?? "Memory photo"}

@@ -8,6 +8,7 @@ import {
   renderMemorialInvitationCanvas,
   type MemorialInvitationCanvasInput,
 } from "@/lib/memorialInvitationCanvas"
+import { MemorialCard } from "@/components/MemorialCard"
 
 export type MemorialInvitationCardProps = {
   name: string
@@ -142,14 +143,11 @@ export function MemorialInvitationCard({
   }, [renderCanvas, slug])
 
   const btnClass =
-    "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#c5a059]/40 bg-[#f2ebe0]/90 px-5 text-[13px] font-normal tracking-wide text-[#333] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] transition-colors hover:bg-[#ebe3d6] disabled:opacity-40 [font-family:var(--font-sans)]"
+    "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#c5a059]/40 bg-[#f2ebe0]/90 px-5 text-[13px] font-normal tracking-wide text-[#333] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[#ebe3d6] disabled:opacity-40 [font-family:var(--font-sans)]"
 
   return (
     <div className={`flex flex-col items-center gap-5 py-2 text-center ${className}`}>
-      <div
-        className="relative w-full max-w-[min(200px,38vw)] shrink-0 overflow-hidden rounded-[1.35rem] border border-[rgba(197,160,89,0.38)] bg-[#faf8f5] shadow-[0_20px_50px_-18px_rgba(51,51,51,0.18),0_2px_8px_rgba(51,51,51,0.06)]"
-        style={{ aspectRatio: "9 / 16" }}
-      >
+      <MemorialCard className="w-full max-w-[min(200px,38vw)] shrink-0 rounded-[32px] border border-[rgba(197,160,89,0.38)] bg-[#faf8f5] shadow-[0_20px_50px_-18px_rgba(51,51,51,0.18),0_2px_8px_rgba(51,51,51,0.06)] [aspect-ratio:9/16]">
         {previewSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={previewSrc} alt="" className="h-full w-full object-cover object-top" />
@@ -158,7 +156,7 @@ export function MemorialInvitationCard({
             Preparing invitation…
           </div>
         )}
-      </div>
+      </MemorialCard>
 
       <div className="h-px w-20 max-w-[40%] shrink-0 bg-[rgba(197,160,89,0.35)]" aria-hidden />
 

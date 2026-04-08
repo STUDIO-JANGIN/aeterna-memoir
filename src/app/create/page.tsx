@@ -6,6 +6,9 @@ import { Clock, Flower2, Gift, MapPin, Sparkles } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
+import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
+import { playShutterClick } from "@/lib/shutterClick"
+import { ArtisanCardLight } from "@/components/ArtisanCardLight"
 import { MemorialInvitationCard } from "@/components/MemorialInvitationCard"
 import { MemorialShareActions } from "@/components/MemorialShareActions"
 import { createEventAction } from "@/app/actions/createEvent"
@@ -26,6 +29,7 @@ import {
 } from "@/lib/createFlowStorage"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
 import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
+import type { User } from "@supabase/supabase-js"
 
 /** URL `plan=` → internal tier. Legacy: `basic` = Plus; marketing: `forever` = Plus, `film` = Premium. */
 function parsePlanQueryParam(param: string | null): StoragePlan | null {
@@ -84,30 +88,26 @@ const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
 const MINUTES = ["00", "15", "30", "45"]
 
 const inputBase =
-  "w-full rounded-2xl bg-white/[0.04] px-5 py-4 text-lg text-[color:var(--landing-text-hero)] placeholder:text-white/35 shadow-[inset_0_1px_3px_rgba(0,0,0,0.35)] outline-none transition-all focus:bg-white/[0.07] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.28),0_0_0_1px_rgba(197,160,89,0.25)] focus:ring-0"
+  "w-full rounded-[32px] bg-white/[0.04] px-5 py-4 text-lg text-[color:var(--landing-text-hero)] placeholder:text-white/35 shadow-[inset_0_1px_3px_rgba(0,0,0,0.35)] outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:bg-white/[0.07] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.28),0_0_0_1px_rgba(197,160,89,0.25)] focus:ring-0"
 
 const selectBase =
-  "w-full min-h-[52px] rounded-2xl bg-white/[0.04] px-4 py-3 text-base text-[var(--landing-text-hero)] outline-none transition-colors focus:bg-white/[0.07] focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 appearance-none"
+  "w-full min-h-[52px] rounded-[32px] bg-white/[0.04] px-4 py-3 text-base text-[var(--landing-text-hero)] outline-none transition-colors duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:bg-white/[0.07] focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 appearance-none"
 
 /** Step 3 — glass fields + gold catch-light on focus */
 const selectJourneyBase =
-  "w-full min-h-[52px] rounded-xl border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-base font-medium text-[color:var(--landing-text-hero)] shadow-[inset_0_1px_3px_rgba(0,0,0,0.35)] backdrop-blur-[8px] outline-none transition-all focus:border-[var(--aeterna-gold)]/40 focus:bg-white/[0.09] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3),0_0_0_1px_rgba(197,160,89,0.32),0_0_22px_-4px_rgba(197,160,89,0.18)] focus:ring-0 focus:backdrop-blur-[10px] appearance-none [color-scheme:dark]"
-
-/** Born / At rest — light-weight serif, artisan */
-const journeyChapterLabel =
-  "font-[var(--font-serif)] font-light text-[12px] md:text-[13px] tracking-[0.06em] text-[#f5f5f7]/65"
+  "w-full min-h-[52px] rounded-[32px] border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-base font-medium text-[color:var(--landing-text-hero)] shadow-[inset_0_1px_3px_rgba(0,0,0,0.35)] backdrop-blur-[8px] outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:border-[var(--aeterna-gold)]/40 focus:bg-white/[0.09] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3),0_0_0_1px_rgba(197,160,89,0.32),0_0_22px_-4px_rgba(197,160,89,0.18)] focus:ring-0 focus:backdrop-blur-[10px] appearance-none [color-scheme:dark]"
 
 /** Memorial details: minimal border, landing-aligned */
 const fieldLabelClass = "block text-[10px] tracking-[0.22em] uppercase text-[#f5f5f7]/60 mb-2"
 const inputMemorial =
-  "w-full rounded-xl bg-white/[0.035] px-4 py-3.5 text-base text-[color:var(--landing-text-hero)] placeholder:text-white/32 outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] focus:bg-white/[0.06] focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.28),0_0_20px_-6px_rgba(197,160,89,0.12)] border border-white/[0.07]"
+  "w-full rounded-[32px] bg-white/[0.035] px-4 py-3.5 text-base text-[color:var(--landing-text-hero)] placeholder:text-white/32 outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] focus:bg-white/[0.06] focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.28),0_0_20px_-6px_rgba(197,160,89,0.12)] border border-white/[0.1]"
 const inputMemorialDate =
   `${inputMemorial} [color-scheme:dark] min-h-[52px]`
 const selectMemorial =
-  "min-h-[52px] flex-1 min-w-0 rounded-xl bg-white/[0.035] px-3 py-3 text-sm text-[#f4f1ea] outline-none transition-colors focus:bg-white/[0.06] focus:ring-1 focus:ring-[var(--aeterna-gold)]/22 border border-white/[0.07] appearance-none"
+  "min-h-[52px] flex-1 min-w-0 rounded-[32px] bg-white/[0.035] px-3 py-3 text-sm text-[#f4f1ea] outline-none transition-colors duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:bg-white/[0.06] focus:ring-1 focus:ring-[var(--aeterna-gold)]/22 border border-white/[0.1] appearance-none"
 /** Multiline optional fields — matches memorial inputs, high contrast */
 const textareaMemorial =
-  "w-full min-h-[100px] rounded-xl bg-white/[0.035] px-4 py-3.5 text-base text-[#f4f1ea] placeholder:text-white/32 outline-none transition-colors focus:bg-white/[0.06] focus:ring-1 focus:ring-[var(--aeterna-gold)]/22 border border-white/[0.07] resize-y"
+  "w-full min-h-[100px] rounded-[32px] bg-white/[0.035] px-4 py-3.5 text-base text-[#f4f1ea] placeholder:text-white/32 outline-none transition-colors duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:bg-white/[0.06] focus:ring-1 focus:ring-[var(--aeterna-gold)]/22 border border-white/[0.1] resize-y"
 
 function buildDateString(y: string, m: string, d: string): string {
   if (!y) return ""
@@ -157,11 +157,34 @@ function isMemorialSignInFooterNoise(message: string | null): boolean {
   )
 }
 
-const slide = {
-  initial: { opacity: 0, x: 28 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -22 },
+function focusNextField(el: HTMLElement | null) {
+  if (!el) return
+  el.scrollIntoView({ behavior: "smooth", block: "nearest" })
+  window.setTimeout(() => {
+    el.focus({ preventScroll: true })
+  }, 300)
 }
+
+function firstNameFromUser(u: User | null | undefined): string {
+  if (!u) return "friend"
+  const meta = u.user_metadata as { full_name?: string; name?: string } | undefined
+  const full =
+    typeof meta?.full_name === "string"
+      ? meta.full_name
+      : typeof meta?.name === "string"
+        ? meta.name
+        : ""
+  const first = full.trim().split(/\s+/)[0]
+  if (first) return first
+  const email = u.email
+  if (email?.includes("@")) {
+    const local = email.split("@")[0]?.replace(/\./g, " ").trim() ?? ""
+    if (local) return local.split(/\s+/)[0] ?? "friend"
+  }
+  return "friend"
+}
+
+const stepPresence = artisanPresence
 
 function CreateEventForm() {
   const { user, setUser, ready: authReady, refresh: refreshAuthUser } = useSupabaseUser()
@@ -180,6 +203,9 @@ function CreateEventForm() {
   const [deathY, setDeathY] = useState("")
   const [deathM, setDeathM] = useState("")
   const [deathD, setDeathD] = useState("")
+
+  const birthComplete = Boolean(birthY && birthM && birthD)
+  const atRestRevealRef = useRef(false)
 
   const [location, setLocation] = useState("")
   const [ceremonyDate, setCeremonyDate] = useState("")
@@ -200,8 +226,13 @@ function CreateEventForm() {
   const [createdSlug, setCreatedSlug] = useState<string | null>(null)
   const [pendingCheckout, setPendingCheckout] = useState<PendingCheckoutV1 | null>(null)
   const [showResumeToast, setShowResumeToast] = useState(false)
+  const [welcomeHome, setWelcomeHome] = useState<{ name: string } | null>(null)
   const resumeToastAfterAuthRef = useRef(false)
+  const welcomeLastShownAtRef = useRef(0)
   const profileInputRef = useRef<HTMLInputElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const locationInputRef = useRef<HTMLInputElement>(null)
+  const fundInputRef = useRef<HTMLInputElement>(null)
   const birthYRef = useRef<HTMLSelectElement>(null)
   const birthMRef = useRef<HTMLSelectElement>(null)
   const birthDRef = useRef<HTMLSelectElement>(null)
@@ -222,8 +253,30 @@ function CreateEventForm() {
   }, [wizardStep])
 
   useEffect(() => {
+    if (!memorialType) return
+    const t = window.setTimeout(() => {
+      if (wizardStep === 1) nameInputRef.current?.focus()
+      if (wizardStep === 4) locationInputRef.current?.focus()
+    }, 80)
+    return () => window.clearTimeout(t)
+  }, [wizardStep, memorialType])
+
+  useEffect(() => {
     memorialTypeRef.current = memorialType
   }, [memorialType])
+
+  useEffect(() => {
+    if (!birthComplete) {
+      atRestRevealRef.current = false
+      return
+    }
+    if (atRestRevealRef.current) return
+    atRestRevealRef.current = true
+    const t = window.setTimeout(() => {
+      deathYRef.current?.focus()
+    }, 480)
+    return () => window.clearTimeout(t)
+  }, [birthComplete])
 
   useEffect(() => {
     const mapped = parsePlanQueryParam(planParam)
@@ -314,6 +367,12 @@ function CreateEventForm() {
     const t = window.setTimeout(() => setShowResumeToast(false), 4200)
     return () => window.clearTimeout(t)
   }, [showResumeToast])
+
+  useEffect(() => {
+    if (!welcomeHome) return
+    const t = window.setTimeout(() => setWelcomeHome(null), 2800)
+    return () => window.clearTimeout(t)
+  }, [welcomeHome])
 
   useEffect(() => {
     if (!pendingCheckout) return
@@ -413,6 +472,11 @@ function CreateEventForm() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event !== "SIGNED_IN") return
       if (!session?.user) return
+      const now = Date.now()
+      if (now - welcomeLastShownAtRef.current > 800) {
+        welcomeLastShownAtRef.current = now
+        setWelcomeHome({ name: firstNameFromUser(session.user) })
+      }
       await refreshAuthUser()
       router.refresh()
       if (memorialTypeRef.current && wizardStepRef.current === 5) {
@@ -579,6 +643,8 @@ function CreateEventForm() {
   const handleCreate = async () => {
     if (memorialType === null || wizardStep !== effectiveWizardSteps) return
     if (!canContinue()) return
+
+    playShutterClick()
 
     const snapshot = buildCreateDraft(wizardStep)
     if (snapshot) writeCreateDraft(snapshot)
@@ -753,18 +819,42 @@ function CreateEventForm() {
         {showResumeToast && (
           <motion.div
             role="status"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.28 }}
+            initial={stepPresence.initial}
+            animate={stepPresence.animate}
+            exit={stepPresence.exit}
+            transition={ARTISAN_SPRING}
             className="fixed left-4 right-4 z-[60] max-w-lg mx-auto pointer-events-none"
             style={{
               top: "max(0.75rem, calc(env(safe-area-inset-top, 0px) + 3.25rem))",
             }}
           >
-            <p className="rounded-2xl border border-white/[0.1] bg-landing/95 px-4 py-3 text-center text-sm text-white/85 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.5)] backdrop-blur-md">
-              Resuming from your last entry.
+            <p className="rounded-[32px] border border-white/[0.1] bg-landing/95 px-4 py-3 text-center text-sm text-white/85 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.5)] backdrop-blur-md">
+              We saved your place — you can pick up here.
             </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {welcomeHome && (
+          <motion.div
+            role="status"
+            aria-live="polite"
+            initial={stepPresence.initial}
+            animate={stepPresence.animate}
+            exit={stepPresence.exit}
+            transition={ARTISAN_SPRING}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-[#030303]/72 backdrop-blur-md px-6"
+          >
+            <motion.p
+              initial={stepPresence.initial}
+              animate={stepPresence.animate}
+              exit={stepPresence.exit}
+              transition={ARTISAN_SPRING}
+              className="max-w-md text-center font-[var(--font-serif)] text-2xl font-normal tracking-[0.04em] text-[#f4f1ea] md:text-[1.65rem]"
+            >
+              Welcome home, {welcomeHome.name}
+            </motion.p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -777,7 +867,7 @@ function CreateEventForm() {
               className="h-full bg-[var(--aeterna-gold)]"
               initial={false}
               animate={{ width: `${progress * 100}%` }}
-              transition={{ type: "spring", stiffness: 140, damping: 24 }}
+              transition={ARTISAN_SPRING}
             />
           </div>
           <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] bg-landing/95 px-4 py-2.5 backdrop-blur-md md:px-8">
@@ -788,7 +878,7 @@ function CreateEventForm() {
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="shrink-0 min-h-[36px] px-1 text-[10px] tracking-[0.2em] text-white/35 hover:text-white/55 uppercase transition-colors"
+                className="shrink-0 min-h-[36px] px-1 text-[10px] tracking-[0.2em] text-white/35 hover:text-white/55 uppercase transition-colors duration-300 ease-in-out"
               >
                 Sign out
               </button>
@@ -813,12 +903,12 @@ function CreateEventForm() {
         {memorialType === null ? (
           <div className="w-full text-center">
             <h1 className="text-landing-hero mb-3 px-2">Who are we honoring?</h1>
-            <p className="mb-12 text-base leading-relaxed text-white/45">A quiet space for someone you love.</p>
+            <p className="mb-12 text-base leading-relaxed text-white/45">A calm place to remember someone you love.</p>
             <div className="mx-auto grid max-w-md grid-cols-2 gap-4">
               <button
                 type="button"
                 onClick={() => pickType("person")}
-                className="cta-silk flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-3xl border border-white/[0.08] bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.98] md:min-h-[180px]"
+                className="cta-silk flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-[32px] border border-white/10 bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.98] md:min-h-[180px]"
               >
                 <Sparkles className="h-10 w-10 text-[var(--aeterna-gold)]" strokeWidth={1} aria-hidden />
                 <span className="text-sm text-white/80">Someone dear</span>
@@ -826,7 +916,7 @@ function CreateEventForm() {
               <button
                 type="button"
                 onClick={() => pickType("pet")}
-                className="cta-silk flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-3xl border border-white/[0.08] bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.98] md:min-h-[180px]"
+                className="cta-silk flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-[32px] border border-white/10 bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.98] md:min-h-[180px]"
               >
                 <span className="text-4xl" aria-hidden>
                   🐾
@@ -838,12 +928,11 @@ function CreateEventForm() {
         ) : (
           <>
             {pendingCheckout && (
-              <div className="mb-5 rounded-2xl border border-white/[0.1] bg-white/[0.04] px-4 py-3 text-sm text-white/75">
+              <div className="mb-5 rounded-[32px] border border-white/[0.1] bg-white/[0.04] px-4 py-3 text-sm text-white/75">
                 <p>
-                  Payment wasn&apos;t completed.{" "}
-                  <span className="font-medium text-[#f4f1ea]">{pendingCheckout.name}</span> is already saved — use{" "}
-                  <span className="text-[var(--aeterna-gold)]">Continue to payment</span> on the last step to try again, or edit
-                  details below.
+                  Payment didn&apos;t finish.{" "}
+                  <span className="font-medium text-[#f4f1ea]">{pendingCheckout.name}</span> is safe — on the last step, tap{" "}
+                  <span className="text-[var(--aeterna-gold)]">Continue the Story</span> to pay, or change anything above first.
                 </p>
                 <button
                   type="button"
@@ -860,21 +949,28 @@ function CreateEventForm() {
             <AnimatePresence mode="wait">
             <motion.div
               key={wizardStep}
-              initial={slide.initial}
-              animate={slide.animate}
-              exit={slide.exit}
-              transition={{ duration: 0.38, ease: [0.25, 0.1, 0.25, 1] }}
+              initial={stepPresence.initial}
+              animate={stepPresence.animate}
+              exit={stepPresence.exit}
+              transition={ARTISAN_SPRING}
               className="w-full flex-1"
             >
               {wizardStep === 1 && (
                 <div className="space-y-3 pt-4">
                   <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">Their name</h2>
-                  <p className="text-base text-white/45">What did you call them?</p>
+                  <p className="text-base text-white/45">What name should we use?</p>
                   <input
+                    ref={nameInputRef}
                     autoFocus
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Say it here"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && name.trim()) {
+                        e.preventDefault()
+                        goNext()
+                      }
+                    }}
+                    placeholder="Their name"
                     className={`${inputBase} mt-8 text-2xl md:text-3xl`}
                     autoComplete="off"
                   />
@@ -885,13 +981,13 @@ function CreateEventForm() {
                 <div className="space-y-4 pt-4 text-center">
                   <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">A face to remember</h2>
                   <p className="text-base text-white/50 max-w-md mx-auto leading-relaxed">
-                    A gentle portrait helps everyone recognize them in the memorial and enriches the tribute. Tap the circle to add a photograph.
+                    A photo helps people recognize them. Tap the circle to add one.
                   </p>
                   <button
                     type="button"
                     onClick={() => profileInputRef.current?.click()}
-                    aria-label="Choose profile photograph"
-                    className="group mx-auto mt-10 flex h-48 w-48 items-center justify-center overflow-hidden rounded-full bg-white/[0.04] ring-1 ring-[var(--aeterna-gold)]/28 transition-transform active:scale-[0.98] md:h-56 md:w-56 hover:ring-[var(--aeterna-gold)]/45"
+                    aria-label="Add a Spark of Memory"
+                    className="group mx-auto mt-10 flex h-48 w-48 items-center justify-center overflow-hidden rounded-full bg-white/[0.04] ring-1 ring-[var(--aeterna-gold)]/28 transition-all duration-300 ease-in-out active:scale-[0.98] md:h-56 md:w-56 hover:ring-[var(--aeterna-gold)]/45"
                   >
                     {profilePreview ? (
                       <img src={profilePreview} alt="" className="h-full w-full object-cover" />
@@ -911,7 +1007,7 @@ function CreateEventForm() {
                           aria-hidden
                         />
                         <span className="relative z-10 text-[10px] tracking-[0.22em] uppercase text-white/40">
-                          Eternal light
+                          Add a Spark of Memory
                         </span>
                       </div>
                     )}
@@ -932,18 +1028,18 @@ function CreateEventForm() {
                         <Sparkles className="h-4 w-4 text-[var(--aeterna-gold)] animate-star-fade" strokeWidth={1.15} />
                       </div>
                       <p className="text-[15px] leading-[1.6] text-[#f5f5f7] md:text-base">
-                        Every life is a story told in chapters. If you don&apos;t have exact dates, an approximate year is a
-                        perfect start. Your memorial begins with a 7-day gathering period for loved ones to share
-                        memories—securing their legacy for eternity.
+                        Exact dates are lovely; a year alone is fine if that&apos;s what you have. When the page opens,
+                        loved ones get seven gentle days to add photos and stories.
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-8 md:space-y-10">
-                    <div className="card-treasure rounded-2xl">
-                      <div className="card-treasure-inner rounded-2xl px-5 py-7 md:px-7 md:py-8">
+                    <ArtisanCardLight>
+                    <div className="card-treasure rounded-[32px]">
+                      <div className="card-treasure-inner rounded-[32px] px-5 py-7 md:px-7 md:py-8">
                         <div className="mb-6 border-b border-white/[0.06] pb-6">
-                          <p className={journeyChapterLabel}>Born</p>
+                          <p className="label-announcement font-[var(--font-serif)]">Born</p>
                         </div>
                         <div className="grid grid-cols-3 gap-3 md:gap-4">
                           <select
@@ -951,7 +1047,7 @@ function CreateEventForm() {
                             value={birthY}
                             onChange={(e) => {
                               setBirthY(e.target.value)
-                              if (e.target.value) birthMRef.current?.focus()
+                              if (e.target.value) focusNextField(birthMRef.current)
                             }}
                             className={selectJourneyBase}
                             aria-label="Birth year"
@@ -968,7 +1064,7 @@ function CreateEventForm() {
                             value={birthM}
                             onChange={(e) => {
                               setBirthM(e.target.value)
-                              if (e.target.value) birthDRef.current?.focus()
+                              if (e.target.value) focusNextField(birthDRef.current)
                             }}
                             className={selectJourneyBase}
                             aria-label="Birth month"
@@ -985,7 +1081,6 @@ function CreateEventForm() {
                             value={birthD}
                             onChange={(e) => {
                               setBirthD(e.target.value)
-                              if (e.target.value) deathYRef.current?.focus()
                             }}
                             className={selectJourneyBase}
                             aria-label="Birth day"
@@ -1000,72 +1095,85 @@ function CreateEventForm() {
                         </div>
                       </div>
                     </div>
+                    </ArtisanCardLight>
 
-                    <div className="card-treasure rounded-2xl">
-                      <div className="card-treasure-inner rounded-2xl px-5 py-7 md:px-7 md:py-8">
-                        <div className="mb-6 border-b border-white/[0.06] pb-6">
-                          <p className={journeyChapterLabel}>At rest</p>
-                        </div>
-                        <div className="grid grid-cols-3 gap-3 md:gap-4">
-                          <select
-                            ref={deathYRef}
-                            value={deathY}
-                            onChange={(e) => {
-                              setDeathY(e.target.value)
-                              if (e.target.value) deathMRef.current?.focus()
-                            }}
-                            className={selectJourneyBase}
-                            aria-label="Year of passing"
-                          >
-                            <option value="">YYYY</option>
-                            {YEARS.map((y) => (
-                              <option key={y} value={y}>
-                                {y}
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            ref={deathMRef}
-                            value={deathM}
-                            onChange={(e) => {
-                              setDeathM(e.target.value)
-                              if (e.target.value) deathDRef.current?.focus()
-                            }}
-                            className={selectJourneyBase}
-                            aria-label="Month of passing"
-                          >
-                            <option value="">MM</option>
-                            {MONTHS.map((m) => (
-                              <option key={m} value={m}>
-                                {m}
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            ref={deathDRef}
-                            value={deathD}
-                            onChange={(e) => setDeathD(e.target.value)}
-                            className={selectJourneyBase}
-                            aria-label="Day of passing"
-                          >
-                            <option value="">DD</option>
-                            {DAYS.map((d) => (
-                              <option key={d} value={d}>
-                                {d}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
+                    {birthComplete && (
+                      <motion.div
+                        key="at-rest-block"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                      >
+                        <ArtisanCardLight>
+                          <div className="card-treasure rounded-[32px]">
+                            <div className="card-treasure-inner rounded-[32px] px-5 py-7 md:px-7 md:py-8">
+                              <div className="mb-6 border-b border-white/[0.06] pb-6">
+                                <p className="label-announcement font-[var(--font-serif)]">At Rest</p>
+                              </div>
+                              <div className="grid grid-cols-3 gap-3 md:gap-4">
+                                <select
+                                  ref={deathYRef}
+                                  value={deathY}
+                                  onChange={(e) => {
+                                    setDeathY(e.target.value)
+                                    if (e.target.value) focusNextField(deathMRef.current)
+                                  }}
+                                  className={selectJourneyBase}
+                                  aria-label="Year of passing"
+                                >
+                                  <option value="">YYYY</option>
+                                  {YEARS.map((y) => (
+                                    <option key={y} value={y}>
+                                      {y}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  ref={deathMRef}
+                                  value={deathM}
+                                  onChange={(e) => {
+                                    setDeathM(e.target.value)
+                                    if (e.target.value) focusNextField(deathDRef.current)
+                                  }}
+                                  className={selectJourneyBase}
+                                  aria-label="Month of passing"
+                                >
+                                  <option value="">MM</option>
+                                  {MONTHS.map((m) => (
+                                    <option key={m} value={m}>
+                                      {m}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  ref={deathDRef}
+                                  value={deathD}
+                                  onChange={(e) => setDeathD(e.target.value)}
+                                  className={selectJourneyBase}
+                                  aria-label="Day of passing"
+                                >
+                                  <option value="">DD</option>
+                                  {DAYS.map((d) => (
+                                    <option key={d} value={d}>
+                                      {d}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </ArtisanCardLight>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               )}
 
               {wizardStep === 4 && (
                 <div className="space-y-8 pt-4">
-                  <div className="card-treasure rounded-2xl">
-                    <div className="card-treasure-inner rounded-2xl p-5 md:p-6">
+                  <ArtisanCardLight>
+                  <div className="card-treasure rounded-[32px]">
+                    <div className="card-treasure-inner rounded-[32px] p-5 md:p-6">
                     <p className="text-[9px] tracking-[0.28em] uppercase text-white/32">Optional</p>
                     <h3 className="mt-2 font-[var(--font-serif)] text-lg font-normal leading-snug text-[#e8e4dc] md:text-xl">
                       Memorial Service &amp; Support Family
@@ -1082,10 +1190,17 @@ function CreateEventForm() {
                             aria-hidden
                           />
                           <input
+                            ref={locationInputRef}
                             id="memorial-location-opt"
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
-                            placeholder="e.g., St. Jude's Chapel, 2 PM"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && location.trim()) {
+                                e.preventDefault()
+                                focusNextField(fundInputRef.current)
+                              }
+                            }}
+                            placeholder="Place and time — or city"
                             autoComplete="off"
                             className={`${inputMemorial} min-h-[48px] pl-11 text-[15px] md:min-h-[52px] md:text-base`}
                           />
@@ -1102,12 +1217,13 @@ function CreateEventForm() {
                             aria-hidden
                           />
                           <input
+                            ref={fundInputRef}
                             id="memorial-support-opt"
                             type="text"
                             inputMode="url"
                             value={fundLink}
                             onChange={(e) => setFundLink(e.target.value)}
-                            placeholder="Link to memorial fund or charity"
+                            placeholder="Fund or charity link (optional)"
                             autoComplete="off"
                             className={`${inputMemorial} min-h-[48px] pl-11 text-[15px] md:min-h-[52px] md:text-base`}
                           />
@@ -1116,7 +1232,8 @@ function CreateEventForm() {
                     </div>
                   </div>
                 </div>
-              </div>
+                </ArtisanCardLight>
+                </div>
               )}
 
               {wizardStep === 5 && (
@@ -1127,14 +1244,14 @@ function CreateEventForm() {
                       Claim your memorial
                     </h2>
                     <p className="mt-3 text-base text-white/45 leading-relaxed max-w-sm mx-auto">
-                      Create your account to manage and protect this memorial.
+                      Sign in so you can keep this memorial safe and change it anytime.
                     </p>
                   </div>
                   {signedIn ? (
-                    <div className="rounded-2xl border border-white/[0.1] bg-white/[0.04] px-5 py-4">
+                    <div className="rounded-[32px] border border-white/[0.1] bg-white/[0.04] px-5 py-4">
                       <p className="text-[10px] tracking-[0.2em] uppercase text-white/35 mb-1">Signed in</p>
                       <p className="text-sm text-[#f4f1ea] font-medium truncate">{user?.email ?? user?.id ?? ""}</p>
-                      <p className="mt-2 text-xs text-white/40">Continue to choose your plan.</p>
+                      <p className="mt-2 text-xs text-white/40">Next, choose how you&apos;d like to keep their page.</p>
                     </div>
                   ) : !authReady ? (
                     <div className="flex flex-col items-center justify-center gap-3 py-10" aria-live="polite">
@@ -1146,7 +1263,7 @@ function CreateEventForm() {
                       type="button"
                       onClick={handleContinueWithGoogle}
                       disabled={googleLoading}
-                      className="mx-auto flex min-h-[56px] w-full max-w-sm items-center justify-center gap-3 rounded-2xl border border-white/[0.12] bg-black/35 px-6 py-3.5 text-[var(--landing-text-hero)] font-semibold transition-colors hover:border-white/25 hover:bg-white/[0.06] disabled:opacity-50"
+                      className="mx-auto flex min-h-[56px] w-full max-w-sm items-center justify-center gap-3 rounded-[32px] border border-white/10 bg-[#030303]/55 px-6 py-3.5 text-[var(--landing-text-hero)] font-semibold transition-colors duration-300 ease-in-out hover:border-white/25 hover:bg-white/[0.06] disabled:opacity-50"
                     >
                       <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden>
                         <path
@@ -1166,7 +1283,7 @@ function CreateEventForm() {
                           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                         />
                       </svg>
-                      {googleLoading ? "Redirecting…" : "Continue with Google"}
+                      {googleLoading ? "Redirecting…" : "Continue the Story with Google"}
                     </button>
                   )}
                 </div>
@@ -1179,14 +1296,14 @@ function CreateEventForm() {
                       You&apos;re almost there
                     </h2>
                     <p className="mt-2 text-base text-white/45">
-                      Review your plan. When you&apos;re ready, we&apos;ll create their space — or continue to secure checkout.
+                      When you&apos;re ready, we&apos;ll open their page — or go on to pay if you chose a paid plan.
                     </p>
                     <p className="mt-2 text-xs text-white/35">All prices in US dollars (USD).</p>
                   </div>
                   {(() => {
                     const summary = PLAN_SUMMARY[storagePlan]
                     return (
-                      <div className="rounded-2xl border border-[var(--aeterna-gold)]/22 bg-gradient-to-b from-black/35 to-[color:var(--landing-bg)] p-6 md:p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_24px_64px_-28px_rgba(0,0,0,0.65)]">
+                      <div className="rounded-[32px] border border-white/10 ring-1 ring-[var(--aeterna-gold)]/22 bg-gradient-to-b from-[#030303]/50 to-[color:var(--landing-bg)] p-6 md:p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_24px_64px_-28px_rgba(0,0,0,0.65)]">
                         <p className="text-[10px] tracking-[0.32em] uppercase text-[var(--aeterna-gold)]/85">Your selected plan</p>
                         <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
                           <div>
@@ -1256,7 +1373,7 @@ function CreateEventForm() {
                         key={p.id}
                         type="button"
                         onClick={() => setStoragePlan(p.id)}
-                        className={`rounded-2xl px-5 py-5 text-left transition-colors ${
+                        className={`rounded-[32px] border border-white/10 px-5 py-5 text-left transition-colors duration-300 ease-in-out ${
                           storagePlan === p.id ? "bg-[var(--aeterna-gold)]/12 ring-1 ring-[var(--aeterna-gold)]/40" : "bg-white/[0.03] hover:bg-white/[0.05]"
                         }`}
                       >
@@ -1292,7 +1409,7 @@ function CreateEventForm() {
                 type="button"
                 onClick={goBack}
                 disabled={loading}
-                className="cta-silk shrink-0 min-h-[52px] min-w-[5.5rem] rounded-2xl border border-white/[0.14] bg-transparent px-4 text-sm font-medium tracking-wide text-white/65 hover:bg-white/[0.05] hover:text-white disabled:opacity-40 sm:min-h-[56px]"
+                className="cta-silk shrink-0 min-h-[52px] min-w-[5.5rem] rounded-[32px] border border-white/[0.14] bg-transparent px-4 text-sm font-medium tracking-wide text-white/65 hover:bg-white/[0.05] hover:text-white disabled:opacity-40 sm:min-h-[56px]"
               >
                 Back
               </button>
@@ -1300,25 +1417,25 @@ function CreateEventForm() {
                 type="button"
                 disabled={loading || !canContinue()}
                 onClick={onPrimaryPress}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 520, damping: 28 }}
-                className="cta-silk btn-tap min-h-[56px] flex-1 rounded-2xl bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] text-sm font-semibold tracking-wide shadow-[0_8px_32px_-8px_rgba(197,160,89,0.45)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_12px_40px_-8px_rgba(197,160,89,0.5)] disabled:opacity-35 active:shadow-[0_4px_20px_-6px_rgba(197,160,89,0.35)] sm:min-h-[60px]"
+                whileTap={{ scale: 0.98, boxShadow: "0 0 36px rgba(197, 160, 89, 0.42)" }}
+                transition={ARTISAN_SPRING}
+                className="cta-silk btn-tap min-h-[56px] flex-1 rounded-[32px] bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] text-sm font-semibold tracking-wide shadow-[0_8px_32px_-8px_rgba(197,160,89,0.45)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_12px_40px_-8px_rgba(197,160,89,0.5)] disabled:opacity-35 active:shadow-[0_4px_20px_-6px_rgba(197,160,89,0.35)] sm:min-h-[60px]"
               >
                 {loading
                   ? "Creating…"
                   : wizardStep === 5 && !authReady
                     ? "Checking account…"
                     : wizardStep === 5 && !signedIn
-                      ? "Continue with Google"
+                      ? "Continue the Story with Google"
                       : wizardStep < effectiveWizardSteps
-                    ? "Continue"
+                    ? "Continue the Story"
                     : isPlanSummaryView
                       ? storagePlan === "free"
-                        ? "Confirm & create"
-                        : "Confirm & launch"
+                        ? "Continue the Story"
+                        : "Continue the Story"
                       : storagePlan === "free"
-                        ? "Create memorial"
-                        : "Continue to payment"}
+                        ? "Continue the Story"
+                        : "Continue the Story"}
               </motion.button>
             </div>
           </div>
@@ -1328,9 +1445,10 @@ function CreateEventForm() {
       <AnimatePresence>
         {showSuccessPopup && createdSlug && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={stepPresence.initial}
+            animate={stepPresence.animate}
+            exit={stepPresence.exit}
+            transition={ARTISAN_SPRING}
             className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-landing/90 backdrop-blur-xl"
           >
             <div className="flex min-h-[100dvh] w-full flex-col items-center justify-center px-4 py-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-8">

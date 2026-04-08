@@ -180,7 +180,12 @@ export async function createStoryAction(formData: FormData) {
       throw e
     }
 
-    return { ok: true, storyId: inserted?.id ?? null }
+    return {
+      ok: true,
+      storyId: inserted?.id ?? null,
+      imageUrl: mainUrl,
+      thumbUrl: thumbUrl,
+    }
   } catch (err: unknown) {
     console.error("Critical Upload Error:", err)
     if (err instanceof Error && err.stack) {

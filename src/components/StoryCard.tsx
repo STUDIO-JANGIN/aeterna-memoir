@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
+import { ARTISAN_SPRING } from "@/lib/artisanMotion"
 import { formatDateTime } from "@/lib/formatDate"
 import { heartStoryAction } from "@/app/actions/heartStory"
 
@@ -47,7 +48,7 @@ export function StoryCard({ story, initialHearted = false }: Props) {
           <img
             src={story.image_url}
             alt={story.story_text ?? ""}
-            className="w-full h-56 object-cover group-hover:scale-[1.03] transition-transform duration-500"
+            className="memorial-thumbnail w-full h-56 object-cover group-hover:scale-[1.03] transition-transform duration-500"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         </div>
@@ -64,7 +65,7 @@ export function StoryCard({ story, initialHearted = false }: Props) {
               disabled={pending || isHearted}
               className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)]/60 text-[var(--aeterna-gold-muted)] hover:border-[var(--aeterna-gold)]/80 hover:text-[var(--aeterna-gold)] disabled:opacity-80 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]/50"
               whileTap={{ scale: 1.35 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              transition={ARTISAN_SPRING}
               aria-label={isHearted ? "Hearted" : "Add heart"}
             >
               <span

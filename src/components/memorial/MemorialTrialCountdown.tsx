@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { motion } from "framer-motion"
+import { ARTISAN_SPRING } from "@/lib/artisanMotion"
 
 const TWENTY_FOUR_H_MS = 24 * 60 * 60 * 1000
 
@@ -33,7 +34,7 @@ export function MemorialTrialCountdown({ remainingMs, className = "" }: Memorial
       role="timer"
       aria-live="polite"
       animate={urgent ? { opacity: [1, 0.96, 1] } : { opacity: 1 }}
-      transition={urgent ? { duration: 3, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
+      transition={urgent ? { duration: 3, repeat: Infinity, ease: "easeInOut" } : ARTISAN_SPRING}
       className={`relative overflow-hidden rounded-2xl card-landing-airy px-5 py-5 sm:px-7 sm:py-6 ${className}`}
     >
       <div

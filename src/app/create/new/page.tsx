@@ -259,7 +259,7 @@ export default function NewMemorialPage() {
                 Portrait photograph
               </label>
               <label className="inline-flex items-center gap-2 mt-1 px-4 py-2 rounded-full border border-[var(--aeterna-gold)]/60 text-[var(--aeterna-gold)] text-[10px] uppercase tracking-[0.2em] cursor-pointer hover:bg-[var(--aeterna-gold-pale)] hover:text-[var(--aeterna-charcoal)] transition-colors">
-                <span>Upload photo</span>
+                <span>Add a Spark of Memory</span>
                 <input
                   type="file"
                   name="profile_image"
@@ -325,7 +325,7 @@ export default function NewMemorialPage() {
                 </p>
               )}
               {locationSuggestions.length > 0 && (
-                <div className="mt-2 rounded-2xl border border-white/[0.08] bg-black/40 shadow-[var(--landing-shadow-deep)] max-h-48 overflow-auto text-left backdrop-blur-sm">
+                <div className="mt-2 rounded-2xl border border-white/[0.08] bg-[#030303]/40 shadow-[var(--landing-shadow-deep)] max-h-48 overflow-auto text-left backdrop-blur-sm">
                   {locationSuggestions.map((s) => (
                     <button
                       key={s.place_id}
@@ -440,7 +440,7 @@ export default function NewMemorialPage() {
               disabled={saving}
               className="btn-landing-gold min-h-[48px] px-8 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {saving ? "Creating…" : "Create memorial"}
+              {saving ? "Creating…" : "Continue the Story"}
             </button>
           </div>
         </form>

@@ -32,9 +32,8 @@ import {
 import { buildGlobalShareMessage } from "@/components/MemorialShareActions"
 import { openWhatsAppWithPrefilledText } from "@/lib/whatsappInvite"
 import { coerceIdString } from "@/lib/uuid"
-
-const spring = { type: "spring" as const, stiffness: 300, damping: 30 }
-const springJelly = { type: "spring" as const, stiffness: 400, damping: 22 }
+import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
+import { OptimisticImage } from "@/components/Upload"
 
 type FeedEvent = {
   id: string
@@ -101,6 +100,8 @@ export default function GuestFeedPage({ params }: PageProps) {
   const [memoryStoryText, setMemoryStoryText] = useState("")
   const [memoryPhotoFile, setMemoryPhotoFile] = useState<File | null>(null)
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
+  /** Set after createStory succeeds — swaps optimistic blob for Supabase CDN URL. */
+  const [photoPermanentUrl, setPhotoPermanentUrl] = useState<string | null>(null)
   const memoryFileInputRef = useRef<HTMLInputElement>(null)
   const adminForbiddenHandledRef = useRef(false)
   const shareFormOpenedRef = useRef(false)
@@ -466,6 +467,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     setMemoryAuthorName("")
     setMemoryStoryText("")
     setMemoryPhotoFile(null)
+    setPhotoPermanentUrl(null)
     setPhotoPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev)
       return null
@@ -484,6 +486,7 @@ export default function GuestFeedPage({ params }: PageProps) {
   }, [slug, searchParams, router])
 
   const handleMemoryPhotoChange = (file: File | null) => {
+    setPhotoPermanentUrl(null)
     setPhotoPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev)
       return null
@@ -574,7 +577,7 @@ export default function GuestFeedPage({ params }: PageProps) {
   const handleSubmitStory = async () => {
     if (!event) return
     if (!memoryPhotoFile) {
-      setSubmitError("Please choose a photo to upload.")
+      setSubmitError("Please add a Spark of Memory (a photo).")
       return
     }
     if (!memoryAuthorName.trim() || !memoryStoryText.trim()) {
@@ -611,6 +614,13 @@ export default function GuestFeedPage({ params }: PageProps) {
 
       const result = await createStoryAction(payload)
       if (result?.ok && result?.storyId && typeof window !== "undefined") {
+        if (result.imageUrl) {
+          setPhotoPermanentUrl(result.imageUrl)
+          setPhotoPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev)
+            return null
+          })
+        }
         try {
           const stored: Record<string, string> = {}
           const raw = localStorage.getItem("aeterna_my_stories")
@@ -766,7 +776,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           className="inline-block text-[var(--aeterna-gold)] hover:underline text-sm tracking-wide"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          transition={spring}
+          transition={ARTISAN_SPRING}
         >
           Return home
         </motion.a>
@@ -800,7 +810,7 @@ export default function GuestFeedPage({ params }: PageProps) {
   const showAddStoryCta =
     !filmReleased && !isClosed && photoDeadlineRemainingMs !== null && photoDeadlineRemainingMs > 0
 
-  const addStoryLabel = isPremiumTier ? "Add photo for tribute film" : "Add a photo & story"
+  const addStoryLabel = "Add a Spark of Memory"
 
   return (
     <LayoutGroup>
@@ -812,17 +822,18 @@ export default function GuestFeedPage({ params }: PageProps) {
       <AnimatePresence>
         {showPremiumBlurPopup && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            initial={artisanPresence.initial}
+            animate={artisanPresence.animate}
+            exit={artisanPresence.exit}
+            transition={ARTISAN_SPRING}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#030303]/60 backdrop-blur-sm"
             onClick={() => setShowPremiumBlurPopup(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              transition={spring}
+              transition={ARTISAN_SPRING}
               className="rounded-2xl bg-[var(--aeterna-charcoal)] border border-[var(--aeterna-gold-pale)] shadow-xl max-w-sm w-full p-6 text-center"
               onClick={(e) => e.stopPropagation()}
             >
@@ -838,7 +849,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                 className="min-h-[44px] px-6 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm hover:bg-[var(--aeterna-gold-light)] transition-colors"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                transition={spring}
+                transition={ARTISAN_SPRING}
               >
                 OK
               </motion.button>
@@ -849,17 +860,18 @@ export default function GuestFeedPage({ params }: PageProps) {
       <AnimatePresence>
         {showPaymentComingSoon && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            initial={artisanPresence.initial}
+            animate={artisanPresence.animate}
+            exit={artisanPresence.exit}
+            transition={ARTISAN_SPRING}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#030303]/60 backdrop-blur-sm"
             onClick={() => setShowPaymentComingSoon(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              transition={spring}
+              transition={ARTISAN_SPRING}
               className="rounded-2xl bg-[var(--aeterna-charcoal)] border border-[var(--aeterna-gold-pale)] shadow-xl max-w-sm w-full p-6 text-center"
               onClick={(e) => e.stopPropagation()}
             >
@@ -875,7 +887,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                 className="min-h-[44px] px-6 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm hover:bg-[var(--aeterna-gold-light)] transition-colors"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                transition={spring}
+                transition={ARTISAN_SPRING}
               >
                 OK
               </motion.button>
@@ -889,10 +901,10 @@ export default function GuestFeedPage({ params }: PageProps) {
             role="alert"
             aria-live="assertive"
             className="fixed left-1/2 top-[max(0.85rem,env(safe-area-inset-top))] z-[60] w-[min(calc(100vw-2rem),22rem)] -translate-x-1/2 px-4"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+            initial={artisanPresence.initial}
+            animate={artisanPresence.animate}
+            exit={artisanPresence.exit}
+            transition={ARTISAN_SPRING}
           >
             <div className="rounded-2xl border border-[var(--border-gold)] bg-[#1e1e1e]/95 px-4 py-3 text-center shadow-[var(--landing-shadow-deep)] backdrop-blur-md">
               <p className="text-[13px] leading-snug text-[var(--landing-text-body)]">
@@ -904,10 +916,10 @@ export default function GuestFeedPage({ params }: PageProps) {
         {showDonationThankYou && (
           <motion.div
             className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[60] max-w-sm px-6 py-4 rounded-2xl border border-[var(--border-gold)] bg-[var(--aeterna-charcoal-soft)] text-center shadow-xl"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 6 }}
-            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+            initial={artisanPresence.initial}
+            animate={artisanPresence.animate}
+            exit={artisanPresence.exit}
+            transition={ARTISAN_SPRING}
           >
             <p className="text-[var(--aeterna-gold)] font-serif text-sm leading-relaxed">
               Thank you for your thoughtful support.
@@ -919,12 +931,12 @@ export default function GuestFeedPage({ params }: PageProps) {
             role="status"
             aria-live="polite"
             className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-[60] w-[min(calc(100vw-2rem),22rem)] -translate-x-1/2 px-4"
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 14 }}
-            transition={{ duration: 0.48, ease: [0.25, 0.1, 0.25, 1] }}
+            initial={artisanPresence.initial}
+            animate={artisanPresence.animate}
+            exit={artisanPresence.exit}
+            transition={ARTISAN_SPRING}
           >
-            <div className="rounded-2xl border border-white/[0.12] bg-black/80 px-5 py-4 text-center shadow-[0_16px_48px_rgba(0,0,0,0.5)] backdrop-blur-md">
+            <div className="rounded-2xl border border-white/[0.12] bg-[#030303]/80 px-5 py-4 text-center shadow-[0_16px_48px_rgba(0,0,0,0.5)] backdrop-blur-md">
               <p className="font-[var(--font-serif)] text-[16px] font-medium tracking-tight text-white">
                 Memory Received
               </p>
@@ -981,9 +993,9 @@ export default function GuestFeedPage({ params }: PageProps) {
       </AnimatePresence>
       <header className="relative w-full px-4 pb-8 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 sm:pb-10">
         <div className="mx-auto flex max-w-lg flex-col items-center text-center">
-          <div className="mb-6 aspect-square w-[min(88vw,22rem)] max-w-[90vw] shrink-0 overflow-hidden rounded-full border border-white/[0.12] bg-black/[0.15] shadow-[0_28px_72px_-24px_rgba(0,0,0,0.65)]">
+          <div className="mb-6 aspect-square w-[min(88vw,22rem)] max-w-[90vw] shrink-0 overflow-hidden rounded-full border border-white/[0.12] bg-[#030303]/[0.15] shadow-[0_28px_72px_-24px_rgba(0,0,0,0.65)]">
             {profileSrc ? (
-              <img src={profileSrc} alt="" className="h-full w-full object-cover" loading="eager" decoding="async" />
+              <img src={profileSrc} alt="" className="memorial-thumbnail h-full w-full object-cover" loading="eager" decoding="async" />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-white/[0.06] font-serif text-[clamp(2.5rem,18vw,4rem)] text-[var(--landing-text-muted)]">
                 {(event.name ?? "?").charAt(0)}
@@ -1006,7 +1018,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   className="inline-flex min-h-[52px] max-w-[min(100%,20rem)] items-center justify-center gap-2 rounded-full bg-[var(--aeterna-gold)] px-6 py-3.5 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)]"
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
-                  transition={springJelly}
+                  transition={ARTISAN_SPRING}
                 >
                   <span aria-hidden className="text-lg font-light leading-none">
                     +
@@ -1138,7 +1150,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   className="gold-btn-shimmer hidden md:inline-flex min-h-[52px] px-8 py-3.5 rounded-[var(--radius-button)] border border-[var(--aeterna-gold)] text-[var(--aeterna-gold)] font-[var(--font-serif)] text-sm tracking-[0.2em] uppercase hover:bg-[var(--aeterna-gold-pale)] disabled:opacity-60"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  transition={spring}
+                  transition={ARTISAN_SPRING}
                 >
                   {checkoutLoading ? "Redirecting to checkout…" : "Download High-Quality Film"}
                 </motion.button>
@@ -1153,7 +1165,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   disabled={checkoutLoading}
                   className="gold-btn-shimmer w-full min-h-[52px] px-6 py-3.5 rounded-[var(--radius-button)] border border-[var(--aeterna-gold)] text-[var(--aeterna-gold)] font-[var(--font-serif)] text-sm tracking-[0.18em] uppercase hover:bg-[var(--aeterna-gold-pale)] disabled:opacity-60"
                   whileTap={{ scale: 0.98 }}
-                  transition={spring}
+                  transition={ARTISAN_SPRING}
                 >
                   {checkoutLoading ? "Redirecting…" : "Download High-Quality Film"}
                 </motion.button>
@@ -1206,7 +1218,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                           <img
                             src={story.image_url}
                             alt=""
-                            className="w-full h-full object-cover"
+                            className="memorial-thumbnail w-full h-full object-cover"
                             style={i === teaserIndex ? { animation: "teaserReveal 5s ease-in-out" } : undefined}
                           />
                         ) : (
@@ -1243,7 +1255,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                         className="min-h-[44px] px-6 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-[var(--font-serif)] text-sm tracking-[0.12em] uppercase disabled:opacity-60 hover:bg-[var(--aeterna-gold-light)]"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.97 }}
-                        transition={spring}
+                        transition={ARTISAN_SPRING}
                       >
                         {notificationLoading ? "Saving…" : "Notify me"}
                       </motion.button>
@@ -1290,7 +1302,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                     }`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    transition={spring}
+                    transition={ARTISAN_SPRING}
                   >
                     {checkoutLoading ? "Redirecting…" : "Unlock all memories"}
                   </motion.button>
@@ -1306,7 +1318,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                       disabled={checkoutLoading}
                       className="w-full min-h-[52px] rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-serif text-sm font-medium tracking-[0.12em] uppercase hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60 transition-colors"
                       whileTap={{ scale: 0.98 }}
-                      transition={spring}
+                      transition={ARTISAN_SPRING}
                     >
                       {checkoutLoading ? "Redirecting…" : "Unlock all memories"}
                     </motion.button>
@@ -1325,7 +1337,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                     className="relative aspect-square cursor-pointer bg-landing"
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...spring, delay: 0.04 * Math.min(index, 12) }}
+                    transition={{ ...ARTISAN_SPRING, delay: 0.04 * Math.min(index, 12) }}
                   >
                     <motion.button
                       type="button"
@@ -1343,9 +1355,9 @@ export default function GuestFeedPage({ params }: PageProps) {
                           layoutId={isBlurred ? undefined : `story-img-${story.id}`}
                           src={story.thumb_url ?? story.image_url}
                           alt=""
-                          className={`h-full w-full object-cover ${isBlurred ? "blur-[12px] select-none" : ""}`}
+                          className={`memorial-thumbnail h-full w-full object-cover ${isBlurred ? "blur-[12px] select-none" : ""}`}
                           style={{ opacity: viewerStory?.id === story.id ? 0 : 1 }}
-                          transition={spring}
+                          transition={ARTISAN_SPRING}
                           draggable={false}
                         />
                       ) : (
@@ -1355,7 +1367,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                       )}
                     </motion.button>
                     {isBlurred && (
-                      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/35">
+                      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#030303]/35">
                         <svg className="h-7 w-7 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
@@ -1365,7 +1377,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                       </div>
                     )}
                     {myStoryId === story.id && (
-                      <div className="absolute top-2 left-2 right-2 rounded-lg bg-black/70 backdrop-blur-sm p-2.5 text-center">
+                      <div className="absolute top-2 left-2 right-2 rounded-lg bg-[#030303]/70 backdrop-blur-sm p-2.5 text-center">
                         <p className="text-[10px] text-white font-medium mb-2">
                           Your memory is currently <strong className="text-[var(--aeterna-gold)]">#{index + 1}</strong>. Invite friends to leave a heart.
                         </p>
@@ -1379,7 +1391,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                                 (typeof window !== "undefined" ? window.location.href : "")
                               openWhatsAppWithPrefilledText(text)
                             }}
-                            className="inline-flex min-h-[40px] min-w-[5.25rem] flex-1 items-center justify-center rounded-full border border-[var(--border-gold)] bg-black/30 px-2.5 text-[10px] font-medium tracking-wide text-[var(--aeterna-gold)] touch-manipulation active:scale-[0.98] sm:min-h-[36px] hover:bg-[var(--aeterna-gold)]/10"
+                            className="inline-flex min-h-[40px] min-w-[5.25rem] flex-1 items-center justify-center rounded-full border border-[var(--border-gold)] bg-[#030303]/30 px-2.5 text-[10px] font-medium tracking-wide text-[var(--aeterna-gold)] touch-manipulation active:scale-[0.98] sm:min-h-[36px] hover:bg-[var(--aeterna-gold)]/10"
                           >
                             WhatsApp
                           </button>
@@ -1390,7 +1402,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                               const text = dualRouteShareText || (typeof window !== "undefined" ? window.location.href : "")
                               window.location.href = `sms:?&body=${encodeURIComponent(text)}`
                             }}
-                            className="inline-flex min-h-[44px] min-w-[6.5rem] flex-[1.15] items-center justify-center gap-1 rounded-full border border-[var(--border-gold)] bg-black/35 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-hero)] shadow-[0_8px_28px_-8px_rgba(0,0,0,0.55)] touch-manipulation active:scale-[0.98] sm:min-h-[40px] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10"
+                            className="inline-flex min-h-[44px] min-w-[6.5rem] flex-[1.15] items-center justify-center gap-1 rounded-full border border-[var(--border-gold)] bg-[#030303]/35 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-hero)] shadow-[0_8px_28px_-8px_rgba(0,0,0,0.55)] touch-manipulation active:scale-[0.98] sm:min-h-[40px] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10"
                           >
                             Message
                           </button>
@@ -1466,7 +1478,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                       className="min-h-[48px] px-6 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-serif text-sm font-medium tracking-[0.12em] uppercase hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60 transition-colors"
                       whileHover={platformTipChecked && !donationCheckoutLoading ? { scale: 1.02 } : undefined}
                       whileTap={platformTipChecked && !donationCheckoutLoading ? { scale: 0.98 } : undefined}
-                      transition={spring}
+                      transition={ARTISAN_SPRING}
                     >
                       {donationCheckoutLoading ? "Redirecting to checkout…" : `${donationAmountLabel} support · view account details`}
                     </motion.button>
@@ -1529,7 +1541,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           className="pointer-events-none fixed inset-x-0 bottom-0 z-[45] flex justify-center px-4 pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-3"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ ...spring, delay: 0.2 }}
+          transition={{ ...ARTISAN_SPRING, delay: 0.2 }}
         >
           <div className="pointer-events-auto max-w-lg w-full flex justify-center">
             {isClosed ? (
@@ -1544,7 +1556,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                 className="inline-flex min-h-[50px] w-full max-w-md items-center justify-center gap-2 rounded-full border border-[var(--aeterna-gold)]/35 bg-[var(--aeterna-gold)] px-5 py-3 text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_12px_40px_-12px_rgba(0,0,0,0.55)] transition-colors hover:bg-[var(--aeterna-gold-light)] sm:px-8"
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                transition={springJelly}
+                transition={ARTISAN_SPRING}
               >
                 <span aria-hidden className="text-lg font-light leading-none">
                   +
@@ -1577,23 +1589,24 @@ export default function GuestFeedPage({ params }: PageProps) {
       {/* Share a Memory — one question per screen */}
       {formOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#030303]/70 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="form-title"
         >
           <motion.div
             className="w-full max-w-md rounded-2xl border border-[var(--border-gold-subtle)] bg-[#1e1e1e] shadow-[var(--shadow-deep)] overflow-hidden"
-            initial={{ opacity: 0, scale: 0.98, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+            initial={artisanPresence.initial}
+            animate={artisanPresence.animate}
+            exit={artisanPresence.exit}
+            transition={ARTISAN_SPRING}
           >
             <div className="relative h-[3px] w-full bg-[var(--aeterna-charcoal-muted)]/90">
               <motion.div
                 className="absolute inset-y-0 left-0 rounded-r-full bg-[var(--aeterna-gold)]"
                 initial={false}
                 animate={{ width: `${(shareStep / 3) * 100}%` }}
-                transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
+                transition={ARTISAN_SPRING}
               />
             </div>
 
@@ -1617,7 +1630,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   aria-label="Close"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  transition={spring}
+                  transition={ARTISAN_SPRING}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1631,7 +1644,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                  transition={ARTISAN_SPRING}
                   className="min-h-[200px] flex flex-col"
                 >
                   {shareStep === 1 && (
@@ -1654,7 +1667,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   {shareStep === 2 && (
                     <>
                       <h3 className="font-heading font-serif text-xl md:text-[1.35rem] text-[var(--aeterna-headline)] text-center leading-snug mb-6 mt-2">
-                        Upload a photo of your memory.
+                        Add a Spark of Memory.
                       </h3>
                       <input
                         ref={memoryFileInputRef}
@@ -1675,16 +1688,21 @@ export default function GuestFeedPage({ params }: PageProps) {
                           const f = e.dataTransfer.files?.[0]
                           if (f?.type.startsWith("image/")) handleMemoryPhotoChange(f)
                         }}
-                        className="group flex min-h-[168px] w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)]/50 px-4 py-8 text-center font-sans transition-colors hover:border-[var(--aeterna-gold-muted)]/60 hover:bg-[var(--aeterna-charcoal-soft)]/40"
+                        className="group flex min-h-[168px] w-full flex-col items-center justify-center gap-3 rounded-[32px] border border-dashed border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)]/50 px-4 py-8 text-center font-sans transition-[colors,transform,box-shadow] duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-[var(--aeterna-gold-muted)]/60 hover:bg-[var(--aeterna-charcoal-soft)]/40"
                       >
                         <span className="text-sm text-[var(--aeterna-headline)]">
-                          {memoryPhotoFile ? "Change photo" : "Tap to choose a photo"}
+                          {memoryPhotoFile ? "Change your spark" : "Tap to add a Spark of Memory"}
                         </span>
-                        <span className="text-xs text-[var(--aeterna-gold-muted)]">or drag and drop an image here</span>
+                        <span className="text-xs text-[var(--aeterna-gold-muted)]">or drag one here</span>
                       </button>
-                      {photoPreviewUrl && (
-                        <div className="mt-5 overflow-hidden rounded-xl border border-[var(--border-gold-subtle)]/60">
-                          <img src={photoPreviewUrl} alt="" className="max-h-52 w-full object-cover" />
+                      {(photoPermanentUrl || photoPreviewUrl) && (
+                        <div className="mt-5 overflow-hidden rounded-[32px] border-[0.5px] border-[rgba(255,255,255,0.1)]">
+                          <OptimisticImage
+                            src={(photoPermanentUrl ?? photoPreviewUrl)!}
+                            resolved={Boolean(photoPermanentUrl)}
+                            alt=""
+                            className="max-h-52 w-full object-cover rounded-[32px]"
+                          />
                         </div>
                       )}
                     </>
@@ -1701,7 +1719,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                         autoFocus
                         rows={5}
                         placeholder="A favorite trip, a quiet everyday moment, or a smile you’ll always remember…"
-                        className="w-full resize-none rounded-xl border border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)] px-4 py-3.5 font-sans text-base leading-relaxed text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] placeholder:opacity-75 focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)]/70"
+                        className="w-full resize-none rounded-[32px] border-[0.5px] border-[rgba(255,255,255,0.1)] bg-[var(--aeterna-charcoal)] px-4 py-3.5 font-sans text-base leading-relaxed text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] placeholder:opacity-75 focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)]/70"
                       />
                       <p className="mt-6 text-center font-sans text-sm leading-relaxed text-[var(--aeterna-body)] text-balance">
                         {isPremiumTier
@@ -1725,10 +1743,10 @@ export default function GuestFeedPage({ params }: PageProps) {
                     type="button"
                     onClick={goShareBack}
                     disabled={submitLoading}
-                    className="min-h-[52px] flex-1 rounded-xl border border-[var(--border-gold-subtle)] font-sans text-sm text-[var(--landing-text-body)] transition-colors hover:bg-white/5 disabled:opacity-50"
+                    className="min-h-[52px] flex-1 rounded-[32px] border border-[var(--border-gold-subtle)] font-sans text-sm text-[var(--landing-text-body)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-white/5 disabled:opacity-50"
                     whileHover={{ scale: submitLoading ? 1 : 1.01 }}
                     whileTap={{ scale: submitLoading ? 1 : 0.99 }}
-                    transition={spring}
+                    transition={ARTISAN_SPRING}
                   >
                     Back
                   </motion.button>
@@ -1737,22 +1755,22 @@ export default function GuestFeedPage({ params }: PageProps) {
                   <motion.button
                     type="button"
                     onClick={goShareNext}
-                    className="min-h-[52px] flex-1 rounded-xl bg-[var(--aeterna-gold)] font-sans text-sm font-medium text-[var(--aeterna-charcoal)] shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-colors hover:bg-[var(--aeterna-gold-light)]"
+                    className="min-h-[52px] flex-1 rounded-[32px] bg-[var(--aeterna-gold)] font-sans text-sm font-medium text-[var(--aeterna-charcoal)] shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[var(--aeterna-gold-light)]"
                     whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    transition={spring}
+                    whileTap={{ scale: 0.98, boxShadow: "0 0 36px rgba(197, 160, 89, 0.42)" }}
+                    transition={ARTISAN_SPRING}
                   >
-                    Continue
+                    Continue the Story
                   </motion.button>
                 ) : (
                   <motion.button
                     type="button"
                     onClick={handleSubmitStory}
                     disabled={submitLoading}
-                    className="min-h-[52px] flex-1 rounded-xl bg-[var(--aeterna-gold)] font-sans text-sm font-medium text-[var(--aeterna-charcoal)] shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-colors hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60"
+                    className="min-h-[52px] flex-1 rounded-[32px] bg-[var(--aeterna-gold)] font-sans text-sm font-medium text-[var(--aeterna-charcoal)] shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60"
                     whileHover={{ scale: submitLoading ? 1 : 1.01 }}
                     whileTap={{ scale: submitLoading ? 1 : 0.99 }}
-                    transition={spring}
+                    transition={ARTISAN_SPRING}
                   >
                     {submitLoading ? "Sending…" : "Share this memory"}
                   </motion.button>

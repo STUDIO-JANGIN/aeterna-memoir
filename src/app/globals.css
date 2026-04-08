@@ -44,9 +44,11 @@
   --border-luxury: var(--border-gold-subtle);
   --border-charcoal: rgba(13, 13, 13, 0.08);
 
-  /* Global background: deep navy, cards: warm sand beige */
-  --background: #020617;                 /* slate-950 */
+  /* App shell — obsidian (Artisan Standard) */
+  --background: #030303;
   --foreground: #f5f5f7;
+  --text-primary: #f5f5f7;
+  --text-secondary: #86868b;
   --card: #f4ebde;                       /* warm sand beige */
   --card-foreground: #020617;
   --primary: var(--charcoal);
@@ -61,10 +63,15 @@
   --input: var(--border-luxury);
   --ring: var(--champagne);
 
-  /* Luxury radius (24px+) and soft shadow */
-  --radius-card: 1.5rem;   /* 24px ≈ rounded-2xl */
-  --radius-button: 1.5rem;
-  --radius-input: 1rem;
+  /* Squircle / artisan radius (32px) */
+  --radius-card: 32px;
+  --radius-artisan: 32px;
+  --radius-button: 9999px;
+  --radius-input: 32px;
+  --ease-artisan: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-artisan: all 0.4s var(--ease-artisan);
+  --cursor-x: 50vw;
+  --cursor-y: 50vh;
   --shadow-soft: 0 25px 50px -12px rgba(0, 0, 0, 0.2), 0 12px 24px -8px rgba(0, 0, 0, 0.12);
   /* Soft card shadow with shadow-xl feel */
   --shadow-card: 0 20px 25px -5px rgba(15, 23, 42, 0.6), 0 10px 10px -5px rgba(15, 23, 42, 0.7);
@@ -77,18 +84,21 @@
   --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: "Syne", "Inter", system-ui, sans-serif;
 
-  /* Landing page palette (shared with /create, /admin — once.film–inspired) */
-  /* Warm charcoal (not flat black) — aligns with hero video grade and removes harsh seams */
-  --landing-bg: #0f0e0d;
-  --landing-bg-section: #0f0e0d;
+  /* Landing / memorial canvas — obsidian */
+  --landing-bg: #030303;
+  --landing-bg-section: #030303;
   --landing-text-hero: #f5f5f7;
   --landing-text-title: #f5f5f7;
   --landing-text-body: #f5f5f7;
-  --landing-text-muted: #737373;
-  --landing-border: rgba(255, 255, 255, 0.06);
+  --landing-text-muted: #86868b;
+  /* Card edge on dark UI (10% white) */
+  --landing-border: rgba(255, 255, 255, 0.1);
+  --landing-border-subtle: rgba(255, 255, 255, 0.06);
   --landing-border-medium: rgba(255, 255, 255, 0.1);
   --landing-border-strong: rgba(255, 255, 255, 0.12);
   --landing-surface: rgba(255, 255, 255, 0.02);
+  /** True black replacement — softer void for buttons and fills */
+  --ink-void: #030303;
   --landing-shadow-deep: 0 40px 100px rgba(0, 0, 0, 0.45), 0 20px 40px rgba(0, 0, 0, 0.2);
   --landing-shadow-phone: 0 40px 100px rgba(0, 0, 0, 0.55);
 }
@@ -117,34 +127,98 @@
 }
 
 @layer base {
-  /* Body: Inter (landing hero subcopy). Headings: serif (landing hero title). */
   html {
     font-family: var(--font-sans);
-    background-color: var(--background);
-    color: var(--foreground);
+    background-color: var(--landing-bg);
+    color: var(--text-primary);
     scroll-behavior: smooth;
-    line-height: 1.6;
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: rgba(212, 175, 55, 0.2);
+    color: var(--text-primary);
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.45);
   }
   body {
     font-family: var(--font-sans);
-    background-color: var(--background);
-    color: #f5f5f7;
-    line-height: 1.6;
+    background-color: var(--landing-bg);
+    color: var(--text-primary);
+    line-height: 1.8;
+    letter-spacing: 0.01em;
   }
-  h1, h2, h3, h4, h5, h6, .font-heading {
+  h1,
+  h2,
+  .font-heading {
     font-family: var(--font-serif);
-    font-weight: 400;
+    font-weight: 600;
+    text-wrap: balance;
+    letter-spacing: -0.05em;
+    line-height: 1.1;
   }
-  h1 {
-    letter-spacing: 0.05em;
-    line-height: 1.12;
-  }
-  h2, h3 {
-    letter-spacing: 0.05em;
+  h3 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.02em;
     line-height: 1.2;
   }
+
+  .label-announcement {
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 0.65rem;
+    color: rgba(245, 245, 247, 0.5);
+    font-weight: 600;
+  }
+
+  p,
+  .font-body {
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+  }
   h4, h5, h6 {
-    letter-spacing: 0.05em;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  /** Long-form memorial copy — artisan novel */
+  .text-artisan-novel,
+  .prose-memorial p {
+    font-family: var(--font-serif);
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+    color: var(--text-secondary);
+  }
+  img:not([data-sharp]):not(.rounded-full),
+  video:not([data-sharp]) {
+    border-radius: var(--radius-artisan);
+  }
+  img.memorial-thumbnail,
+  .memorial-thumbnail img {
+    border-radius: 32px !important;
+  }
+  button,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"] {
+    text-transform: capitalize;
+    font-weight: 500;
+  }
+  button:not(:disabled):active,
+  [role="button"]:active {
+    transform: scale(0.98);
+    transition:
+      transform 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.1s ease-out;
+    box-shadow: 0 0 32px rgba(255, 255, 255, 0.07);
   }
   *,
   *:before,
@@ -187,14 +261,13 @@
     animation: goldBorderShimmer 2s ease-in-out infinite;
   }
 
-  /** Primary CTAs — smooth hover (“liquid silk”) */
+  /** Primary CTAs — artisan motion */
   .cta-silk {
-    transition: all 0.3s ease;
+    transition: var(--transition-artisan);
   }
 
-  /* once.film-style: button press/hover feedback (native-app feel) */
   .btn-tap {
-    transition: all 0.3s ease;
+    transition: var(--transition-artisan);
   }
   .btn-tap:hover {
     transform: scale(1.02);
@@ -261,9 +334,9 @@
   .text-landing-hero {
     font-family: var(--font-serif);
     font-size: clamp(2rem, 6vw, 3.25rem);
-    font-weight: 400;
+    font-weight: 600;
     line-height: 1.12;
-    letter-spacing: 0.05em;
+    letter-spacing: -0.04em;
     color: var(--landing-text-hero);
   }
 
@@ -271,8 +344,8 @@
     font-family: var(--font-serif);
     font-size: 1.5rem;
     line-height: 1.2;
-    font-weight: 400;
-    letter-spacing: 0.05em;
+    font-weight: 600;
+    letter-spacing: -0.04em;
     color: var(--landing-text-title);
   }
   @media (min-width: 768px) {
@@ -284,8 +357,9 @@
   .text-landing-body {
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    line-height: 1.6;
-    color: var(--landing-text-body);
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+    color: var(--text-secondary);
   }
   @media (min-width: 768px) {
     .text-landing-body {
@@ -297,7 +371,7 @@
     font-size: 10px;
     letter-spacing: 0.35em;
     text-transform: uppercase;
-    color: var(--landing-text-muted);
+    color: var(--text-secondary);
   }
 
   .text-landing-nav {
@@ -313,8 +387,8 @@
   }
 
   .card-landing-airy {
-    border-radius: 1.75rem;
-    border: 1px solid var(--landing-border);
+    border-radius: var(--radius-artisan);
+    border: 0.5px solid rgba(255, 255, 255, 0.1);
     background-color: var(--landing-surface);
     box-shadow: var(--landing-shadow-deep);
     backdrop-filter: blur(12px);
@@ -322,7 +396,7 @@
 
   /** Gradient edge + glass — pricing / create “treasure box” */
   .card-treasure {
-    border-radius: 1rem; /* rounded-2xl */
+    border-radius: var(--radius-artisan);
     background: linear-gradient(
       145deg,
       rgba(255, 255, 255, 0.14) 0%,
@@ -333,7 +407,8 @@
     box-shadow: 0 24px 56px rgba(0, 0, 0, 0.4);
   }
   .card-treasure-inner {
-    border-radius: calc(1rem - 1px);
+    border-radius: calc(var(--radius-artisan) - 1px);
+    border: 0.5px solid rgba(255, 255, 255, 0.1);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(15, 14, 13, 0.72) 100%);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
@@ -373,7 +448,7 @@
     justify-content: center;
     border-radius: 9999px;
     border: 1px solid var(--landing-border-medium);
-    background-color: #000;
+    background-color: var(--ink-void);
     padding-left: 2.25rem;
     padding-right: 2.25rem;
     font-size: 11px;
@@ -381,10 +456,10 @@
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: #f5f5f4;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    transition: var(--transition-artisan);
   }
   .btn-landing-primary:hover {
-    background-color: rgb(10 10 10);
+    background-color: #121212;
   }
   .btn-landing-primary:disabled {
     opacity: 0.5;
@@ -408,10 +483,7 @@
     box-shadow:
       0 10px 28px -6px rgba(0, 0, 0, 0.45),
       0 0 32px -4px rgba(197, 160, 89, 0.22);
-    transition:
-      background-color 0.2s ease,
-      box-shadow 0.2s ease,
-      transform 0.2s ease;
+    transition: var(--transition-artisan);
   }
   .btn-landing-gold:hover {
     background-color: var(--aeterna-gold-light);
@@ -435,7 +507,7 @@
     justify-content: center;
     border-radius: 9999px;
     border: 1px solid var(--border-gold);
-    background-color: rgba(0, 0, 0, 0.28);
+    background-color: rgba(3, 3, 3, 0.45);
     padding-left: 1.5rem;
     padding-right: 1.5rem;
     font-size: 10px;
@@ -444,11 +516,7 @@
     text-transform: uppercase;
     color: var(--aeterna-gold);
     box-shadow: 0 8px 28px -8px rgba(0, 0, 0, 0.55);
-    transition:
-      background-color 0.2s ease,
-      border-color 0.2s ease,
-      box-shadow 0.2s ease,
-      transform 0.2s ease;
+    transition: var(--transition-artisan);
   }
   .btn-landing-outline-gold:hover {
     background-color: rgba(197, 160, 89, 0.1);

@@ -67,7 +67,7 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
             </Link>
             {event && (
               <div className="flex items-center gap-2 text-xs">
-                <span className="px-2 py-0.5 rounded-full bg-black/30 border border-white/[0.08] text-[var(--landing-text-body)]">
+                <span className="px-2 py-0.5 rounded-full bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-body)]">
                   {event.name ?? "Untitled album"}
                 </span>
                 <span
@@ -122,7 +122,7 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
                   </span>
                 </div>
               </div>
-              <div className="mt-4 relative rounded-2xl overflow-hidden border border-white/[0.08] bg-black shadow-[var(--landing-shadow-deep)]">
+              <div className="mt-4 relative rounded-2xl overflow-hidden border border-white/[0.08] bg-[#030303] shadow-[var(--landing-shadow-deep)]">
                 {SAMPLE_MAGIC_VIDEO_URL ? (
                   <video
                     className="w-full h-full aspect-video object-cover"
@@ -142,7 +142,7 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
                   </div>
                 )}
                 {currentTier !== "premium" && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-center px-4">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#030303]/70 text-center px-4">
                     <p className="text-sm text-[var(--aeterna-gold)] font-heading mb-2">
                       Upgrade to Premium to create films like this for your family.
                     </p>

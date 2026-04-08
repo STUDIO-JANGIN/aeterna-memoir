@@ -230,7 +230,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 name="name"
                 type="text"
                 defaultValue={event.name ?? ""}
-                className="w-full min-h-[44px] px-4 rounded-xl bg-black/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
+                className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
                 placeholder="Loved one's name"
               />
             </div>
@@ -256,7 +256,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                   name="birth_date"
                   type="text"
                   defaultValue={event.birth_date ?? ""}
-                  className="w-full min-h-[44px] px-4 rounded-xl bg-black/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
+                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
                   placeholder="e.g. 1950-01-15"
                 />
               </div>
@@ -269,7 +269,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                   name="death_date"
                   type="text"
                   defaultValue={event.death_date ?? ""}
-                  className="w-full min-h-[44px] px-4 rounded-xl bg-black/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
+                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
                   placeholder="e.g. 2024-03-01"
                 />
               </div>
@@ -283,7 +283,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 name="location"
                 type="text"
                 defaultValue={event.location ?? ""}
-                className="w-full min-h-[44px] px-4 rounded-xl bg-black/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
+                className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
                 placeholder="City, venue, etc."
               />
             </div>
@@ -296,7 +296,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 name="ceremony_time"
                 type="text"
                 defaultValue={event.ceremony_time ?? ""}
-                className="w-full min-h-[44px] px-4 rounded-xl bg-black/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
+                className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
                 placeholder="e.g. March 15, 2024 at 2pm"
               />
             </div>
@@ -309,7 +309,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 name="flower_link"
                 type="url"
                 defaultValue={event.flower_link ?? ""}
-                className="w-full min-h-[44px] px-4 rounded-xl bg-black/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
+                className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
                 placeholder="https://..."
               />
             </div>
@@ -322,7 +322,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 name="bank_info"
                 rows={4}
                 defaultValue={event.bank_info ?? ""}
-                className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-none"
                 placeholder="Bank name, account number, account holder, etc. (shown to visitors after support payment)"
               />
             </div>
@@ -388,7 +388,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
               {tributeSuggestions.map((line, idx) => (
                 <li
                   key={idx}
-                  className="rounded-xl bg-black/25 border border-white/[0.08] px-4 py-3 leading-relaxed text-[var(--landing-text-body)]"
+                  className="rounded-xl bg-[#030303]/25 border border-white/[0.08] px-4 py-3 leading-relaxed text-[var(--landing-text-body)]"
                 >
                   <span className="block text-[10px] uppercase tracking-[0.22em] text-[var(--aeterna-gold-muted)] mb-1">
                     Suggestion {idx + 1}

@@ -18,7 +18,7 @@ export function IPhoneShell({
     >
       {island && (
         <div
-          className="pointer-events-none absolute left-1/2 top-[14px] z-20 h-[28px] w-[92px] -translate-x-1/2 rounded-full bg-black/90 ring-1 ring-white/[0.06]"
+          className="pointer-events-none absolute left-1/2 top-[14px] z-20 h-[28px] w-[92px] -translate-x-1/2 rounded-full bg-[#030303]/90 ring-1 ring-white/[0.06]"
           aria-hidden
         />
       )}
@@ -97,7 +97,7 @@ export function StepScreenCreate() {
       </div>
       <div className="shrink-0 px-2.5 pb-3 pt-1">
         <div className="flex h-8 items-center justify-center rounded-2xl bg-[var(--aeterna-gold)] text-[7px] font-semibold uppercase tracking-[0.14em] text-[#0a0a0a]">
-          Continue
+          Continue the Story
         </div>
       </div>
     </div>
@@ -160,7 +160,7 @@ export function StepScreenShareMemory() {
       </div>
       <div className="shrink-0 px-2.5 pb-3 pt-1">
         <div className="flex h-8 items-center justify-center rounded-xl bg-[var(--aeterna-gold)] text-[7px] font-semibold uppercase tracking-[0.12em] text-[#0a0a0a]">
-          Continue
+          Continue the Story
         </div>
       </div>
     </div>
@@ -240,7 +240,7 @@ export function StepScreenConnectVote() {
         <p className="text-center font-[var(--font-serif)] text-[8px] text-[#e8e4dc]">Memories</p>
         <p className="text-center text-[6px] text-white/40">Heart the moments that matter</p>
       </div>
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-px overflow-y-auto bg-black/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-px overflow-y-auto bg-[#030303]/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {CONNECT_MOMENTS.map((moment, i) => (
           <div
             key={moment.id}
@@ -258,7 +258,7 @@ export function StepScreenConnectVote() {
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
             <span
               className={`absolute bottom-0.5 right-0.5 rounded-full px-1 py-0.5 text-[5.5px] font-medium tabular-nums ${
-                i === 0 ? "bg-black/75 text-red-300" : "bg-black/60 text-white/75"
+                i === 0 ? "bg-[#030303]/75 text-red-300" : "bg-[#030303]/60 text-white/75"
               }`}
             >
               ♥ {moment.hearts}
@@ -300,7 +300,7 @@ export function StepScreenFilmTribute() {
               </svg>
             </div>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 flex gap-0.5 bg-black/55 p-1">
+          <div className="absolute bottom-0 left-0 right-0 flex gap-0.5 bg-[#030303]/55 p-1">
             {[12, 28, 48, 68].map((pct, i) => (
               <div key={i} className="relative h-7 flex-1 overflow-hidden rounded-sm ring-1 ring-white/10">
                 <img
@@ -313,7 +313,7 @@ export function StepScreenFilmTribute() {
             ))}
           </div>
         </div>
-        <div className="shrink-0 border-t border-white/[0.06] bg-black/50 px-2 py-1.5 text-center">
+        <div className="shrink-0 border-t border-white/[0.06] bg-[#030303]/50 px-2 py-1.5 text-center">
           <p className="text-[7px] text-white/50">Cinematic tribute · Luma AI</p>
         </div>
       </div>

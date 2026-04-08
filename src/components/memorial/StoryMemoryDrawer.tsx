@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
+import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
 import { ArrowUp, Flag } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
 import {
@@ -32,7 +33,6 @@ function formatShortTime(iso: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-const spring = { type: "spring" as const, stiffness: 320, damping: 32 }
 const DRAG_CLOSE = 100
 
 export function StoryMemoryDrawer({
@@ -216,14 +216,14 @@ export function StoryMemoryDrawer({
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      initial={artisanPresence.initial}
+      animate={artisanPresence.animate}
+      exit={artisanPresence.exit}
+      transition={ARTISAN_SPRING}
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/65 backdrop-blur-[3px]"
+        className="absolute inset-0 bg-[#030303]/65 backdrop-blur-[3px]"
         aria-label="Close"
         onClick={onClose}
       />
@@ -233,10 +233,10 @@ export function StoryMemoryDrawer({
         aria-modal="true"
         aria-labelledby="memory-drawer-title"
         className="relative z-10 flex max-h-[92dvh] w-full max-w-full flex-col overflow-hidden rounded-t-[1.75rem] border border-[var(--border-gold-subtle)] border-b-0 bg-[var(--once-bg-elevated)] shadow-[0_-24px_80px_rgba(0,0,0,0.45)] md:max-h-[85vh] md:max-w-lg md:rounded-2xl md:border-b md:shadow-2xl"
-        initial={isDesktop ? { opacity: 0, scale: 0.96, y: 16 } : { y: "100%" }}
-        animate={isDesktop ? { opacity: 1, scale: 1, y: 0 } : { y: 0, opacity: 1 }}
-        exit={isDesktop ? { opacity: 0, scale: 0.98, y: 12 } : { y: "100%" }}
-        transition={{ type: "spring", stiffness: 380, damping: 34 }}
+        initial={isDesktop ? artisanPresence.initial : { y: "100%" }}
+        animate={isDesktop ? artisanPresence.animate : { y: 0, opacity: 1 }}
+        exit={isDesktop ? artisanPresence.exit : { y: "100%" }}
+        transition={ARTISAN_SPRING}
         onClick={(e) => e.stopPropagation()}
       >
           {/* Mobile drag handle + swipe area */}
@@ -278,7 +278,7 @@ export function StoryMemoryDrawer({
                   src={story.thumb_url ?? story.image_url}
                   alt=""
                   className="mx-auto max-h-[32vh] w-full object-contain md:max-h-[38vh]"
-                  transition={spring}
+                  transition={ARTISAN_SPRING}
                   draggable={false}
                 />
               ) : (
@@ -291,7 +291,7 @@ export function StoryMemoryDrawer({
               <p className="font-[var(--font-serif)] text-base text-[var(--aeterna-gold)]">{story.author_name ?? "Anonymous"}</p>
               <p className="mt-1 text-sm leading-relaxed text-[var(--once-text-primary)]">{story.story_text ?? ""}</p>
 
-              <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--border-gold-subtle)]/50 bg-black/20 px-3 py-2.5">
+              <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--border-gold-subtle)]/50 bg-[#030303]/20 px-3 py-2.5">
                 <motion.button
                   type="button"
                   onClick={onHeart}

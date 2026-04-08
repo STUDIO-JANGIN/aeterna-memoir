@@ -206,7 +206,7 @@ export default function EventTributePage() {
           <div className="flex flex-col md:flex-row items-center md:items-end gap-10 md:gap-14">
             {event.profile_image && (
               <div className="flex flex-col items-center md:items-start">
-                <div className="relative w-40 h-40 md:w-52 md:h-52 rounded-[28px] overflow-hidden border border-[var(--border-gold-subtle)] shadow-[var(--shadow-deep)] bg-black/40">
+                <div className="relative w-40 h-40 md:w-52 md:h-52 rounded-[28px] overflow-hidden border border-[var(--border-gold-subtle)] shadow-[var(--shadow-deep)] bg-[#030303]/40">
                   <img
                     src={event.profile_image}
                     alt={`${displayName || "Loved one"}'s portrait`}
@@ -316,7 +316,7 @@ export default function EventTributePage() {
       </RevealSection>
 
       {dialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#030303]/90 backdrop-blur-xl p-8">
           <div className="rounded-[28px] max-w-md w-full p-12 shadow-[var(--shadow-deep)] border border-[var(--border-luxury)] bg-[var(--cream-warm)] text-[var(--charcoal)]">
             <p className="font-serif text-[11px] uppercase tracking-[0.32em] text-[var(--champagne)] mb-2 text-center">Share a Tribute</p>
             <h2 className="text-2xl md:text-3xl mb-10 text-center font-light text-[var(--charcoal)] tracking-tight">Leave a memory</h2>
@@ -326,7 +326,7 @@ export default function EventTributePage() {
               <input type="file" name="file" accept="image/*" className="w-full text-sm font-serif text-[var(--charcoal-muted)] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border file:border-[var(--border-luxury)] file:bg-[var(--champagne-pale)] file:font-serif file:text-[var(--charcoal)]" />
               <div className="flex gap-4 pt-6">
                 <button type="button" onClick={() => setDialogOpen(false)} className="flex-1 py-4 rounded-[24px] border border-[var(--border-luxury)] text-[var(--charcoal-muted)] font-serif text-sm hover:bg-[var(--champagne-pale)]/60 transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 py-4 rounded-[24px] bg-[var(--charcoal)] text-[var(--cream)] font-serif text-sm shadow-[var(--shadow-button)] hover:opacity-95 transition-all">Submit</button>
+                <button type="submit" className="flex-1 py-4 rounded-[32px] bg-[var(--charcoal)] text-[var(--cream)] font-serif text-sm shadow-[var(--shadow-button)] hover:opacity-95 transition-all">Continue the Story</button>
               </div>
             </form>
           </div>
@@ -412,7 +412,7 @@ export default function EventTributePage() {
       )}
 
       {donationsOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#030303]/60 backdrop-blur-sm">
           <div className="bg-white rounded-[2rem] max-w-2xl w-full mx-4 p-8 shadow-2xl border border-[#E4D7C7]">
             <div className="flex items-start justify-between gap-4 mb-6">
               <div>
@@ -452,7 +452,7 @@ export default function EventTributePage() {
 
       {/* Bridge popup: voluntary tip before opening family’s donation link */}
       {bridgeOpen && event?.flower_link && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#030303]/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-[2rem] max-w-sm w-full p-8 shadow-2xl border border-[#E4D7C7]">
             <p className="font-sans text-[10px] tracking-[0.28em] uppercase text-gray-400 mb-2">Aeterna</p>
             <h2 className="text-xl font-light text-gray-800 mb-2">Help preserve the memories shared by loved ones.</h2>

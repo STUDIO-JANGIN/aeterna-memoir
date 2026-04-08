@@ -207,7 +207,7 @@ export default function PresentPage({ params }: PageProps) {
         {hasContentAfterStart && current ? (
           <div className="max-w-6xl w-full px-10 flex flex-col md:flex-row items-center gap-16">
             <div
-              className={`relative w-full md:w-1/2 aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.8)] border border-white/10 bg-black/40 transition-opacity duration-700 ${
+              className={`relative w-full md:w-1/2 aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.8)] border border-white/10 bg-[#030303]/40 transition-opacity duration-700 ${
                 fadeState === "in" ? "opacity-100" : "opacity-0"
               }`}
             >
@@ -270,7 +270,7 @@ export default function PresentPage({ params }: PageProps) {
       )}
 
       {isAudioFile && started && (
-        <div className="fixed bottom-6 left-8 flex items-center gap-2 font-sans text-[10px] text-gray-300 bg-black/50 border border-white/10 rounded-full px-3 py-2 backdrop-blur-sm">
+        <div className="fixed bottom-6 left-8 flex items-center gap-2 font-sans text-[10px] text-gray-300 bg-[#030303]/50 border border-white/10 rounded-full px-3 py-2 backdrop-blur-sm">
           <button
             type="button"
             onClick={() => setMuted((m) => !m)}
@@ -292,7 +292,7 @@ export default function PresentPage({ params }: PageProps) {
       )}
 
       {shareUrl && (
-        <div className="fixed bottom-6 right-8 flex items-center gap-3 font-sans text-[10px] text-gray-200 bg-black/40 border border-white/5 rounded-full px-4 py-3 backdrop-blur-sm">
+        <div className="fixed bottom-6 right-8 flex items-center gap-3 font-sans text-[10px] text-gray-200 bg-[#030303]/40 border border-white/5 rounded-full px-4 py-3 backdrop-blur-sm">
           <div className="text-right">
             <p className="uppercase tracking-[0.24em] text-gray-400 mb-1">Add your memory</p>
             <a

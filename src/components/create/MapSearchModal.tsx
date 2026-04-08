@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
+import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
 import { MapPin, X } from "lucide-react"
 import { usePlaceAutocomplete } from "@/hooks/usePlaceAutocomplete"
 
@@ -37,17 +38,18 @@ export function MapSearchModal({ open, onClose, initialQuery, onApply, placesEna
           role="dialog"
           aria-modal="true"
           aria-labelledby="map-search-title"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/65 backdrop-blur-sm"
+          initial={artisanPresence.initial}
+          animate={artisanPresence.animate}
+          exit={artisanPresence.exit}
+          transition={ARTISAN_SPRING}
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-[#030303]/65 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && onClose()}
         >
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-            transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            initial={artisanPresence.initial}
+            animate={artisanPresence.animate}
+            exit={artisanPresence.exit}
+            transition={ARTISAN_SPRING}
             className="w-full max-w-md rounded-2xl border border-white/[0.1] bg-[color:var(--landing-bg)] shadow-[0_24px_80px_-20px_rgba(0,0,0,0.85)] max-h-[min(90dvh,560px)] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
@@ -81,7 +83,7 @@ export function MapSearchModal({ open, onClose, initialQuery, onApply, placesEna
               />
               {loading && <p className="text-[11px] text-white/35">Searching…</p>}
               {predictions.length > 0 && (
-                <ul className="rounded-xl border border-white/[0.08] bg-black/30 max-h-44 overflow-auto divide-y divide-white/[0.06]">
+                <ul className="rounded-xl border border-white/[0.08] bg-[#030303]/30 max-h-44 overflow-auto divide-y divide-white/[0.06]">
                   {predictions.map((p) => (
                     <li key={p.place_id}>
                       <button

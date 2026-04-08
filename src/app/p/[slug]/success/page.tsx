@@ -1,6 +1,7 @@
 "use client"
 
-import { use, useEffect, useState, Suspense } from "react"
+import { use, useEffect, useRef, useState, Suspense } from "react"
+import confetti from "canvas-confetti"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { getPaymentSuccessAction } from "@/app/actions/getPaymentSuccess"
@@ -27,6 +28,7 @@ function SuccessContent({ slug }: { slug: string }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isOwner, setIsOwner] = useState(false)
   const [inviteMeta, setInviteMeta] = useState<InvitationCardData | null>(null)
+  const confettiFired = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -119,6 +121,23 @@ function SuccessContent({ slug }: { slug: string }) {
     }
   }, [status, slug])
 
+  useEffect(() => {
+    if (status !== "success" || confettiFired.current) return
+    confettiFired.current = true
+    const id = requestAnimationFrame(() => {
+      confetti({
+        particleCount: 40,
+        spread: 70,
+        origin: { x: 0.5, y: 0.42 },
+        colors: ["#D4AF37", "#F5F5F7"],
+        gravity: 0.35,
+        ticks: 520,
+        scalar: 1,
+      })
+    })
+    return () => cancelAnimationFrame(id)
+  }, [status])
+
   const displayName = eventName?.trim() || "your loved one"
   const inviteName = eventName?.trim() || "Your loved one"
   const baseUrl = getAppBaseUrl()
@@ -198,7 +217,7 @@ function SuccessContent({ slug }: { slug: string }) {
             <div className="mt-12 hidden md:flex flex-wrap items-center justify-center gap-3">
               <Link
                 href={`/p/${slug}`}
-                className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-black px-8 text-[11px] font-medium tracking-[0.18em] uppercase text-[#f5f5f4] border border-white/[0.12] hover:bg-neutral-950 transition-colors"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#030303] px-8 text-[11px] font-medium tracking-[0.18em] uppercase text-[#f5f5f4] border border-white/10 hover:bg-[#0c0c0c] transition-colors duration-300 ease-in-out"
               >
                 View memorial
               </Link>
@@ -234,7 +253,7 @@ function SuccessContent({ slug }: { slug: string }) {
           <div className="flex flex-col gap-2 max-w-lg mx-auto">
             <Link
               href={`/p/${slug}`}
-              className="flex w-full min-h-[52px] items-center justify-center rounded-full bg-black text-[#f5f5f4] text-[11px] font-medium tracking-[0.18em] uppercase border border-white/[0.1] hover:bg-neutral-950 transition-colors"
+              className="flex w-full min-h-[52px] items-center justify-center rounded-full bg-[#030303] text-[#f5f5f4] text-[11px] font-medium tracking-[0.18em] uppercase border border-white/10 hover:bg-[#0c0c0c] transition-colors duration-300 ease-in-out"
             >
               View memorial
             </Link>

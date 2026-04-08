@@ -30,3 +30,29 @@ export async function heartStoryAction(storyId: string): Promise<HeartResult> {
   }
   return { ok: true, likesCount: nextCount }
 }
+
+/** Remove one heart from the story (floors at 0). */
+export async function unheartStoryAction(storyId: string): Promise<HeartResult> {
+  const supabase = getSupabaseAdmin()
+  const { data: row, error: fetchError } = await supabase
+    .from("stories")
+    .select("likes_count")
+    .eq("id", storyId)
+    .single()
+
+  if (fetchError || row == null) {
+    return { ok: false, error: fetchError?.message ?? "Story not found." }
+  }
+
+  const current = row.likes_count ?? 0
+  const nextCount = Math.max(0, current - 1)
+  const { error: updateError } = await supabase
+    .from("stories")
+    .update({ likes_count: nextCount })
+    .eq("id", storyId)
+
+  if (updateError) {
+    return { ok: false, error: updateError.message }
+  }
+  return { ok: true, likesCount: nextCount }
+}

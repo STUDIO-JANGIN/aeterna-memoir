@@ -249,6 +249,12 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
 
   return (
     <div className="min-h-dvh p-6 md:p-10 md:pb-16">
+      {currentTier === "free" && trialRemainingMs > 0 && (
+        <div className="max-w-6xl mx-auto mb-8 md:mb-10 w-full">
+          <MemorialTrialCountdown remainingMs={trialRemainingMs} className="w-full" />
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto">
         <header className="mb-8 md:mb-10">
           <div className="card-landing-airy p-6 md:p-10">
@@ -271,12 +277,6 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
             </div>
           </div>
         </header>
-
-        {currentTier === "free" && trialRemainingMs > 0 && (
-          <div className="mb-8 md:mb-10">
-            <MemorialTrialCountdown remainingMs={trialRemainingMs} />
-          </div>
-        )}
 
         <div className="card-landing-airy p-6 md:p-10 mb-10 md:mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/[0.08]">

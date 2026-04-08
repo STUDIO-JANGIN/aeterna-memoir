@@ -25,8 +25,9 @@ async function ensureInvitationFonts(): Promise<void> {
       document.fonts.load("400 28px 'Playfair Display'"),
       document.fonts.load("italic 400 24px 'Playfair Display'"),
       document.fonts.load("400 22px Inter"),
+      document.fonts.load("400 17px Inter"),
       document.fonts.load("500 21px Inter"),
-      document.fonts.load("600 11px Inter"),
+      document.fonts.load("600 19px Inter"),
     ])
   } catch {
     /* fall back to system fonts */
@@ -254,8 +255,9 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   const death = formatDisplayDate(deathDate)
   y = photoY + photoD + 28
   ctx.textAlign = "center"
-  ctx.fillStyle = INK_SOFT
-  ctx.font = `400 24px ${FONT_SANS}`
+  /** Same as guest URL line under QR: muted sans, slightly larger + semibold */
+  ctx.fillStyle = INK_MUTED
+  ctx.font = `600 19px ${FONT_SANS}`
   ctx.fillText(`${birth}  —  ${death}`, centerX, y)
   y += 44
 
@@ -292,15 +294,18 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     y = sepY + 36
   }
 
+  /** Section labels: match “Scan to share a memory” (weight + size + sans) */
+  const fontScanCta = `500 21px ${FONT_SANS}`
+  /** Body lines under QR URL — location, times, fund link */
+  const fontUrlLine = `400 17px ${FONT_SANS}`
+
   ctx.textAlign = "center"
-  ctx.fillStyle = INK_MUTED
-  ctx.font = `600 11px ${FONT_SANS}`
-  ctx.letterSpacing = "0.22em"
+  ctx.fillStyle = INK
+  ctx.font = fontScanCta
   ctx.fillText("SERVICE", centerX, y)
-  ctx.letterSpacing = "0"
   y += 34
-  ctx.fillStyle = INK_SOFT
-  ctx.font = `400 22px ${FONT_SANS}`
+  ctx.fillStyle = INK_MUTED
+  ctx.font = fontUrlLine
   ctx.fillText(`Location: ${displayLocation(location)}`, centerX, y)
   y += 36
   ctx.fillText(`Service time: ${displayService(ceremonyTime)}`, centerX, y)
@@ -308,14 +313,12 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
 
   const fund = fundLink?.trim()
   if (fund) {
-    ctx.fillStyle = INK_MUTED
-    ctx.font = `600 11px ${FONT_SANS}`
-    ctx.letterSpacing = "0.18em"
-    ctx.fillText("MEMORIAL FUND", centerX, y)
-    ctx.letterSpacing = "0"
-    y += 28
     ctx.fillStyle = INK
-    ctx.font = `400 20px ${FONT_SANS}`
+    ctx.font = fontScanCta
+    ctx.fillText("MEMORIAL FUND", centerX, y)
+    y += 28
+    ctx.fillStyle = INK_MUTED
+    ctx.font = fontUrlLine
     const supLines = wrapLines(ctx, fund, contentW, 4)
     supLines.forEach((ln) => {
       ctx.fillText(ln, centerX, y)
@@ -353,12 +356,12 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   y += qrSize + qrPad + 22
   ctx.textAlign = "center"
   ctx.fillStyle = INK
-  ctx.font = `500 21px ${FONT_SANS}`
+  ctx.font = fontScanCta
   ctx.fillText("Scan to share a memory", centerX, y)
 
   y += 40
   ctx.fillStyle = INK_MUTED
-  ctx.font = `400 17px ${FONT_SANS}`
+  ctx.font = fontUrlLine
   const short = guestUrl.replace(/^https?:\/\//, "")
   const display = short.length > 48 ? `${short.slice(0, 46)}…` : short
   ctx.fillText(display, centerX, y)

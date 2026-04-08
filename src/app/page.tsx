@@ -3,7 +3,7 @@
 import { useState, useEffect, type ReactNode } from "react"
 import Link from "next/link"
 import { Heart, QrCode, Sparkles } from "lucide-react"
-import { Navbar, NavbarCreateLink } from "@/components/Layout/Navbar"
+import { Navbar } from "@/components/Layout/Navbar"
 import { RevealSection } from "@/components/RevealSection"
 import {
   IPhoneShell,
@@ -219,9 +219,7 @@ export default function LandingPage() {
   return (
     <div className="relative min-h-dvh w-full bg-landing text-[#f5f5f7] leading-[1.6]">
       {/* once.film–inspired: calm, editorial, lots of air — nav centered, logo / CTA balanced */}
-      <Navbar
-        end={<NavbarCreateLink />}
-      >
+      <Navbar>
         <button
           type="button"
           onClick={() => scrollTo("how-it-works")}
@@ -269,25 +267,25 @@ export default function LandingPage() {
         <div aria-hidden className="landing-hero-vignette" />
       </div>
 
-      <div className="relative z-0 pt-[76px]">
+      <div className="relative z-0 pt-[6.75rem] md:pt-[76px]">
         {/* Hero: copy + mockups */}
-        <main className="px-5 md:px-10 pt-10 pb-20 md:pt-20 md:pb-32">
+        <main className="px-5 md:px-10 pt-6 pb-16 md:pt-20 md:pb-32">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 gap-y-12 lg:grid-cols-2 lg:gap-12 xl:gap-16 lg:items-center lg:gap-y-0">
+            <div className="grid grid-cols-1 gap-y-14 lg:grid-cols-2 lg:gap-12 xl:gap-16 lg:items-center lg:gap-y-0">
               {/* Value proposition — always on top on mobile; left column on desktop */}
-              <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-left px-1 sm:px-2 pb-4 sm:pb-10 lg:pb-0">
+              <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-left px-1 sm:px-2 pb-2 sm:pb-10 lg:pb-0">
                 <RevealSection className="w-full max-w-xl mx-auto lg:mx-0 lg:max-w-xl space-y-0">
-                  <h1 className="text-landing-hero font-semibold text-balance max-md:!text-[clamp(1.35rem,4vw,1.7rem)] max-md:!leading-[1.3] md:leading-[1.1]">
+                  <h1 className="text-landing-hero font-semibold text-balance max-md:!text-[clamp(1.25rem,4.2vw,1.65rem)] max-md:!leading-[1.38] max-md:tracking-[-0.03em] md:leading-[1.1]">
                     A Digital Shrine for Sacred Memory
                   </h1>
-                  <p className="mt-5 md:mt-8 text-sm md:text-lg leading-[1.6] text-[#f5f5f7]/90 font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance">
+                  <p className="mt-4 md:mt-8 text-[13px] md:text-lg leading-[1.72] md:leading-[1.6] text-[#f5f5f7]/90 font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance max-md:px-0.5">
                     A lasting space for people and pets—preserved with dignity. Share instantly by QR or link: no app, no friction; guests add photos and stories from any phone. A gentle memorial feed where visitors heart and comment on each memory—like a sacred timeline of their legacy.
                   </p>
-                  <p className="mt-5 md:mt-4 text-[11px] md:text-sm leading-[1.62] md:leading-relaxed font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance italic text-[#f0ebe3] [text-shadow:0px_2px_10px_rgba(0,0,0,0.8)]">
+                  <p className="mt-5 md:mt-4 text-[11px] md:text-sm leading-[1.68] md:leading-relaxed font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance italic text-[#f0ebe3] [text-shadow:0px_2px_10px_rgba(0,0,0,0.8)] max-md:px-0.5">
                     Footprints, remembrance, and preservation—in one hallowed place.
                   </p>
                 </RevealSection>
-                <RevealSection className="mt-12 w-full max-w-xl mx-auto lg:mx-0 pt-2 md:mt-10 md:pt-0 border-t border-white/[0.06] md:border-0">
+                <RevealSection className="mt-8 w-full max-w-xl mx-auto lg:mx-0 pt-2 md:mt-10 md:pt-0 border-t border-white/[0.06] md:border-0 max-md:pb-2">
                   <Link
                     href="/create"
                     className="cta-silk inline-flex min-h-[50px] md:min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-8 md:px-14 text-[10px] md:text-[11px] font-semibold tracking-[0.16em] uppercase text-[#0c0c0c] border border-[var(--aeterna-gold)] shadow-[0_16px_50px_-6px_rgba(197,160,89,0.42)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_20px_56px_-4px_rgba(197,160,89,0.5)]"
@@ -298,8 +296,8 @@ export default function LandingPage() {
               </div>
 
               {/* iPhone mockups — own column / region; contained so text never sits underneath */}
-              <RevealSection className="order-2 relative z-10 w-full flex justify-center lg:justify-end">
-                <div className="relative w-full max-w-[min(100%,400px)] lg:max-w-[440px] h-[min(380px,78vw)] sm:h-[420px] md:h-[440px] lg:h-[min(480px,52vh)] isolate">
+              <RevealSection className="order-2 relative z-10 w-full flex justify-center lg:justify-end max-lg:mt-2 max-lg:pt-4">
+                <div className="relative w-full max-w-[min(100%,400px)] lg:max-w-[440px] h-[min(380px,78vw)] sm:h-[420px] md:h-[440px] lg:h-[min(480px,52vh)] isolate max-md:overflow-x-clip max-md:overflow-y-visible">
                   {/* Foreground mockup — inclusive elder portrait (faces kept below Dynamic Island) */}
                   <div
                     className="absolute right-0 top-4 z-20 w-[56%] min-w-[180px] sm:top-6 sm:w-[54%]"

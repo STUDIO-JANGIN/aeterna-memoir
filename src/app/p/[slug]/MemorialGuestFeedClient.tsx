@@ -7,7 +7,7 @@ import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
 import { supabase } from "@/lib/supabase/browser"
 import imageCompression from "browser-image-compression"
 import { createStoryAction } from "@/app/actions/createStory"
-import { heartStoryAction } from "@/app/actions/heartStory"
+import { heartStoryAction, unheartStoryAction } from "@/app/actions/heartStory"
 import { subscribeNotificationAction } from "@/app/actions/subscribeNotification"
 import { subscribeVisitorAction } from "@/app/actions/subscribeVisitor"
 import { createCheckoutSessionAction } from "@/app/actions/createCheckoutSession"
@@ -31,9 +31,13 @@ import {
 } from "@/components/memorial/MemorialTrialCountdown"
 import { buildGlobalShareMessage } from "@/components/MemorialShareActions"
 import { openWhatsAppWithPrefilledText } from "@/lib/whatsappInvite"
-import { coerceIdString } from "@/lib/uuid"
+import { coerceIdString, parseUuidString } from "@/lib/uuid"
 import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
 import { OptimisticImage } from "@/components/Upload"
+
+function normalizeStoryIdForHearts(raw: string): string {
+  return parseUuidString(raw) ?? coerceIdString(raw)
+}
 
 type FeedEvent = {
   id: string
@@ -109,6 +113,7 @@ export default function GuestFeedPage({ params }: PageProps) {
   const [submitLoading, setSubmitLoading] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [heartedIds, setHeartedIds] = useState<Set<string>>(new Set())
+  const [heartBusyId, setHeartBusyId] = useState<string | null>(null)
   const heartedStorageKey = slug ? `aeterna_hearts_${slug}` : null
   const [likesMap, setLikesMap] = useState<Record<string, number>>({})
   const [remainingMs, setRemainingMs] = useState<number | null>(null)
@@ -291,7 +296,9 @@ export default function GuestFeedPage({ params }: PageProps) {
       const raw = localStorage.getItem(heartedStorageKey)
       if (!raw) return
       const ids = JSON.parse(raw) as string[]
-      if (Array.isArray(ids)) setHeartedIds(new Set(ids))
+      if (Array.isArray(ids)) {
+        setHeartedIds(new Set(ids.map((id) => normalizeStoryIdForHearts(String(id))).filter(Boolean)))
+      }
     } catch {
       // ignore
     }
@@ -380,7 +387,8 @@ export default function GuestFeedPage({ params }: PageProps) {
         setStories(storiesNormalized)
         const map: Record<string, number> = {}
         storiesNormalized.forEach((s) => {
-          if (s.id) map[s.id] = s.likes_count ?? 0
+          const k = normalizeStoryIdForHearts(s.id)
+          if (k) map[k] = s.likes_count ?? 0
         })
         setLikesMap(map)
       }
@@ -580,7 +588,7 @@ export default function GuestFeedPage({ params }: PageProps) {
   const handleSubmitStory = async () => {
     if (!event) return
     if (!memoryPhotoFile) {
-      setSubmitError("Please add a Spark of Memory (a photo).")
+      setSubmitError("Please add a memory (a photo).")
       return
     }
     if (!memoryAuthorName.trim() || !memoryStoryText.trim()) {
@@ -647,7 +655,8 @@ export default function GuestFeedPage({ params }: PageProps) {
       setStories(refreshed as Story[])
       const map: Record<string, number> = {}
       refreshed.forEach((s: Story) => {
-        map[s.id] = s.likes_count ?? 0
+        const k = normalizeStoryIdForHearts(s.id)
+        if (k) map[k] = s.likes_count ?? 0
       })
       setLikesMap((prev) => ({ ...prev, ...map }))
     } catch (err) {
@@ -739,19 +748,28 @@ export default function GuestFeedPage({ params }: PageProps) {
   }
 
   const handleHeart = async (storyId: string) => {
-    if (heartedIds.has(storyId)) return
-    const result = await heartStoryAction(storyId)
-    if (result.ok) {
-      const next = new Set(heartedIds).add(storyId)
-      setHeartedIds(next)
-      setLikesMap((prev) => ({ ...prev, [storyId]: result.likesCount }))
-      if (heartedStorageKey && typeof window !== "undefined") {
-        try {
-          localStorage.setItem(heartedStorageKey, JSON.stringify([...next]))
-        } catch {
-          // ignore
+    const id = normalizeStoryIdForHearts(storyId)
+    if (!id || heartBusyId) return
+    setHeartBusyId(id)
+    try {
+      const removing = heartedIds.has(id)
+      const result = removing ? await unheartStoryAction(id) : await heartStoryAction(id)
+      if (result.ok) {
+        const next = new Set(heartedIds)
+        if (removing) next.delete(id)
+        else next.add(id)
+        setHeartedIds(next)
+        setLikesMap((prev) => ({ ...prev, [id]: result.likesCount }))
+        if (heartedStorageKey && typeof window !== "undefined") {
+          try {
+            localStorage.setItem(heartedStorageKey, JSON.stringify([...next]))
+          } catch {
+            // ignore
+          }
         }
       }
+    } finally {
+      setHeartBusyId(null)
     }
   }
 
@@ -800,7 +818,7 @@ export default function GuestFeedPage({ params }: PageProps) {
   const showAddStoryCta =
     !filmReleased && !isClosed && photoDeadlineRemainingMs !== null && photoDeadlineRemainingMs > 0
 
-  const addStoryLabel = "Add a Spark of Memory"
+  const addStoryLabel = "Add a memory"
 
   return (
     <LayoutGroup>
@@ -1010,13 +1028,15 @@ export default function GuestFeedPage({ params }: PageProps) {
           <p className="mt-2 text-base font-medium tabular-nums text-[var(--landing-text-body)] sm:text-lg">
             {birth} — {death}
           </p>
+        </div>
 
-          {event.invitation_bio?.trim() ? (
-            <p className="mt-6 w-full max-w-xl whitespace-pre-wrap px-1 text-center font-[var(--font-serif)] text-base leading-relaxed text-[var(--landing-text-body)] sm:text-[1.05rem]">
-              {event.invitation_bio.trim()}
-            </p>
-          ) : null}
+        {event.invitation_bio?.trim() ? (
+          <p className="mx-auto mt-6 w-full max-w-4xl whitespace-pre-wrap px-2 text-center font-['Times_New_Roman',Times,serif] text-[1.05rem] italic leading-[1.75] text-[var(--landing-text-body)] sm:px-6 sm:text-[1.125rem] sm:leading-[1.8]">
+            {event.invitation_bio.trim()}
+          </p>
+        ) : null}
 
+        <div className="mx-auto flex max-w-lg flex-col items-center text-center">
           {showAddStoryCta || isOwner ? (
             <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-3 px-1">
               {showAddStoryCta ? (
@@ -1280,7 +1300,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                 )}
               </>
             )}
-            <ul className="grid grid-cols-3 gap-[3px] bg-landing">
+            <ul className="grid grid-cols-3 md:grid-cols-4 gap-[3px] bg-landing">
               {stories.map((story, index) => {
                 const isBlurredByPaywall = isLocked && index >= paywallThreshold
                 const isBlurred = isBlurredByDeadlineOnly(index) || isBlurredByPaywall
@@ -1496,8 +1516,11 @@ export default function GuestFeedPage({ params }: PageProps) {
             story={viewerStory}
             eventId={coerceIdString(event.id)}
             sessionUser={sessionUser}
-            likesCount={likesMap[viewerStory.id] ?? viewerStory.likes_count ?? 0}
-            isHearted={heartedIds.has(viewerStory.id)}
+            likesCount={
+              likesMap[normalizeStoryIdForHearts(viewerStory.id)] ?? viewerStory.likes_count ?? 0
+            }
+            isHearted={heartedIds.has(normalizeStoryIdForHearts(viewerStory.id))}
+            heartBusy={heartBusyId === normalizeStoryIdForHearts(viewerStory.id)}
             onClose={() => setViewerStory(null)}
             onHeart={() => handleHeart(viewerStory.id)}
             showAiFilmMessaging={isPremiumTier}
@@ -1587,7 +1610,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   {shareStep === 2 && (
                     <>
                       <h3 className="font-heading font-serif text-xl md:text-[1.35rem] text-[var(--aeterna-headline)] text-center leading-snug mb-6 mt-2">
-                        Add a Spark of Memory.
+                        Add a memory.
                       </h3>
                       <input
                         ref={memoryFileInputRef}
@@ -1611,7 +1634,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                         className="group flex min-h-[168px] w-full flex-col items-center justify-center gap-3 rounded-[32px] border border-dashed border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)]/50 px-4 py-8 text-center font-sans transition-[colors,transform,box-shadow] duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-[var(--aeterna-gold-muted)]/60 hover:bg-[var(--aeterna-charcoal-soft)]/40"
                       >
                         <span className="text-sm text-[var(--aeterna-headline)]">
-                          {memoryPhotoFile ? "Change your spark" : "Tap to add a Spark of Memory"}
+                          {memoryPhotoFile ? "Change photo" : "Tap to add a memory"}
                         </span>
                         <span className="text-xs text-[var(--aeterna-gold-muted)]">or drag one here</span>
                       </button>

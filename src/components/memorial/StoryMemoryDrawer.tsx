@@ -41,6 +41,7 @@ export function StoryMemoryDrawer({
   sessionUser,
   likesCount,
   isHearted,
+  heartBusy = false,
   onClose,
   onHeart,
   showAiFilmMessaging = false,
@@ -52,6 +53,8 @@ export function StoryMemoryDrawer({
   sessionUser: { id: string; email: string | null } | null
   likesCount: number
   isHearted: boolean
+  /** While a heart request is in flight (avoid double taps). */
+  heartBusy?: boolean
   onClose: () => void
   onHeart: () => void
   showAiFilmMessaging?: boolean
@@ -70,6 +73,11 @@ export function StoryMemoryDrawer({
   /** stories.id from DB (UUID text) — never pass objects/numbers raw into server actions */
   const photoStoryId = useMemo(() => coerceIdString(story?.id), [story?.id])
   const memorialEventId = useMemo(() => coerceIdString(eventId), [eventId])
+
+  const canPostComment = useMemo(
+    () => Boolean(parseUuidString(photoStoryId) && parseUuidString(memorialEventId)),
+    [photoStoryId, memorialEventId],
+  )
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)")
@@ -199,6 +207,9 @@ export function StoryMemoryDrawer({
           window.alert(res.error)
         }
       }
+    } catch (err) {
+      console.error("[StoryMemoryDrawer] addStoryComment", err)
+      setSendError(err instanceof Error ? err.message : "Could not send your message.")
     } finally {
       setSending(false)
     }
@@ -295,10 +306,10 @@ export function StoryMemoryDrawer({
                 <motion.button
                   type="button"
                   onClick={onHeart}
-                  disabled={isHearted}
-                  className={`rounded-full p-2 ${isHearted ? "text-red-400" : "text-[var(--once-text-secondary)] hover:text-red-400/90"}`}
-                  whileTap={{ scale: isHearted ? 1 : 1.15 }}
-                  aria-label={showAiFilmMessaging ? "Heart this memory" : "Heart this memory"}
+                  disabled={heartBusy}
+                  className={`rounded-full p-2 disabled:opacity-50 ${isHearted ? "text-red-400" : "text-[var(--once-text-secondary)] hover:text-red-400/90"}`}
+                  whileTap={{ scale: heartBusy ? 1 : 1.15 }}
+                  aria-label={isHearted ? "Remove heart" : "Heart this memory"}
                 >
                   <svg className="h-7 w-7" fill={isHearted ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -359,7 +370,14 @@ export function StoryMemoryDrawer({
             </div>
 
             {/* Composer — chat bubble style */}
-            <div className="shrink-0 border-t border-[var(--border-gold-subtle)]/40 bg-[var(--once-bg)]/95 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <form
+              className="shrink-0 border-t border-[var(--border-gold-subtle)]/40 bg-[var(--once-bg)]/95 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (sending || !body.trim() || !canPostComment) return
+                void handleSend()
+              }}
+            >
               <label htmlFor="tribute-author" className="sr-only">
                 Your name
               </label>
@@ -386,15 +404,14 @@ export function StoryMemoryDrawer({
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault()
-                      if (!sending && body.trim() && eventId) void handleSend()
+                      if (!sending && body.trim() && canPostComment) void handleSend()
                     }
                   }}
                 />
                 <span className="mb-2 shrink-0 text-[10px] tabular-nums text-[var(--once-text-muted)]">{body.length}/500</span>
                 <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={sending || !body.trim() || !eventId}
+                  type="submit"
+                  disabled={sending || !body.trim() || !canPostComment}
                   className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] shadow-md transition hover:bg-[var(--aeterna-gold-light)] disabled:opacity-40"
                   aria-label="Send"
                 >
@@ -402,7 +419,7 @@ export function StoryMemoryDrawer({
                 </button>
               </div>
               {sendError && <p className="mt-2 text-center text-xs text-red-400/90">{sendError}</p>}
-            </div>
+            </form>
           </div>
       </motion.div>
     </motion.div>

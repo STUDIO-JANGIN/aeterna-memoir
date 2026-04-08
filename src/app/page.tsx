@@ -233,7 +233,7 @@ export default function LandingPage() {
               {/* Value proposition — always on top on mobile; left column on desktop */}
               <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-left px-1 sm:px-2 pb-4 sm:pb-10 lg:pb-0">
                 <RevealSection className="w-full max-w-xl mx-auto lg:mx-0 lg:max-w-xl space-y-0">
-                  <h1 className="text-landing-hero font-semibold text-balance max-md:!text-[clamp(1.35rem,4vw,1.7rem)] max-md:!leading-[1.3] max-md:tracking-[-0.015em] md:leading-[1.1]">
+                  <h1 className="text-landing-hero font-semibold text-balance max-md:!text-[clamp(1.35rem,4vw,1.7rem)] max-md:!leading-[1.3] md:leading-[1.1]">
                     A Digital Shrine for Sacred Memory
                   </h1>
                   <p className="mt-5 md:mt-8 text-sm md:text-lg leading-[1.68] md:leading-relaxed text-[#b8b8b8] font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance">

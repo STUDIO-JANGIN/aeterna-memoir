@@ -169,7 +169,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="relative min-h-dvh w-full bg-landing text-[#9a9a9a]">
+    <div className="relative min-h-dvh w-full bg-landing text-[#f5f5f7] leading-[1.6]">
       {/* once.film–inspired: calm, editorial, lots of air — nav centered, logo / CTA balanced */}
       <header className="fixed top-0 left-0 right-0 z-40 grid grid-cols-[1fr_auto_1fr] items-center px-5 md:px-10 py-5 bg-[color:var(--landing-bg)]/90 backdrop-blur-md border-b border-white/[0.06]">
         <div className="flex items-center gap-2 justify-self-start min-w-0">
@@ -190,7 +190,7 @@ export default function LandingPage() {
         <div className="flex items-center justify-end justify-self-end shrink-0">
           <Link
             href="/create"
-            className="inline-flex min-h-[34px] md:min-h-[40px] items-center rounded-full border border-white/[0.1] bg-black px-3 sm:px-4 md:px-5 text-[9px] sm:text-[10px] font-medium tracking-[0.14em] sm:tracking-[0.16em] uppercase text-[#f5f5f4] hover:bg-neutral-950 transition-colors"
+            className="cta-silk inline-flex min-h-[34px] md:min-h-[40px] items-center rounded-full border border-white/[0.1] bg-black px-3 sm:px-4 md:px-5 text-[9px] sm:text-[10px] font-medium tracking-[0.14em] sm:tracking-[0.16em] uppercase text-[#f5f5f4] hover:bg-neutral-950 hover:border-white/[0.18]"
           >
             Create
           </Link>
@@ -236,7 +236,7 @@ export default function LandingPage() {
                   <h1 className="text-landing-hero font-semibold text-balance max-md:!text-[clamp(1.35rem,4vw,1.7rem)] max-md:!leading-[1.3] md:leading-[1.1]">
                     A Digital Shrine for Sacred Memory
                   </h1>
-                  <p className="mt-5 md:mt-8 text-sm md:text-lg leading-[1.68] md:leading-relaxed text-[#b8b8b8] font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance">
+                  <p className="mt-5 md:mt-8 text-sm md:text-lg leading-[1.6] text-[#f5f5f7]/90 font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance">
                     A lasting space for people and pets—preserved with dignity. Share instantly by QR or link: no app, no friction; guests add photos and stories from any phone. A gentle memorial feed where visitors heart and comment on each memory—like a sacred timeline of their legacy.
                   </p>
                   <p className="mt-5 md:mt-4 text-[11px] md:text-sm leading-[1.62] md:leading-relaxed font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance italic text-[#f0ebe3] [text-shadow:0px_2px_10px_rgba(0,0,0,0.8)]">
@@ -246,7 +246,7 @@ export default function LandingPage() {
                 <RevealSection className="mt-12 w-full max-w-xl mx-auto lg:mx-0 pt-2 md:mt-10 md:pt-0 border-t border-white/[0.06] md:border-0">
                   <Link
                     href="/create"
-                    className="inline-flex min-h-[50px] md:min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-8 md:px-14 text-[10px] md:text-[11px] font-semibold tracking-[0.16em] uppercase text-[#0c0c0c] border border-[var(--aeterna-gold)] shadow-[0_16px_50px_-6px_rgba(197,160,89,0.42)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_20px_56px_-4px_rgba(197,160,89,0.5)] transition-all duration-300"
+                    className="cta-silk inline-flex min-h-[50px] md:min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-8 md:px-14 text-[10px] md:text-[11px] font-semibold tracking-[0.16em] uppercase text-[#0c0c0c] border border-[var(--aeterna-gold)] shadow-[0_16px_50px_-6px_rgba(197,160,89,0.42)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_20px_56px_-4px_rgba(197,160,89,0.5)]"
                   >
                     Create a Memorial Now
                   </Link>
@@ -418,7 +418,7 @@ export default function LandingPage() {
                       <div className="flex-1" />
                       <Link
                         href={plan.href}
-                        className={`btn-tap mt-8 inline-flex min-h-[48px] items-center justify-center rounded-full text-[10px] tracking-[0.16em] uppercase font-medium transition-colors ${
+                        className={`cta-silk btn-tap mt-8 inline-flex min-h-[48px] items-center justify-center rounded-full text-[10px] tracking-[0.16em] uppercase font-medium ${
                           plan.statusTag
                             ? "animate-artisan-pulse border border-[var(--aeterna-gold)]/35 text-[color:var(--landing-text-hero)] hover:bg-white/[0.06]"
                             : plan.emphasis === "gold"

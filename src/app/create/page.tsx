@@ -89,13 +89,13 @@ const inputBase =
 const selectBase =
   "w-full min-h-[52px] rounded-2xl bg-white/[0.04] px-4 py-3 text-base text-[var(--landing-text-hero)] outline-none transition-colors focus:bg-white/[0.07] focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 appearance-none"
 
-/** Step 3 date selects — inner depth + gold catch-light on focus */
+/** Step 3 — glass fields + gold catch-light on focus */
 const selectJourneyBase =
-  "w-full min-h-[52px] rounded-xl border border-white/[0.1] bg-white/[0.035] px-4 py-3 text-base font-medium text-[color:var(--landing-text-hero)] outline-none transition-all shadow-[inset_0_1px_3px_rgba(0,0,0,0.42)] focus:border-[var(--aeterna-gold)]/40 focus:bg-white/[0.06] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.35),0_0_0_1px_rgba(197,160,89,0.32),0_0_22px_-4px_rgba(197,160,89,0.18)] focus:ring-0 appearance-none [color-scheme:dark]"
+  "w-full min-h-[52px] rounded-xl border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-base font-medium text-[color:var(--landing-text-hero)] shadow-[inset_0_1px_3px_rgba(0,0,0,0.35)] backdrop-blur-[8px] outline-none transition-all focus:border-[var(--aeterna-gold)]/40 focus:bg-white/[0.09] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3),0_0_0_1px_rgba(197,160,89,0.32),0_0_22px_-4px_rgba(197,160,89,0.18)] focus:ring-0 focus:backdrop-blur-[10px] appearance-none [color-scheme:dark]"
 
-/** Quieter than values — guide only (~60% opacity) */
+/** Born / At rest — light-weight serif, artisan */
 const journeyChapterLabel =
-  "font-[var(--font-serif)] text-[11px] md:text-xs font-normal italic tracking-[0.04em] text-[#f5f5f7]/60"
+  "font-[var(--font-serif)] font-light text-[12px] md:text-[13px] tracking-[0.06em] text-[#f5f5f7]/65"
 
 /** Memorial details: minimal border, landing-aligned */
 const fieldLabelClass = "block text-[10px] tracking-[0.22em] uppercase text-[#f5f5f7]/60 mb-2"
@@ -818,7 +818,7 @@ function CreateEventForm() {
               <button
                 type="button"
                 onClick={() => pickType("person")}
-                className="flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-3xl border border-white/[0.08] bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform active:scale-[0.98] md:min-h-[180px] md:hover:bg-white/[0.06]"
+                className="cta-silk flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-3xl border border-white/[0.08] bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.98] md:min-h-[180px]"
               >
                 <Sparkles className="h-10 w-10 text-[var(--aeterna-gold)]" strokeWidth={1} aria-hidden />
                 <span className="text-sm text-white/80">Someone dear</span>
@@ -826,7 +826,7 @@ function CreateEventForm() {
               <button
                 type="button"
                 onClick={() => pickType("pet")}
-                className="flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-3xl border border-white/[0.08] bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform active:scale-[0.98] md:min-h-[180px] md:hover:bg-white/[0.06]"
+                className="cta-silk flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-3xl border border-white/[0.08] bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.98] md:min-h-[180px]"
               >
                 <span className="text-4xl" aria-hidden>
                   🐾
@@ -931,7 +931,7 @@ function CreateEventForm() {
                         <Clock className="h-4 w-4 text-[var(--aeterna-gold)]/55" strokeWidth={1.15} />
                         <Sparkles className="h-4 w-4 text-[var(--aeterna-gold)] animate-star-fade" strokeWidth={1.15} />
                       </div>
-                      <p className="text-[15px] leading-[1.75] text-[#b8b0a2] md:text-base md:leading-[1.7]">
+                      <p className="text-[15px] leading-[1.6] text-[#f5f5f7] md:text-base">
                         Every life is a story told in chapters. If you don&apos;t have exact dates, an approximate year is a
                         perfect start. Your memorial begins with a 7-day gathering period for loved ones to share
                         memories—securing their legacy for eternity.
@@ -943,7 +943,7 @@ function CreateEventForm() {
                     <div className="card-treasure rounded-2xl">
                       <div className="card-treasure-inner rounded-2xl px-5 py-7 md:px-7 md:py-8">
                         <div className="mb-6 border-b border-white/[0.06] pb-6">
-                          <p className={journeyChapterLabel}>Sunrise</p>
+                          <p className={journeyChapterLabel}>Born</p>
                         </div>
                         <div className="grid grid-cols-3 gap-3 md:gap-4">
                           <select
@@ -1004,7 +1004,7 @@ function CreateEventForm() {
                     <div className="card-treasure rounded-2xl">
                       <div className="card-treasure-inner rounded-2xl px-5 py-7 md:px-7 md:py-8">
                         <div className="mb-6 border-b border-white/[0.06] pb-6">
-                          <p className={journeyChapterLabel}>Sunset</p>
+                          <p className={journeyChapterLabel}>At rest</p>
                         </div>
                         <div className="grid grid-cols-3 gap-3 md:gap-4">
                           <select
@@ -1292,7 +1292,7 @@ function CreateEventForm() {
                 type="button"
                 onClick={goBack}
                 disabled={loading}
-                className="shrink-0 min-h-[52px] min-w-[5.5rem] rounded-2xl border border-white/[0.14] bg-transparent px-4 text-sm font-medium tracking-wide text-white/65 transition-colors hover:bg-white/[0.05] hover:text-white disabled:opacity-40 sm:min-h-[56px]"
+                className="cta-silk shrink-0 min-h-[52px] min-w-[5.5rem] rounded-2xl border border-white/[0.14] bg-transparent px-4 text-sm font-medium tracking-wide text-white/65 hover:bg-white/[0.05] hover:text-white disabled:opacity-40 sm:min-h-[56px]"
               >
                 Back
               </button>
@@ -1302,7 +1302,7 @@ function CreateEventForm() {
                 onClick={onPrimaryPress}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 520, damping: 28 }}
-                className="btn-tap min-h-[56px] flex-1 rounded-2xl bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] text-sm font-semibold tracking-wide shadow-[0_8px_32px_-8px_rgba(197,160,89,0.45)] transition-[opacity,box-shadow] disabled:opacity-35 active:shadow-[0_4px_20px_-6px_rgba(197,160,89,0.35)] sm:min-h-[60px]"
+                className="cta-silk btn-tap min-h-[56px] flex-1 rounded-2xl bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] text-sm font-semibold tracking-wide shadow-[0_8px_32px_-8px_rgba(197,160,89,0.45)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_12px_40px_-8px_rgba(197,160,89,0.5)] disabled:opacity-35 active:shadow-[0_4px_20px_-6px_rgba(197,160,89,0.35)] sm:min-h-[60px]"
               >
                 {loading
                   ? "Creating…"

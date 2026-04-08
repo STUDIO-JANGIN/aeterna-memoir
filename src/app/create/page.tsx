@@ -40,7 +40,7 @@ function parsePlanQueryParam(param: string | null): StoragePlan | null {
   return null
 }
 
-const WIZARD_STEPS_FULL = 8
+const WIZARD_STEPS_FULL = 9
 
 /** Inline pill next to plan titles (e.g. Eternal Film). */
 const planStatusTagClass =
@@ -195,9 +195,12 @@ function focusNextField(el: HTMLElement | null) {
 const stepPresence = artisanPresence
 
 function CreateEventForm() {
-  const { user, setUser, ready: authReady, refresh: refreshAuthUser } = useSupabaseUser()
+  const { user, ready: authReady, refresh: refreshAuthUser } = useSupabaseUser()
   const signedIn = Boolean(user?.id)
   const [googleLoading, setGoogleLoading] = useState(false)
+  /** Blocks “Continue with Google” until sign-out has fully cleared session (avoids OAuth races). */
+  const [signingOut, setSigningOut] = useState(false)
+  const oauthStartLockRef = useRef(false)
 
   const [memorialType, setMemorialType] = useState<MemorialType | null>(null)
   const [wizardStep, setWizardStep] = useState(1)
@@ -253,6 +256,7 @@ function CreateEventForm() {
   const nameInputRef = useRef<HTMLInputElement>(null)
   const locationInputRef = useRef<HTMLInputElement>(null)
   const fundInputRef = useRef<HTMLInputElement>(null)
+  const invitationBioRef = useRef<HTMLTextAreaElement>(null)
   const birthYRef = useRef<HTMLSelectElement>(null)
   const birthMRef = useRef<HTMLSelectElement>(null)
   const birthDRef = useRef<HTMLSelectElement>(null)
@@ -272,11 +276,11 @@ function CreateEventForm() {
   const planParam = searchParams.get("plan")?.trim().toLowerCase() ?? null
   const planLockedFromUrl = parsePlanQueryParam(planParam) !== null
   const serviceStepsSkipped = willHostMemorialService === false
-  const stepsForProgress = serviceStepsSkipped ? 6 : 8
+  const stepsForProgress = serviceStepsSkipped ? 7 : 9
   const progressStep = useMemo(() => {
     if (!serviceStepsSkipped) return wizardStep
-    if (wizardStep <= 4) return wizardStep
-    if (wizardStep >= 7) return wizardStep - 2
+    if (wizardStep <= 5) return wizardStep
+    if (wizardStep >= 8) return wizardStep - 2
     return wizardStep
   }, [wizardStep, serviceStepsSkipped])
 
@@ -288,8 +292,9 @@ function CreateEventForm() {
     if (!memorialType) return
     const t = window.setTimeout(() => {
       if (wizardStep === 1) nameInputRef.current?.focus()
-      if (wizardStep === 5) locationInputRef.current?.focus()
-      if (wizardStep === 6) fundInputRef.current?.focus()
+      if (wizardStep === 4) invitationBioRef.current?.focus()
+      if (wizardStep === 6) locationInputRef.current?.focus()
+      if (wizardStep === 7) fundInputRef.current?.focus()
     }, 80)
     return () => window.clearTimeout(t)
   }, [wizardStep, memorialType])
@@ -306,7 +311,7 @@ function CreateEventForm() {
     if (atRestRevealRef.current) return
     atRestRevealRef.current = true
     const t = window.setTimeout(() => {
-      deathYRef.current?.focus()
+      deathMRef.current?.focus()
     }, 480)
     return () => window.clearTimeout(t)
   }, [birthComplete])
@@ -490,10 +495,10 @@ function CreateEventForm() {
         await refreshAuthUser()
         router.refresh()
         const draft = readCreateDraft()
-        if (draft?.memorialType && draft.wizardStep === 7) {
+        if (draft?.memorialType && draft.wizardStep === 8) {
           setStepSlideDir(1)
-          setWizardStep(8)
-          writeCreateDraft({ ...draft, wizardStep: 8 })
+          setWizardStep(9)
+          writeCreateDraft({ ...draft, wizardStep: 9 })
         }
         // If React state lags behind the new session (common right after OAuth), resync once.
         fallbackTimer = window.setTimeout(async () => {
@@ -516,7 +521,7 @@ function CreateEventForm() {
     }
   }, [searchParams, refreshAuthUser, router])
 
-  /** Wizard-level listener: Google popup closes with SIGNED_IN before React state catches up. */
+  /** Welcome overlay + session sync on sign-in. Step 7→8 is handled only by the dedicated effect below (single source of truth). */
   useEffect(() => {
     const {
       data: { subscription },
@@ -530,12 +535,6 @@ function CreateEventForm() {
       }
       await refreshAuthUser()
       router.refresh()
-      if (memorialTypeRef.current && wizardStepRef.current === 7) {
-        setStepSlideDir(1)
-        setWizardStep(8)
-        const d = readCreateDraft()
-        if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 8 })
-      }
     })
     return () => subscription.unsubscribe()
   }, [refreshAuthUser, router])
@@ -559,32 +558,53 @@ function CreateEventForm() {
   const guestUrl = createdSlug ? `${baseUrl.replace(/\/$/, "")}/p/${createdSlug}` : ""
 
   const handleContinueWithGoogle = async () => {
+    if (signingOut || oauthStartLockRef.current) return
     if (memorialType) {
       const snapshot = buildCreateDraft(wizardStep)
       if (snapshot) writeCreateDraft(snapshot)
     }
+    oauthStartLockRef.current = true
     setGoogleLoading(true)
     setCreateError(null)
     const planQs = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("plan") : null
     const nextPath = planQs ? `/create?plan=${encodeURIComponent(planQs)}` : "/create"
     /** Must match Supabase Auth → Redirect URLs (`https://aeternamemoir.com/auth/callback`). */
     const redirectTo = buildOAuthCallbackRedirectUrl(nextPath)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    })
-    setGoogleLoading(false)
-    if (error) setCreateError(error.message)
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      })
+      if (error) {
+        setCreateError(error.message)
+        setGoogleLoading(false)
+        oauthStartLockRef.current = false
+        return
+      }
+      /** Browser navigates to Google; keep loading until unload. */
+    } catch (e) {
+      setCreateError(e instanceof Error ? e.message : "Sign-in could not start. Please try again.")
+      setGoogleLoading(false)
+      oauthStartLockRef.current = false
+    }
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    setSigningOut(true)
+    setCreateError(null)
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "local" })
+      if (error) setCreateError(error.message)
+      await refreshAuthUser()
+      router.refresh()
+    } finally {
+      setSigningOut(false)
+    }
     clearPendingCheckout()
     setPendingCheckout(null)
-    setUser(null)
-    if (wizardStep >= 8) {
+    if (wizardStep >= 9) {
       setStepSlideDir(1)
-      setWizardStep(7)
+      setWizardStep(8)
     }
   }
 
@@ -669,7 +689,7 @@ function CreateEventForm() {
   const buildCreateDraft = (stepForDraft: number): CreateDraftV1 | null => {
     if (!memorialType) return null
     return {
-      v: 5,
+      v: 6,
       memorialType,
       wizardStep: stepForDraft,
       willHostMemorialService,
@@ -698,14 +718,15 @@ function CreateEventForm() {
         return name.trim().length > 0
       case 2:
       case 3:
-      case 5:
-      case 6:
-        return true
       case 4:
-        return willHostMemorialService !== null
+      case 6:
       case 7:
-        return authReady
+        return true
+      case 5:
+        return willHostMemorialService !== null
       case 8:
+        return authReady && !signingOut
+      case 9:
         return true
       default:
         return false
@@ -721,8 +742,8 @@ function CreateEventForm() {
     setCreateError(null)
     if (!memorialType) return
 
-    /** Step 8 + URL-locked plan: first Back closes the plan grid and returns to summary. */
-    if (wizardStep === 8 && planLockedFromUrl && showPlanChangeOptions) {
+    /** Step 9 + URL-locked plan: first Back closes the plan grid and returns to summary. */
+    if (wizardStep === 9 && planLockedFromUrl && showPlanChangeOptions) {
       setShowPlanChangeOptions(false)
       window.scrollTo({ top: 0, behavior: "smooth" })
       return
@@ -731,11 +752,11 @@ function CreateEventForm() {
     if (wizardStep > 1) {
       setStepSlideDir(-1)
       let nextStep: number
-      if (wizardStep === 8) nextStep = 7
-      else if (wizardStep === 7 && serviceStepsSkipped) nextStep = 4
+      if (wizardStep === 9) nextStep = 8
+      else if (wizardStep === 8 && serviceStepsSkipped) nextStep = 5
       else nextStep = wizardStep - 1
 
-      if (wizardStep === 8 && nextStep === 7) {
+      if (wizardStep === 9 && nextStep === 8) {
         blockPlanAutoAdvanceRef.current = true
       }
       const d = buildCreateDraft(nextStep)
@@ -753,7 +774,7 @@ function CreateEventForm() {
     if (!canContinue() || !memorialType) return
     setCreateError(null)
 
-    if (wizardStep === 4) {
+    if (wizardStep === 5) {
       if (willHostMemorialService !== true && willHostMemorialService !== false) return
       setStepSlideDir(1)
       if (willHostMemorialService === false) {
@@ -763,12 +784,12 @@ function CreateEventForm() {
         setCeremonyM("00")
         setCeremonyPeriod("PM")
         setFundLink("")
-        const next = 7
+        const next = 8
         const d = buildCreateDraft(next)
         if (d) writeCreateDraft(d)
         setWizardStep(next)
       } else {
-        const next = 5
+        const next = 6
         const d = buildCreateDraft(next)
         if (d) writeCreateDraft(d)
         setWizardStep(next)
@@ -778,7 +799,7 @@ function CreateEventForm() {
     }
 
     if (wizardStep < WIZARD_STEPS_FULL) {
-      if (wizardStep === 7) blockPlanAutoAdvanceRef.current = false
+      if (wizardStep === 8) blockPlanAutoAdvanceRef.current = false
       setStepSlideDir(1)
       const d = buildCreateDraft(wizardStep + 1)
       if (d) writeCreateDraft(d)
@@ -786,13 +807,13 @@ function CreateEventForm() {
     }
   }
 
-  /** After Google OAuth, advance from Account (7) → Plan (8) as soon as the session is confirmed. */
+  /** After Google OAuth, advance from Account (8) → Plan (9) as soon as the session is confirmed. */
   useEffect(() => {
-    if (wizardStep !== 7 || !signedIn || !memorialType || !authReady) return
+    if (wizardStep !== 8 || !signedIn || !memorialType || !authReady) return
     if (blockPlanAutoAdvanceRef.current) return
     setStepSlideDir(1)
-    setWizardStep(8)
-    const d = buildCreateDraft(8)
+    setWizardStep(9)
+    const d = buildCreateDraft(9)
     if (d) writeCreateDraft(d)
   }, [wizardStep, signedIn, memorialType, authReady])
 
@@ -939,7 +960,7 @@ function CreateEventForm() {
 
   const onPrimaryPress = () => {
     if (!memorialType) return
-    if (wizardStep === 7 && authReady && !signedIn) {
+    if (wizardStep === 8 && authReady && !signedIn) {
       void handleContinueWithGoogle()
       return
     }
@@ -951,7 +972,7 @@ function CreateEventForm() {
 
   const isPlanSummaryView =
     memorialType !== null &&
-    wizardStep === 8 &&
+    wizardStep === 9 &&
     planLockedFromUrl &&
     !showPlanChangeOptions
 
@@ -966,7 +987,7 @@ function CreateEventForm() {
     Boolean(createError) &&
       !(
       isMemorialSignInFooterNoise(createError) &&
-      (wizardStep === 7 || wizardStep === 8 || signedIn)
+      (wizardStep === 8 || wizardStep === 9 || signedIn)
     )
 
   return (
@@ -1034,9 +1055,11 @@ function CreateEventForm() {
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="shrink-0 min-h-[36px] rounded-full border border-white/20 bg-white/[0.07] px-3 py-1.5 text-[10px] font-medium tracking-[0.18em] text-white/80 uppercase shadow-[0_1px_0_rgba(255,255,255,0.06)] transition-[color,background-color,border-color,box-shadow] duration-300 ease-in-out hover:border-white/30 hover:bg-white/[0.12] hover:text-[#f4f1ea] hover:shadow-[0_0_0_1px_rgba(212,175,55,0.15)] active:scale-[0.98]"
+                disabled={signingOut}
+                aria-busy={signingOut}
+                className="shrink-0 min-h-[36px] rounded-full border border-white/20 bg-white/[0.07] px-3 py-1.5 text-[10px] font-medium tracking-[0.18em] text-white/80 uppercase shadow-[0_1px_0_rgba(255,255,255,0.06)] transition-[color,background-color,border-color,box-shadow] duration-300 ease-in-out hover:border-white/30 hover:bg-white/[0.12] hover:text-[#f4f1ea] hover:shadow-[0_0_0_1px_rgba(212,175,55,0.15)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
               >
-                Sign out
+                {signingOut ? "Signing out…" : "Sign out"}
               </button>
             ) : !authReady ? (
               <span className="shrink-0 min-h-[36px] px-1 text-[10px] tracking-[0.2em] text-white/25 uppercase tabular-nums" aria-live="polite">
@@ -1219,23 +1242,6 @@ function CreateEventForm() {
                       <h3 className={stepSectionTitleClass}>Born</h3>
                       <div className="grid grid-cols-3 gap-4 md:gap-5">
                         <select
-                          ref={birthYRef}
-                          value={birthY}
-                          onChange={(e) => {
-                            setBirthY(e.target.value)
-                            if (e.target.value) focusNextField(birthMRef.current)
-                          }}
-                          className={ghostDateSelectClass}
-                          aria-label="Birth year"
-                        >
-                          <option value="">YYYY</option>
-                          {YEARS.map((y) => (
-                            <option key={y} value={y}>
-                              {y}
-                            </option>
-                          ))}
-                        </select>
-                        <select
                           ref={birthMRef}
                           value={birthM}
                           onChange={(e) => {
@@ -1257,6 +1263,7 @@ function CreateEventForm() {
                           value={birthD}
                           onChange={(e) => {
                             setBirthD(e.target.value)
+                            if (e.target.value) focusNextField(birthYRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Birth day"
@@ -1265,6 +1272,22 @@ function CreateEventForm() {
                           {DAYS.map((d) => (
                             <option key={d} value={d}>
                               {d}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          ref={birthYRef}
+                          value={birthY}
+                          onChange={(e) => {
+                            setBirthY(e.target.value)
+                          }}
+                          className={ghostDateSelectClass}
+                          aria-label="Birth year"
+                        >
+                          <option value="">YYYY</option>
+                          {YEARS.map((y) => (
+                            <option key={y} value={y}>
+                              {y}
                             </option>
                           ))}
                         </select>
@@ -1281,23 +1304,6 @@ function CreateEventForm() {
                       >
                         <h3 className={stepSectionTitleClass}>At Rest</h3>
                         <div className="grid grid-cols-3 gap-4 md:gap-5">
-                          <select
-                            ref={deathYRef}
-                            value={deathY}
-                            onChange={(e) => {
-                              setDeathY(e.target.value)
-                              if (e.target.value) focusNextField(deathMRef.current)
-                            }}
-                            className={ghostDateSelectClass}
-                            aria-label="Year of passing"
-                          >
-                            <option value="">YYYY</option>
-                            {YEARS.map((y) => (
-                              <option key={y} value={y}>
-                                {y}
-                              </option>
-                            ))}
-                          </select>
                           <select
                             ref={deathMRef}
                             value={deathM}
@@ -1318,7 +1324,10 @@ function CreateEventForm() {
                           <select
                             ref={deathDRef}
                             value={deathD}
-                            onChange={(e) => setDeathD(e.target.value)}
+                            onChange={(e) => {
+                              setDeathD(e.target.value)
+                              if (e.target.value) focusNextField(deathYRef.current)
+                            }}
                             className={ghostDateSelectClass}
                             aria-label="Day of passing"
                           >
@@ -1326,6 +1335,20 @@ function CreateEventForm() {
                             {DAYS.map((d) => (
                               <option key={d} value={d}>
                                 {d}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            ref={deathYRef}
+                            value={deathY}
+                            onChange={(e) => setDeathY(e.target.value)}
+                            className={ghostDateSelectClass}
+                            aria-label="Year of passing"
+                          >
+                            <option value="">YYYY</option>
+                            {YEARS.map((y) => (
+                              <option key={y} value={y}>
+                                {y}
                               </option>
                             ))}
                           </select>
@@ -1337,6 +1360,36 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 4 && (
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                  <div className="space-y-3">
+                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
+                      A few words about them
+                    </h2>
+                    <p className="text-base text-white/45 leading-relaxed">
+                      Share a short tribute, a memory, or what made them special. This can appear on the printed invitation below their dates — you can edit it later from settings.
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <label htmlFor="create-invitation-bio" className={fieldLabelClass}>
+                      Remembrance
+                    </label>
+                    <textarea
+                      ref={invitationBioRef}
+                      id="create-invitation-bio"
+                      value={invitationBio}
+                      onChange={(e) => setInvitationBio(e.target.value)}
+                      placeholder="Optional — a sentence or two, or a longer remembrance."
+                      rows={6}
+                      maxLength={2000}
+                      className={textareaMemorial}
+                      aria-label="Words of remembrance for the invitation"
+                    />
+                    <p className="text-xs text-white/30 tabular-nums">{invitationBio.length} / 2000</p>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 5 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4 text-center">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
@@ -1379,7 +1432,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 5 && (
+              {wizardStep === 6 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
@@ -1463,7 +1516,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 6 && (
+              {wizardStep === 7 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
@@ -1497,7 +1550,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 7 && (
+              {wizardStep === 8 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
@@ -1522,7 +1575,7 @@ function CreateEventForm() {
                     <button
                       type="button"
                       onClick={handleContinueWithGoogle}
-                      disabled={googleLoading}
+                      disabled={googleLoading || signingOut}
                       className="mx-auto flex min-h-[56px] w-full max-w-sm items-center justify-center gap-3 rounded-[32px] border border-white/10 bg-[#030303]/55 px-6 py-3.5 text-[var(--landing-text-hero)] font-semibold transition-colors duration-300 ease-in-out hover:border-white/25 hover:bg-white/[0.06] disabled:opacity-50"
                     >
                       <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden>
@@ -1603,7 +1656,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 8 && (!isPlanSummaryView || showPlanChangeOptions) && (
+              {wizardStep === 9 && (!isPlanSummaryView || showPlanChangeOptions) && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-6 pt-4">
                   {planLockedFromUrl && showPlanChangeOptions && (
                     <button
@@ -1694,9 +1747,9 @@ function CreateEventForm() {
               >
                 {loading
                   ? "Creating…"
-                  : wizardStep === 7 && !authReady
+                  : wizardStep === 8 && !authReady
                     ? "Checking account…"
-                    : wizardStep === 7 && !signedIn
+                    : wizardStep === 8 && !signedIn
                       ? "Continue the Story with Google"
                       : wizardStep < WIZARD_STEPS_FULL
                     ? "Continue the Story"

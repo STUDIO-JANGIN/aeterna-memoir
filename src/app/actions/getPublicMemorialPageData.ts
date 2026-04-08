@@ -30,6 +30,8 @@ export type PublicMemorialEvent = {
   tier: string | null
   bank_info: string | null
   invite_pdf_url: string | null
+  /** Remembrance text from create flow / admin — shown on public memorial. */
+  invitation_bio: string | null
 }
 
 export type PublicMemorialStory = {
@@ -105,6 +107,7 @@ function rowToPublicEvent(row: Record<string, unknown>): PublicMemorialEvent {
     tier: (row.tier as string | null) ?? null,
     bank_info: (row.bank_info as string | null) ?? null,
     invite_pdf_url: (row.invite_pdf_url as string | null) ?? null,
+    invitation_bio: (row.invitation_bio as string | null) ?? null,
   }
 }
 

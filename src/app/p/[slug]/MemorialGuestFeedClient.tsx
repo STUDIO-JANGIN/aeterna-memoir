@@ -59,6 +59,7 @@ type FeedEvent = {
   tier: string | null
   bank_info: string | null
   invite_pdf_url: string | null
+  invitation_bio: string | null
 }
 
 type Story = {
@@ -343,6 +344,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         tier: string | null
         bank_info: string | null
         invite_pdf_url?: string | null
+        invitation_bio?: string | null
       }, list: Story[]) => {
         setEvent({
           id: eventData.id,
@@ -367,6 +369,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           tier: eventData.tier ?? null,
           bank_info: eventData.bank_info ?? null,
           invite_pdf_url: eventData.invite_pdf_url ?? null,
+          invitation_bio: eventData.invitation_bio ?? null,
         })
         const storiesNormalized: Story[] = list.map((s) => ({
           ...s,
@@ -794,19 +797,6 @@ export default function GuestFeedPage({ params }: PageProps) {
       creator_email: event.creator_email,
     })
 
-  const locationLine = (() => {
-    const t = event.location?.trim() ?? ""
-    if (!t || /^location\s*tbd$/i.test(t)) return null
-    return t
-  })()
-  const ceremonyLine = (() => {
-    const t = event.ceremony_time?.trim() ?? ""
-    if (!t || /^time\s*tbd$/i.test(t)) return null
-    return t
-  })()
-  const supportLine = event.flower_link?.trim() || null
-  const hasDetails = !!(locationLine || ceremonyLine || supportLine)
-
   const showAddStoryCta =
     !filmReleased && !isClosed && photoDeadlineRemainingMs !== null && photoDeadlineRemainingMs > 0
 
@@ -991,7 +981,19 @@ export default function GuestFeedPage({ params }: PageProps) {
           </motion.div>
         )}
       </AnimatePresence>
-      <header className="relative w-full px-4 pb-8 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 sm:pb-10">
+
+      {/* Free tier: preservation banner — full width at top (safe area for notched phones) */}
+      {event &&
+        !isPaidMemorial &&
+        photoDeadlineRemainingMs !== null &&
+        photoDeadlineRemainingMs > 0 &&
+        !isPhotoDeadlinePassed && (
+          <div className="w-full pt-[max(0.35rem,env(safe-area-inset-top))]">
+            <MemorialTrialCountdown variant="banner" remainingMs={photoDeadlineRemainingMs} upgradeHref="/#pricing" />
+          </div>
+        )}
+
+      <header className="relative w-full px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8">
         <div className="mx-auto flex max-w-lg flex-col items-center text-center">
           <div className="mb-6 aspect-square w-[min(88vw,22rem)] max-w-[90vw] shrink-0 overflow-hidden rounded-full border border-white/[0.12] bg-[#030303]/[0.15] shadow-[0_28px_72px_-24px_rgba(0,0,0,0.65)]">
             {profileSrc ? (
@@ -1008,6 +1010,12 @@ export default function GuestFeedPage({ params }: PageProps) {
           <p className="mt-2 text-base font-medium tabular-nums text-[var(--landing-text-body)] sm:text-lg">
             {birth} — {death}
           </p>
+
+          {event.invitation_bio?.trim() ? (
+            <p className="mt-6 w-full max-w-xl whitespace-pre-wrap px-1 text-center font-[var(--font-serif)] text-base leading-relaxed text-[var(--landing-text-body)] sm:text-[1.05rem]">
+              {event.invitation_bio.trim()}
+            </p>
+          ) : null}
 
           {showAddStoryCta || isOwner ? (
             <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-3 px-1">
@@ -1037,50 +1045,6 @@ export default function GuestFeedPage({ params }: PageProps) {
             </div>
           ) : null}
 
-          {hasDetails ? (
-            <details className="mt-6 w-full max-w-md text-left">
-              <summary className="cursor-pointer list-none text-center text-[11px] uppercase tracking-[0.28em] text-[var(--landing-text-muted)] transition-colors marker:content-none hover:text-[var(--aeterna-gold-muted)] [&::-webkit-details-marker]:hidden">
-                <span className="inline-flex items-center justify-center gap-2">
-                  View details
-                  <span className="text-[10px] opacity-60" aria-hidden>
-                    ▾
-                  </span>
-                </span>
-              </summary>
-              <div className="mt-4 space-y-3 border-t border-white/[0.08] pt-4 text-left text-sm leading-relaxed text-[var(--landing-text-body)]">
-                {locationLine ? (
-                  <p>
-                    <span className="text-[var(--landing-text-muted)]">Location · </span>
-                    {locationLine}
-                  </p>
-                ) : null}
-                {ceremonyLine ? (
-                  <p>
-                    <span className="text-[var(--landing-text-muted)]">Gathering · </span>
-                    {ceremonyLine}
-                  </p>
-                ) : null}
-                {supportLine ? (
-                  <p className="break-words">
-                    <span className="text-[var(--landing-text-muted)]">Support · </span>
-                    {supportLine.startsWith("http") ? (
-                      <a
-                        href={supportLine}
-                        className="text-[var(--aeterna-gold)] underline underline-offset-2"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {supportLine}
-                      </a>
-                    ) : (
-                      supportLine
-                    )}
-                  </p>
-                ) : null}
-              </div>
-            </details>
-          ) : null}
-
           {photoDeadlineRemainingMs !== null &&
           photoDeadlineRemainingMs > 0 &&
           !isPhotoDeadlinePassed &&
@@ -1094,17 +1058,6 @@ export default function GuestFeedPage({ params }: PageProps) {
           ) : null}
         </div>
       </header>
-
-      {/* Free tier: live trial countdown (creation-aligned deadline, updates every second in parent state) */}
-      {event &&
-        !isPaidMemorial &&
-        photoDeadlineRemainingMs !== null &&
-        photoDeadlineRemainingMs > 0 &&
-        !isPhotoDeadlinePassed && (
-          <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 pt-1 pb-3 sm:pb-4">
-            <MemorialTrialCountdown remainingMs={photoDeadlineRemainingMs} />
-          </div>
-        )}
 
       {/* Full screen cinematic section (when film_url exists) */}
       {filmReleased && (
@@ -1534,39 +1487,6 @@ export default function GuestFeedPage({ params }: PageProps) {
           </section>
         )}
       </main>
-
-      {/* Sticky pill CTA — follows viewport while scrolling */}
-      {!filmReleased && !formOpen && (
-        <motion.div
-          className="pointer-events-none fixed inset-x-0 bottom-0 z-[45] flex justify-center px-4 pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-3"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...ARTISAN_SPRING, delay: 0.2 }}
-        >
-          <div className="pointer-events-auto max-w-lg w-full flex justify-center">
-            {isClosed ? (
-              <div className="rounded-full border border-white/15 bg-landing/95 px-5 py-2.5 text-center text-[10px] uppercase tracking-[0.14em] text-[var(--landing-text-muted)] shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md">
-                Submissions closed
-              </div>
-            ) : showAddStoryCta ? (
-              <motion.button
-                type="button"
-                onClick={handleOpenForm}
-                aria-label={addStoryLabel}
-                className="inline-flex min-h-[50px] w-full max-w-md items-center justify-center gap-2 rounded-full border border-[var(--aeterna-gold)]/35 bg-[var(--aeterna-gold)] px-5 py-3 text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_12px_40px_-12px_rgba(0,0,0,0.55)] transition-colors hover:bg-[var(--aeterna-gold-light)] sm:px-8"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                transition={ARTISAN_SPRING}
-              >
-                <span aria-hidden className="text-lg font-light leading-none">
-                  +
-                </span>
-                {addStoryLabel}
-              </motion.button>
-            ) : null}
-          </div>
-        </motion.div>
-      )}
 
       {/* Memory detail: bottom sheet (mobile) / modal (desktop) + tributes */}
       <AnimatePresence mode="wait">

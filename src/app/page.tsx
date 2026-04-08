@@ -169,6 +169,17 @@ export default function LandingPage() {
   const hasVideo = !!LANDING_BACKGROUND_VIDEO_URL
   const showPlaceholder = !hasVideo || videoError
 
+  /** After client navigation from other routes (e.g. memorial “upgrade” → /#pricing), scroll to pricing. */
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const raw = window.location.hash?.replace(/^#/, "") ?? ""
+    if (raw !== "pricing") return
+    const t = window.setTimeout(() => {
+      document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }, 0)
+    return () => window.clearTimeout(t)
+  }, [])
+
   useEffect(() => {
     const elements = LANDING_NAV_IDS.map((id) => document.getElementById(id)).filter(
       (el): el is HTMLElement => Boolean(el),

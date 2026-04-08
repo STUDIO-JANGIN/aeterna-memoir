@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { ARTISAN_SPRING } from "@/lib/artisanMotion"
 
@@ -20,14 +21,31 @@ type MemorialTrialCountdownProps = {
   /** Milliseconds remaining until the free trial / collection window ends. */
   remainingMs: number
   className?: string
+  /**
+   * `banner` = full viewport width, flat sides (e.g. top of memorial feed).
+   * `card` = rounded inset card (e.g. admin dashboard).
+   */
+  variant?: "banner" | "card"
+  /** Destination for the “upgrade” link (landing pricing: Eternal Legacy + Eternal Film). */
+  upgradeHref?: string
 }
 
 /**
  * Preservation window — aligned to landing: dark surface, gold accents, generous spacing.
  */
-export function MemorialTrialCountdown({ remainingMs, className = "" }: MemorialTrialCountdownProps) {
+export function MemorialTrialCountdown({
+  remainingMs,
+  className = "",
+  variant = "card",
+  upgradeHref = "/#pricing",
+}: MemorialTrialCountdownProps) {
   const urgent = remainingMs > 0 && remainingMs < TWENTY_FOUR_H_MS
   const line = useMemo(() => formatMemorialCountdownDisplay(remainingMs), [remainingMs])
+
+  const shell =
+    variant === "banner"
+      ? "relative w-full max-w-none rounded-none border-x-0 border-t border-b border-white/[0.08] bg-[rgba(3,3,3,0.55)] px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-md sm:px-6 sm:py-6"
+      : "relative overflow-hidden rounded-2xl card-landing-airy px-5 py-5 sm:px-7 sm:py-6"
 
   return (
     <motion.div
@@ -35,7 +53,7 @@ export function MemorialTrialCountdown({ remainingMs, className = "" }: Memorial
       aria-live="polite"
       animate={urgent ? { opacity: [1, 0.96, 1] } : { opacity: 1 }}
       transition={urgent ? { duration: 3, repeat: Infinity, ease: "easeInOut" } : ARTISAN_SPRING}
-      className={`relative overflow-hidden rounded-2xl card-landing-airy px-5 py-5 sm:px-7 sm:py-6 ${className}`}
+      className={`${shell} ${className}`}
     >
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.06]"
@@ -56,9 +74,15 @@ export function MemorialTrialCountdown({ remainingMs, className = "" }: Memorial
         >
           {line}
         </p>
-        <p className="mt-4 text-sm leading-relaxed text-[var(--landing-text-body)] max-w-md mx-auto px-1">
-          To keep these memories alive forever, please upgrade within 7 days. After this window, the shrine will gently
-          close to protect the privacy of the data.
+        <p className="mt-4 text-sm leading-relaxed text-[var(--landing-text-body)] max-w-2xl mx-auto px-1">
+          To keep these memories alive forever, please{" "}
+          <Link
+            href={upgradeHref}
+            className="font-medium text-[var(--aeterna-gold)] underline underline-offset-[0.2em] decoration-[var(--aeterna-gold)]/50 hover:text-[var(--aeterna-gold-light)] hover:decoration-[var(--aeterna-gold)] transition-colors"
+          >
+            upgrade
+          </Link>{" "}
+          within 7 days. After this window, the shrine will gently close to protect the privacy of the data.
         </p>
       </div>
     </motion.div>

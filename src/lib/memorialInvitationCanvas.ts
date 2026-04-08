@@ -270,33 +270,26 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
 
   const bioRaw = remembranceBio?.trim()
   if (bioRaw) {
-    let dividerY = y + 12
+    const dividerY = y + 12
     drawGoldDivider(dividerY)
-    y = dividerY + 36
-
-    ctx.fillStyle = INK_MUTED
-    ctx.font = `600 11px ${FONT_SANS}`
-    ctx.letterSpacing = "0.28em"
-    ctx.fillText("WORDS OF REMEMBRANCE", centerX, y)
-    ctx.letterSpacing = "0"
-    y += 36
+    y = dividerY + 32
 
     ctx.fillStyle = INK
     ctx.font = `italic 400 24px ${FONT_SERIF}`
-    const bioLines = wrapLines(ctx, bioRaw, contentW, 10)
+    const bioLines = wrapLines(ctx, bioRaw, contentW, 12)
     bioLines.forEach((ln) => {
       ctx.fillText(ln, centerX, y)
       y += 38
     })
-    y += 24
-
-    dividerY = y + 8
-    drawGoldDivider(dividerY)
-    y = dividerY + 36
+    y += 28
   } else {
-    const dividerY = y + 12
-    drawGoldDivider(dividerY)
-    y = dividerY + 36
+    y += 20
+  }
+
+  if (bioRaw) {
+    const sepY = y + 8
+    drawGoldDivider(sepY)
+    y = sepY + 36
   }
 
   ctx.textAlign = "center"

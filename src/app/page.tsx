@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type ReactNode } from "react"
 import Link from "next/link"
-import { Clock, Heart, QrCode, Sparkles } from "lucide-react"
+import { Heart, QrCode, Sparkles } from "lucide-react"
 import { Navbar, NavbarCreateLink } from "@/components/Layout/Navbar"
 import { RevealSection } from "@/components/RevealSection"
 import {
@@ -384,24 +384,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Time window — quiet, not alarmist */}
-        <section className="border-t border-white/[0.03] bg-landing px-5 py-16 md:px-10">
-          <RevealSection className="max-w-xl mx-auto text-center">
-            <div className="inline-flex items-center justify-center gap-3 text-[#737373] mb-4">
-              <Clock className="h-4 w-4 shrink-0" strokeWidth={1} aria-hidden />
-              <Sparkles
-                className="h-3.5 w-3.5 shrink-0 text-[var(--aeterna-gold)] animate-star-fade"
-                strokeWidth={1.5}
-                aria-hidden
-              />
-              <span className="text-[10px] tracking-[0.3em] uppercase">First seven days</span>
-            </div>
-            <p className="font-[var(--font-serif)] text-lg md:text-xl text-[#a3a3a3] leading-relaxed tracking-[0.02em]">
-              The first 7 days are a free window to gather memories. Upgrade anytime to preserve the shrine forever.
-            </p>
-          </RevealSection>
-        </section>
-
         {/* Pricing — extremely simple */}
         <section
           id="pricing"
@@ -413,6 +395,9 @@ export default function LandingPage() {
               <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[color:var(--landing-text-title)] font-normal tracking-[0.05em]">
                 Sacred preservation. One-time.
               </h2>
+              <p className="mt-6 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance">
+                The first 7 days are a free window to gather memories. Upgrade anytime to preserve the shrine forever.
+              </p>
             </RevealSection>
 
             <p className="text-center text-xs text-[#737373] mb-8">All prices in US dollars (USD).</p>

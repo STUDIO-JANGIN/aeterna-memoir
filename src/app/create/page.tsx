@@ -2,13 +2,13 @@
 export const dynamic = "force-dynamic"
 
 import { useState, useEffect, useRef, Suspense } from "react"
-import { Clock, Flower2, Gift, MapPin, Sparkles } from "lucide-react"
+import { Flower2, Sparkles } from "lucide-react"
+import { SacredWelcomeLoadingFallback } from "@/components/Auth/LoadingOverlay"
 import { supabase } from "@/lib/supabase/browser"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
 import { playShutterClick } from "@/lib/shutterClick"
-import { ArtisanCardLight } from "@/components/ArtisanCardLight"
 import { MemorialInvitationCard } from "@/components/MemorialInvitationCard"
 import { MemorialShareActions } from "@/components/MemorialShareActions"
 import { createEventAction } from "@/app/actions/createEvent"
@@ -109,9 +109,17 @@ const inputBase =
 const selectBase =
   "w-full min-h-[52px] rounded-[32px] bg-white/[0.04] px-4 py-3 text-base text-[var(--landing-text-hero)] outline-none transition-colors duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:bg-white/[0.07] focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 appearance-none"
 
-/** Step 3 — glass fields + gold catch-light on focus */
-const selectJourneyBase =
-  "w-full min-h-[52px] rounded-[32px] border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-base font-medium text-[color:var(--landing-text-hero)] shadow-[inset_0_1px_3px_rgba(0,0,0,0.35)] backdrop-blur-[8px] outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:border-[var(--aeterna-gold)]/40 focus:bg-white/[0.09] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3),0_0_0_1px_rgba(197,160,89,0.32),0_0_22px_-4px_rgba(197,160,89,0.18)] focus:ring-0 focus:backdrop-blur-[10px] appearance-none [color-scheme:dark]"
+/** Step 3 date rows — ghost selects: hairline bottom, gold edge on focus (Obsidian) */
+const ghostDateSelectClass =
+  "w-full min-w-0 min-h-[52px] appearance-none cursor-pointer rounded-none border-0 border-b-[0.5px] border-[rgba(255,255,255,0.1)] bg-transparent px-1 py-3 text-center text-base font-normal tabular-nums text-[#f4f1ea] outline-none transition-[box-shadow,border-color,color] duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:border-[rgba(212,175,55,0.55)] focus:shadow-[0_1px_0_0_rgba(212,175,55,0.38)] [color-scheme:dark]"
+
+/** Step 4 optional fields — ghost line inputs (match Step 1 DNA) */
+const ghostLineInputClass =
+  "w-full rounded-none border-0 border-b-[0.5px] border-[rgba(255,255,255,0.1)] bg-transparent px-0 py-3.5 text-base text-[#f4f1ea] placeholder:text-white/30 outline-none transition-[box-shadow,border-color] duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:border-[rgba(212,175,55,0.55)] focus:shadow-[0_1px_0_0_rgba(212,175,55,0.38)]"
+
+/** Born / At Rest — same serif scale as Step 1 titles + announcement tracking */
+const stepSectionTitleClass =
+  "font-[var(--font-serif)] text-2xl font-normal uppercase tracking-[0.15em] text-[#f4f1ea]/50 md:text-3xl"
 
 /** Memorial details: minimal border, landing-aligned */
 const fieldLabelClass = "block text-[10px] tracking-[0.22em] uppercase text-[#f5f5f7]/60 mb-2"
@@ -633,30 +641,34 @@ function CreateEventForm() {
     }
   }
 
-  const goBack = () => {
+  const handleBack = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (process.env.NODE_ENV === "development") {
+      console.log("Back button triggered at Step:", wizardStep)
+    }
     setCreateError(null)
     if (!memorialType) return
-    if (wizardStep <= 1) {
-      setMemorialType(null)
-      return
-    }
+
     /** Step 6 + URL-locked plan: first Back closes the plan grid and returns to summary. */
     if (wizardStep === 6 && planLockedFromUrl && showPlanChangeOptions) {
       setShowPlanChangeOptions(false)
+      window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
-    setStepSlideDir(-1)
-    const nextStep = wizardStep - 1
-    const d = buildCreateDraft(nextStep)
-    if (d) writeCreateDraft(d)
-    setWizardStep(nextStep)
-  }
 
-  const handleBack = () => {
-    if (process.env.NODE_ENV === "development") {
-      console.log("Back button clicked", { wizardStep })
+    if (wizardStep > 1) {
+      setStepSlideDir(-1)
+      const nextStep = wizardStep - 1
+      const d = buildCreateDraft(nextStep)
+      if (d) writeCreateDraft(d)
+      setWizardStep(nextStep)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+      return
     }
-    goBack()
+
+    setMemorialType(null)
+    router.push("/")
   }
 
   const goNext = () => {
@@ -994,10 +1006,10 @@ function CreateEventForm() {
               animate="animate"
               exit="exit"
               transition={ARTISAN_SPRING}
-              className="w-full flex-1"
+              className="flex w-full flex-1 flex-col"
             >
               {wizardStep === 1 && (
-                <div className="space-y-3 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-3 pt-4">
                   <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">Their name</h2>
                   <p className="text-base text-white/45">What name should we use?</p>
                   <input
@@ -1019,7 +1031,7 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 2 && (
-                <div className="space-y-4 pt-4 text-center">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-4 pt-4 text-center">
                   <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">A face to remember</h2>
                   <p className="text-base text-white/50 max-w-md mx-auto leading-relaxed">
                     A photo helps people recognize them. Tap the circle to add one.
@@ -1058,40 +1070,93 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 3 && (
-                <div className="space-y-10 pt-4">
-                  <div className="max-w-xl">
-                    <h2 className="font-[var(--font-serif)] text-2xl font-normal tracking-[0.05em] text-[color:var(--landing-text-hero)] md:text-3xl">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                  <div className="space-y-3">
+                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
                       Honoring Their Journey
                     </h2>
-                    <div className="mt-5 flex gap-3.5">
-                      <div className="mt-0.5 flex shrink-0 flex-col items-center gap-2.5" aria-hidden>
-                        <Clock className="h-4 w-4 text-[var(--aeterna-gold)]/55" strokeWidth={1.15} />
-                        <Sparkles className="h-4 w-4 text-[var(--aeterna-gold)] animate-star-fade" strokeWidth={1.15} />
-                      </div>
-                      <p className="text-[15px] leading-[1.6] text-[#f5f5f7] md:text-base">
-                        Exact dates are lovely; a year alone is fine if that&apos;s what you have. When the page opens,
-                        loved ones get seven gentle days to add photos and stories.
-                      </p>
-                    </div>
+                    <p className="text-base text-white/45 leading-relaxed">
+                      Exact dates are lovely; a year alone is fine if that&apos;s what you have. When the page opens,
+                      loved ones get seven gentle days to add photos and stories.
+                    </p>
                   </div>
 
-                  <div className="space-y-8 md:space-y-10">
-                    <ArtisanCardLight>
-                    <div className="card-treasure rounded-[32px]">
-                      <div className="card-treasure-inner rounded-[32px] px-5 py-7 md:px-7 md:py-8">
-                        <div className="mb-6 border-b border-white/[0.06] pb-6">
-                          <p className="label-announcement font-[var(--font-serif)]">Born</p>
-                        </div>
-                        <div className="grid grid-cols-3 gap-3 md:gap-4">
+                  <div className="space-y-10">
+                    <div className="space-y-6">
+                      <h3 className={stepSectionTitleClass}>Born</h3>
+                      <div className="grid grid-cols-3 gap-4 md:gap-5">
+                        <select
+                          ref={birthYRef}
+                          value={birthY}
+                          onChange={(e) => {
+                            setBirthY(e.target.value)
+                            if (e.target.value) focusNextField(birthMRef.current)
+                          }}
+                          className={ghostDateSelectClass}
+                          aria-label="Birth year"
+                        >
+                          <option value="">YYYY</option>
+                          {YEARS.map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          ref={birthMRef}
+                          value={birthM}
+                          onChange={(e) => {
+                            setBirthM(e.target.value)
+                            if (e.target.value) focusNextField(birthDRef.current)
+                          }}
+                          className={ghostDateSelectClass}
+                          aria-label="Birth month"
+                        >
+                          <option value="">MM</option>
+                          {MONTHS.map((m) => (
+                            <option key={m} value={m}>
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          ref={birthDRef}
+                          value={birthD}
+                          onChange={(e) => {
+                            setBirthD(e.target.value)
+                          }}
+                          className={ghostDateSelectClass}
+                          aria-label="Birth day"
+                        >
+                          <option value="">DD</option>
+                          {DAYS.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {birthComplete && (
+                      <motion.div
+                        key="at-rest-block"
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={ARTISAN_SPRING}
+                        className="w-full space-y-6"
+                      >
+                        <h3 className={stepSectionTitleClass}>At Rest</h3>
+                        <div className="grid grid-cols-3 gap-4 md:gap-5">
                           <select
-                            ref={birthYRef}
-                            value={birthY}
+                            ref={deathYRef}
+                            value={deathY}
                             onChange={(e) => {
-                              setBirthY(e.target.value)
-                              if (e.target.value) focusNextField(birthMRef.current)
+                              setDeathY(e.target.value)
+                              if (e.target.value) focusNextField(deathMRef.current)
                             }}
-                            className={selectJourneyBase}
-                            aria-label="Birth year"
+                            className={ghostDateSelectClass}
+                            aria-label="Year of passing"
                           >
                             <option value="">YYYY</option>
                             {YEARS.map((y) => (
@@ -1101,14 +1166,14 @@ function CreateEventForm() {
                             ))}
                           </select>
                           <select
-                            ref={birthMRef}
-                            value={birthM}
+                            ref={deathMRef}
+                            value={deathM}
                             onChange={(e) => {
-                              setBirthM(e.target.value)
-                              if (e.target.value) focusNextField(birthDRef.current)
+                              setDeathM(e.target.value)
+                              if (e.target.value) focusNextField(deathDRef.current)
                             }}
-                            className={selectJourneyBase}
-                            aria-label="Birth month"
+                            className={ghostDateSelectClass}
+                            aria-label="Month of passing"
                           >
                             <option value="">MM</option>
                             {MONTHS.map((m) => (
@@ -1118,13 +1183,11 @@ function CreateEventForm() {
                             ))}
                           </select>
                           <select
-                            ref={birthDRef}
-                            value={birthD}
-                            onChange={(e) => {
-                              setBirthD(e.target.value)
-                            }}
-                            className={selectJourneyBase}
-                            aria-label="Birth day"
+                            ref={deathDRef}
+                            value={deathD}
+                            onChange={(e) => setDeathD(e.target.value)}
+                            className={ghostDateSelectClass}
+                            aria-label="Day of passing"
                           >
                             <option value="">DD</option>
                             {DAYS.map((d) => (
@@ -1134,76 +1197,6 @@ function CreateEventForm() {
                             ))}
                           </select>
                         </div>
-                      </div>
-                    </div>
-                    </ArtisanCardLight>
-
-                    {birthComplete && (
-                      <motion.div
-                        key="at-rest-block"
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                      >
-                        <ArtisanCardLight>
-                          <div className="card-treasure rounded-[32px]">
-                            <div className="card-treasure-inner rounded-[32px] px-5 py-7 md:px-7 md:py-8">
-                              <div className="mb-6 border-b border-white/[0.06] pb-6">
-                                <p className="label-announcement font-[var(--font-serif)]">At Rest</p>
-                              </div>
-                              <div className="grid grid-cols-3 gap-3 md:gap-4">
-                                <select
-                                  ref={deathYRef}
-                                  value={deathY}
-                                  onChange={(e) => {
-                                    setDeathY(e.target.value)
-                                    if (e.target.value) focusNextField(deathMRef.current)
-                                  }}
-                                  className={selectJourneyBase}
-                                  aria-label="Year of passing"
-                                >
-                                  <option value="">YYYY</option>
-                                  {YEARS.map((y) => (
-                                    <option key={y} value={y}>
-                                      {y}
-                                    </option>
-                                  ))}
-                                </select>
-                                <select
-                                  ref={deathMRef}
-                                  value={deathM}
-                                  onChange={(e) => {
-                                    setDeathM(e.target.value)
-                                    if (e.target.value) focusNextField(deathDRef.current)
-                                  }}
-                                  className={selectJourneyBase}
-                                  aria-label="Month of passing"
-                                >
-                                  <option value="">MM</option>
-                                  {MONTHS.map((m) => (
-                                    <option key={m} value={m}>
-                                      {m}
-                                    </option>
-                                  ))}
-                                </select>
-                                <select
-                                  ref={deathDRef}
-                                  value={deathD}
-                                  onChange={(e) => setDeathD(e.target.value)}
-                                  className={selectJourneyBase}
-                                  aria-label="Day of passing"
-                                >
-                                  <option value="">DD</option>
-                                  {DAYS.map((d) => (
-                                    <option key={d} value={d}>
-                                      {d}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                          </div>
-                        </ArtisanCardLight>
                       </motion.div>
                     )}
                   </div>
@@ -1211,69 +1204,62 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 4 && (
-                <div className="space-y-8 pt-4">
-                  <ArtisanCardLight>
-                  <div className="card-treasure rounded-[32px]">
-                    <div className="card-treasure-inner rounded-[32px] p-5 md:p-6">
-                    <p className="text-[9px] tracking-[0.28em] uppercase text-white/32">Optional</p>
-                    <h3 className="mt-2 font-[var(--font-serif)] text-lg font-normal leading-snug text-[#e8e4dc] md:text-xl">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-8 pt-4">
+                  <div className="space-y-3">
+                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
                       Memorial Service &amp; Support Family
-                    </h3>
-                    <div className="mt-6 space-y-5">
+                    </h2>
+                    <p className="text-base text-white/45 leading-relaxed">
+                      Optional — service details or a support link. You can skip and add these later.
+                    </p>
+                  </div>
+                  <div className="rounded-[32px] border border-white/[0.08] bg-white/[0.03] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md md:p-8">
+                    <p className="text-[10px] tracking-[0.28em] uppercase text-[#f5f5f7]/50">Optional</p>
+                    <div className="mt-8 space-y-8">
                       <div>
-                        <label htmlFor="memorial-location-opt" className={`${fieldLabelClass} mb-1.5 !tracking-[0.18em]`}>
+                        <label
+                          htmlFor="memorial-location-opt"
+                          className="mb-2 block text-[10px] font-medium uppercase tracking-[0.22em] text-[#f5f5f7]/50"
+                        >
                           Location
                         </label>
-                        <div className="relative">
-                          <MapPin
-                            className="pointer-events-none absolute left-3.5 top-1/2 z-[1] h-[18px] w-[18px] -translate-y-1/2 text-[var(--aeterna-gold)]/40"
-                            strokeWidth={1.65}
-                            aria-hidden
-                          />
-                          <input
-                            ref={locationInputRef}
-                            id="memorial-location-opt"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && location.trim()) {
-                                e.preventDefault()
-                                focusNextField(fundInputRef.current)
-                              }
-                            }}
-                            placeholder="Place and time — or city"
-                            autoComplete="off"
-                            className={`${inputMemorial} min-h-[48px] pl-11 text-[15px] md:min-h-[52px] md:text-base`}
-                          />
-                        </div>
+                        <input
+                          ref={locationInputRef}
+                          id="memorial-location-opt"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && location.trim()) {
+                              e.preventDefault()
+                              focusNextField(fundInputRef.current)
+                            }
+                          }}
+                          placeholder="Place and time — or city"
+                          autoComplete="off"
+                          className={ghostLineInputClass}
+                        />
                       </div>
                       <div>
-                        <label htmlFor="memorial-support-opt" className={`${fieldLabelClass} mb-1.5 !tracking-[0.18em]`}>
+                        <label
+                          htmlFor="memorial-support-opt"
+                          className="mb-2 block text-[10px] font-medium uppercase tracking-[0.22em] text-[#f5f5f7]/50"
+                        >
                           Support
                         </label>
-                        <div className="relative">
-                          <Gift
-                            className="pointer-events-none absolute left-3.5 top-1/2 z-[1] h-[18px] w-[18px] -translate-y-1/2 text-[var(--aeterna-gold)]/40"
-                            strokeWidth={1.65}
-                            aria-hidden
-                          />
-                          <input
-                            ref={fundInputRef}
-                            id="memorial-support-opt"
-                            type="text"
-                            inputMode="url"
-                            value={fundLink}
-                            onChange={(e) => setFundLink(e.target.value)}
-                            placeholder="Fund or charity link (optional)"
-                            autoComplete="off"
-                            className={`${inputMemorial} min-h-[48px] pl-11 text-[15px] md:min-h-[52px] md:text-base`}
-                          />
-                        </div>
+                        <input
+                          ref={fundInputRef}
+                          id="memorial-support-opt"
+                          type="text"
+                          inputMode="url"
+                          value={fundLink}
+                          onChange={(e) => setFundLink(e.target.value)}
+                          placeholder="Fund or charity link (optional)"
+                          autoComplete="off"
+                          className={ghostLineInputClass}
+                        />
                       </div>
                     </div>
                   </div>
-                </div>
-                </ArtisanCardLight>
                 </div>
               )}
 
@@ -1438,19 +1424,18 @@ function CreateEventForm() {
 
       {/* Fixed thumb zone */}
       {memorialType !== null && (
-        <div className="pointer-events-auto fixed bottom-0 left-0 right-0 z-[50] border-t-[0.5px] border-[rgba(255,255,255,0.1)] bg-[rgba(3,3,3,0.96)] px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] backdrop-blur-[20px]">
+        <div className="!pointer-events-auto fixed bottom-0 left-0 right-0 !z-[9999] border-t-[0.5px] border-[rgba(255,255,255,0.1)] bg-[rgba(3,3,3,0.96)] px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] backdrop-blur-[20px]">
           <div className="mx-auto w-full max-w-lg space-y-3">
             {showFooterCreateError && (
               <p className="text-center text-sm text-red-400/90" role="alert">
                 {createError}
               </p>
             )}
-            <div className="relative z-[50] flex flex-row items-stretch gap-3 pointer-events-auto">
+            <div className="relative !z-[9999] flex flex-row items-stretch gap-3 !pointer-events-auto">
               <button
                 type="button"
                 onClick={handleBack}
-                disabled={loading}
-                className="cta-silk relative z-[50] pointer-events-auto shrink-0 min-h-[52px] min-w-[5.5rem] rounded-[32px] border border-white/[0.14] bg-transparent px-4 text-sm font-medium tracking-wide text-white/65 hover:bg-white/[0.05] hover:text-white disabled:opacity-40 sm:min-h-[56px]"
+                className="cta-silk !pointer-events-auto relative !z-[9999] shrink-0 min-h-[52px] min-w-[5.5rem] rounded-[32px] border border-white/[0.14] bg-transparent px-4 text-sm font-medium tracking-wide text-white/65 hover:bg-white/[0.05] hover:text-white sm:min-h-[56px]"
               >
                 Back
               </button>
@@ -1539,7 +1524,7 @@ function CreateEventForm() {
 
 export default function CreateEventPage() {
   return (
-    <Suspense fallback={<div className="min-h-dvh bg-landing flex items-center justify-center text-landing-label">Loading…</div>}>
+    <Suspense fallback={<SacredWelcomeLoadingFallback />}>
       <CreateEventForm />
     </Suspense>
   )

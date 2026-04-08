@@ -18,6 +18,7 @@ export type PublicMemorialEvent = {
   ceremony_time: string | null
   flower_link: string | null
   collection_end_at: string | null
+  expired_at: string | null
   is_paid: boolean | null
   created_at: string | null
   film_url: string | null
@@ -95,6 +96,7 @@ function rowToPublicEvent(row: Record<string, unknown>): PublicMemorialEvent {
     ceremony_time: (row.ceremony_time as string | null) ?? null,
     flower_link: (row.flower_link as string | null) ?? null,
     collection_end_at: (row.collection_end_at as string | null) ?? null,
+    expired_at: (row.expired_at as string | null) ?? null,
     is_paid: (row.is_paid as boolean | null) ?? null,
     created_at: (row.created_at as string | null) ?? null,
     film_url: (row.film_url as string | null) ?? null,

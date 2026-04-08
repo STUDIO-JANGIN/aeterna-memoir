@@ -3,6 +3,9 @@
 import { unstable_noStore as noStore } from "next/cache"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { parseUuidString } from "@/lib/uuid"
+import type { Comment } from "@/types/database.types"
+
+export type { Comment }
 
 const MAX_TEXT = 500
 const MAX_NAME = 60
@@ -20,11 +23,46 @@ function rowIsApproved(value: unknown): boolean {
   return false
 }
 
-export type StoryCommentPublic = {
-  id: string
-  visitor_name: string
-  text: string
-  created_at: string
+/** Memorial-facing comment shape (same as {@link Comment}). */
+export type StoryCommentPublic = Comment
+
+function rowIsReported(value: unknown): boolean {
+  if (value === true) return true
+  if (value === false || value == null) return false
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase()
+    return v === "true" || v === "t" || v === "1" || v === "yes"
+  }
+  if (typeof value === "number") return value === 1
+  return false
+}
+
+/** Normalize DB row to public shape; drops reported rows if any slip through. */
+function toPublicComment(row: Record<string, unknown>): StoryCommentPublic | null {
+  if (rowIsReported(row.is_reported)) return null
+  const id = row.id != null ? String(row.id) : ""
+  const visitor_name = row.visitor_name != null ? String(row.visitor_name) : ""
+  const text = row.text != null ? String(row.text) : ""
+  const created_at =
+    typeof row.created_at === "string"
+      ? row.created_at
+      : row.created_at != null
+        ? String(row.created_at)
+        : new Date().toISOString()
+  if (!id) return null
+  return {
+    id,
+    visitor_name,
+    text,
+    created_at,
+    is_reported: false,
+  }
+}
+
+/** PostgREST sometimes lags after adding `is_reported`; retry without touching that column. */
+function isReportColumnOrCacheError(msg: string): boolean {
+  const m = msg.toLowerCase()
+  return m.includes("schema cache") || (m.includes("is_reported") && (m.includes("column") || m.includes("could not find")))
 }
 
 export type StoryCommentsResult =
@@ -74,13 +112,40 @@ export async function getStoryCommentsAction(
     return { ok: true, comments: [] }
   }
 
-  const { data, error } = await supabase
+  const selectCols = "id, visitor_name, text, created_at, is_reported"
+
+  const first = await supabase
     .from("comments")
-    .select("id, visitor_name, text, created_at")
+    .select(selectCols)
     .eq("photo_id", photoIdUuid)
     .eq("event_id", eventIdUuid)
     .eq("is_reported", false)
     .order("created_at", { ascending: true })
+
+  let data: Record<string, unknown>[] | null = (first.data ?? null) as Record<string, unknown>[] | null
+  let error = first.error
+
+  if (error && isReportColumnOrCacheError(error.message ?? "")) {
+    const second = await supabase
+      .from("comments")
+      .select(selectCols)
+      .eq("photo_id", photoIdUuid)
+      .eq("event_id", eventIdUuid)
+      .order("created_at", { ascending: true })
+    if (second.error && isReportColumnOrCacheError(second.error.message ?? "")) {
+      const third = await supabase
+        .from("comments")
+        .select("id, visitor_name, text, created_at")
+        .eq("photo_id", photoIdUuid)
+        .eq("event_id", eventIdUuid)
+        .order("created_at", { ascending: true })
+      data = (third.data ?? null) as Record<string, unknown>[] | null
+      error = third.error
+    } else {
+      data = (second.data ?? null) as Record<string, unknown>[] | null
+      error = second.error
+    }
+  }
 
   if (error) {
     const msg = error.message ?? ""
@@ -91,7 +156,9 @@ export async function getStoryCommentsAction(
     return { ok: false, error: "We couldn’t load messages. Please try again." }
   }
 
-  const rows = (data ?? []) as StoryCommentPublic[]
+  const rows = (data ?? [])
+    .map((row) => toPublicComment(row))
+    .filter((r): r is StoryCommentPublic => r != null)
   return { ok: true, comments: rows }
 }
 
@@ -168,17 +235,34 @@ export async function addStoryCommentAction(
     return { ok: false, error: "You can share a memory once this photo has been approved." }
   }
 
-  const { data: inserted, error: insertErr } = await supabase
+  const insertPayload = {
+    photo_id: photoId,
+    event_id: eventId,
+    text: body,
+    visitor_name: name,
+    is_reported: false,
+  }
+
+  let { data: inserted, error: insertErr } = await supabase
     .from("comments")
-    .insert({
+    .insert(insertPayload)
+    .select("id, visitor_name, text, created_at, is_reported")
+    .single()
+
+  if (insertErr && isReportColumnOrCacheError(insertErr.message ?? "")) {
+    const minimal = {
       photo_id: photoId,
       event_id: eventId,
       text: body,
       visitor_name: name,
-      is_reported: false,
-    })
-    .select("id, visitor_name, text, created_at")
-    .single()
+    }
+    let retry = await supabase.from("comments").insert(minimal).select("id, visitor_name, text, created_at, is_reported").single()
+    if (retry.error && isReportColumnOrCacheError(retry.error.message ?? "")) {
+      retry = await supabase.from("comments").insert(minimal).select("id, visitor_name, text, created_at").single()
+    }
+    inserted = retry.data
+    insertErr = retry.error
+  }
 
   if (insertErr || !inserted) {
     const msg = insertErr?.message ?? ""
@@ -192,7 +276,11 @@ export async function addStoryCommentAction(
     return { ok: false, error: msg || "Could not send your message." }
   }
 
-  return { ok: true, comment: inserted as StoryCommentPublic }
+  const pub = toPublicComment(inserted as Record<string, unknown>)
+  if (!pub) {
+    return { ok: false, error: "Could not send your message." }
+  }
+  return { ok: true, comment: pub }
 }
 
 export type ReportCommentResult = { ok: true } | { ok: false; error: string }

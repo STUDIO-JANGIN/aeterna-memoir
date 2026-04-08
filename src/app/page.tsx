@@ -20,7 +20,7 @@ const LANDING_BACKGROUND_POSTER_URL =
 const FAQ_ITEMS = [
   {
     q: "What is Aeterna?",
-    a: "Aeterna is a digital treasure box for the memories of those we love—both people and pets. It's a special place where their smiles, voices, and stories live forever, instead of being lost in a phone gallery or a dusty album.",
+    a: "Aeterna is a digital treasure box for the memories of those we love: both people and pets. It's a special place where their smiles, voices, and stories live forever, instead of being lost in a phone gallery or a dusty album.",
   },
   {
     q: "Why did you start this?",
@@ -28,7 +28,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "How do I start a memorial?",
-    a: "It's as simple as planting a seed. First, you create a profile for your loved one. Second, you share a link or a QR code with family and friends. There's no app to download and no complicated login—just a direct path to sharing love.",
+    a: "It's as simple as planting a seed. First, you create a profile for your loved one. Second, you share a link or a QR code with family and friends. There's no app to download and no complicated login, just a direct path to sharing love.",
   },
   {
     q: "How do friends and family help?",
@@ -44,14 +44,14 @@ const FAQ_ITEMS = [
   },
   {
     q: "What happens in the long run?",
-    a: "We believe memories should move and speak. In the future, we will help you turn the most-loved photos into a beautiful AI tribute film—a living movie of a life well-lived, so the story stays vibrant for generations to come.",
+    a: "We believe memories should move and speak. In the future, we will help you turn the most-loved photos into a beautiful AI tribute film: a living movie of a life well-lived, so the story stays vibrant for generations to come.",
   },
 ]
 
 /** Screen-reader summaries (match column mockups + copy). */
 const STEP_FLOW_LABELS = [
   "Create a digital shrine: a dignified memorial for your loved one or pet.",
-  "Scan and share: QR at the service or a link—guests upload photos and stories, no app required.",
+  "Scan and share: QR at the service or a link. Guests upload photos and stories; no app required.",
   "Connect and relive: the community hearts favorite memories; the most-loved stories rise to the top.",
 ] as const
 
@@ -66,7 +66,7 @@ const HOW_IT_WORKS_STEPS = [
   {
     title: "Scan · Share",
     description:
-      "Place a QR code at the service or share a link. Guests upload photos and stories instantly—no app required.",
+      "Place a QR code at the service or share a link. Guests upload photos and stories instantly. No app required.",
     Icon: QrCode,
     mockup: "qr" as const,
   },
@@ -218,7 +218,7 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-dvh w-full bg-landing text-[#f5f5f7] leading-[1.6]">
-      {/* once.film–inspired: calm, editorial, lots of air — nav centered, logo / CTA balanced */}
+      {/* once.film–inspired: calm, editorial, lots of air; nav centered, logo / CTA balanced */}
       <Navbar>
         <button
           type="button"
@@ -259,7 +259,7 @@ export default function LandingPage() {
             >
               <source src={LANDING_BACKGROUND_VIDEO_URL} type="video/mp4" />
             </video>
-            {/* Tonal overlay — same hue as --landing-bg so video grade matches the scroll canvas */}
+            {/* Tonal overlay: same hue as --landing-bg so video grade matches the scroll canvas */}
             <div className="absolute inset-0 z-[1] bg-[color:var(--landing-bg)]/50 pointer-events-none" />
           </>
         )}
@@ -272,7 +272,7 @@ export default function LandingPage() {
         <main className="px-5 md:px-10 pt-6 pb-24 md:pt-20 md:pb-32">
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 gap-y-14 lg:grid-cols-2 lg:gap-12 xl:gap-16 lg:items-center lg:gap-y-0">
-              {/* Value proposition — always on top on mobile; left column on desktop */}
+              {/* Value proposition: always on top on mobile; left column on desktop */}
               <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-left px-1 sm:px-2 pb-2 sm:pb-10 lg:pb-0">
                 <RevealSection className="w-full max-w-xl mx-auto lg:mx-0 lg:max-w-xl space-y-0">
                   <h1 className="text-landing-hero font-semibold text-balance md:leading-[1.1] max-md:!text-[clamp(1.875rem,7.5vw,2.75rem)] max-md:!leading-[1.14] max-md:tracking-[-0.035em]">
@@ -281,10 +281,10 @@ export default function LandingPage() {
                     Sacred Memory
                   </h1>
                   <p className="mt-4 md:mt-8 text-[13px] md:text-lg leading-[1.72] md:leading-[1.6] text-[#f5f5f7]/90 font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance max-md:px-0.5">
-                    A lasting space for people and pets—preserved with dignity. Share instantly by QR or link: no app, no friction; guests add photos and stories from any phone. A gentle memorial feed where visitors heart and comment on each memory—like a sacred timeline of their legacy.
+                    A lasting space for people and pets, preserved with dignity. Share instantly by QR or link: no app, no friction; guests add photos and stories from any phone. A gentle memorial feed where visitors heart and comment on each memory, like a sacred timeline of their legacy.
                   </p>
                   <p className="mt-5 md:mt-4 text-[11px] md:text-sm leading-[1.68] md:leading-relaxed font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance italic text-[#f0ebe3] [text-shadow:0px_2px_10px_rgba(0,0,0,0.8)] max-md:px-0.5">
-                    Footprints, remembrance, and preservation—in one hallowed place.
+                    Footprints, remembrance, and preservation in one hallowed place.
                   </p>
                 </RevealSection>
                 <RevealSection className="mt-8 w-full max-w-xl mx-auto lg:mx-0 pt-2 md:mt-10 md:pt-0 border-t border-white/[0.06] md:border-0 max-md:pb-2">
@@ -297,10 +297,10 @@ export default function LandingPage() {
                 </RevealSection>
               </div>
 
-              {/* iPhone mockups — own column / region; contained so text never sits underneath */}
+              {/* iPhone mockups: own column / region; contained so text never sits underneath */}
               <RevealSection className="order-2 relative z-10 w-full flex justify-center lg:justify-end max-lg:mt-2 max-lg:pt-4">
                 <div className="relative w-full max-w-[min(100%,400px)] lg:max-w-[440px] h-[min(380px,78vw)] sm:h-[420px] md:h-[440px] lg:h-[min(480px,52vh)] isolate max-md:overflow-x-clip max-md:overflow-y-visible">
-                  {/* Foreground mockup — inclusive elder portrait (faces kept below Dynamic Island) */}
+                  {/* Foreground mockup: inclusive elder portrait (faces kept below Dynamic Island) */}
                   <div
                     className="absolute right-0 top-4 z-20 w-[56%] min-w-[180px] sm:top-6 sm:w-[54%]"
                     style={{ transform: "perspective(1600px) rotateY(-11deg) rotateZ(2deg)" }}
@@ -318,7 +318,7 @@ export default function LandingPage() {
                       <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/45 via-transparent to-black/25" />
                     </IPhoneShell>
                   </div>
-                  {/* Pets — background */}
+                  {/* Pets: background */}
                   <div
                     className="absolute bottom-4 left-0 z-10 w-[52%] min-w-[170px] sm:bottom-6 sm:w-[50%]"
                     style={{ transform: "perspective(1600px) rotateY(-7deg) rotateZ(-3deg)" }}
@@ -342,7 +342,7 @@ export default function LandingPage() {
           </div>
         </main>
 
-        {/* How it works — 3-column scan (icons + bold headers + mockups) */}
+        {/* How it works: 3-column scan (icons + bold headers + mockups) */}
         <section
           id="how-it-works"
           className="scroll-mt-24 bg-landing px-5 pt-28 pb-16 md:px-10 md:py-28"
@@ -356,7 +356,7 @@ export default function LandingPage() {
                 Create · Share · Gather
               </h2>
               <p className="mt-5 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance">
-                Three pillars: a digital shrine for humans and pets; zero-friction access by QR or link with no app; and a community memorial where visitors heart and comment—so the moments that matter stay in view.
+                Three pillars: a digital shrine for humans and pets; zero-friction access by QR or link with no app; and a community memorial where visitors heart and comment, so the moments that matter stay in view.
               </p>
               <p className="sr-only">
                 Core flow in seconds: create a digital shrine, share by QR or link with no download, guests upload from mobile; community hearts and comments on memories.
@@ -395,7 +395,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Pricing — extremely simple */}
+        {/* Pricing: extremely simple */}
         <section
           id="pricing"
           className="scroll-mt-24 border-t border-white/[0.03] bg-landing px-5 py-20 md:px-10 md:py-28"

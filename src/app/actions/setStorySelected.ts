@@ -75,7 +75,7 @@ export async function getEventBySlug(slug: string): Promise<AdminEvent | null> {
   }
 
   const selectCols =
-    "id, name, slug, collection_end_at, is_paid, tier, video_credits, created_at, birth_date, death_date, location, ceremony_time, flower_link, profile_image, music_url, bank_info, preview_film_url, full_film_requested_at, full_film_url, video_status, invite_pdf_url"
+    "id, name, slug, collection_end_at, expired_at, is_paid, tier, video_credits, created_at, birth_date, death_date, location, ceremony_time, flower_link, profile_image, music_url, bank_info, preview_film_url, full_film_requested_at, full_film_url, video_status, invite_pdf_url"
 
   const { data, error } = await supabase
     .from("events")
@@ -89,7 +89,10 @@ export async function getEventBySlug(slug: string): Promise<AdminEvent | null> {
   }
 
   if (data && typeof data === "object" && data.id) {
-    return { ...data, expired_at: (data as { expired_at?: string }).expired_at ?? data.collection_end_at ?? null } as AdminEvent
+    return {
+      ...data,
+      expired_at: data.expired_at ?? data.collection_end_at ?? null,
+    } as AdminEvent
   }
 
   const { data: dataFallback, error: errorFallback } = await supabase
@@ -104,7 +107,10 @@ export async function getEventBySlug(slug: string): Promise<AdminEvent | null> {
     return null
   }
   if (dataFallback && typeof dataFallback === "object" && dataFallback.id) {
-    return { ...dataFallback, expired_at: (dataFallback as { expired_at?: string }).expired_at ?? dataFallback.collection_end_at ?? null } as AdminEvent
+    return {
+      ...dataFallback,
+      expired_at: dataFallback.expired_at ?? dataFallback.collection_end_at ?? null,
+    } as AdminEvent
   }
 
   console.error("[getEventBySlug] event not found (no data or invalid type). slug:", slugNorm)

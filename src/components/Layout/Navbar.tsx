@@ -36,7 +36,7 @@ function chainNavClick(
 }
 
 /**
- * Landing shell — z above page content.
+ * Landing shell: z above page content.
  * Mobile: single row (logo + hamburger); nav opens as a vertical sheet (once.film–style).
  * Desktop: 3-column grid with centered nav.
  */
@@ -87,8 +87,7 @@ export function Navbar({ children, end }: NavbarProps) {
               aria-modal="true"
               aria-label="Site navigation"
             >
-              <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 py-3">
-                <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#a1a1a6]">Menu</p>
+              <div className="flex shrink-0 items-center justify-end border-b border-white/[0.08] px-3 py-2.5">
                 <button
                   type="button"
                   className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#f5f5f7] hover:bg-white/[0.08]"
@@ -99,7 +98,7 @@ export function Navbar({ children, end }: NavbarProps) {
                 </button>
               </div>
               <nav
-                className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain px-2 pb-6 pt-2 [&_button]:min-h-[3rem] [&_button]:w-full [&_button]:rounded-lg [&_button]:border-0 [&_button]:border-b [&_button]:border-white/[0.08] [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-3 [&_button]:text-left [&_button]:text-[13px] [&_button]:font-medium [&_button]:normal-case [&_button]:tracking-[0.02em] [&_button]:text-[#f5f5f7] [&_button]:last:border-b-0 [&_button]:hover:bg-white/[0.06] [&_button]:active:bg-white/[0.08]"
+                className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain px-2 pb-6 pt-1 [&_button]:min-h-[3rem] [&_button]:w-full [&_button]:rounded-lg [&_button]:border-0 [&_button]:border-b [&_button]:border-white/[0.08] [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-3 [&_button]:text-left [&_button]:text-[12px] [&_button]:font-semibold [&_button]:uppercase [&_button]:tracking-[0.18em] [&_button]:text-[#f5f5f7] [&_button]:last:border-b-0 [&_button]:hover:bg-white/[0.06] [&_button]:active:bg-white/[0.08]"
                 aria-label="Sections"
               >
                 {navWithClose}

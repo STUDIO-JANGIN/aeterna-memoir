@@ -67,6 +67,31 @@ type FeedEvent = {
   invitation_bio: string | null
 }
 
+/** Eternal Legacy / Eternal Film: collection does not expire (avoid 7-day free-timer UX). */
+const PAID_MEMORIAL_DEADLINE_MS = Date.UTC(2099, 11, 31, 23, 59, 59, 999)
+
+function isPaidMemorialEvent(e: FeedEvent): boolean {
+  const t = (e.tier ?? "").trim().toLowerCase()
+  if (t === "plus" || t === "premium") return true
+  return e.is_premium === true || e.is_paid === true
+}
+
+// Deadline time: prefer expired_at, then collection_end_at, else created_at + 7 days.
+function getDeadlineMs(e: FeedEvent): number {
+  if (isPaidMemorialEvent(e)) return PAID_MEMORIAL_DEADLINE_MS
+  if (e.expired_at) return new Date(e.expired_at).getTime()
+  if (e.collection_end_at) return new Date(e.collection_end_at).getTime()
+  const created = e.created_at ? new Date(e.created_at).getTime() : Date.now()
+  return created + 7 * 24 * 60 * 60 * 1000
+}
+
+// Photo submission deadline: prefer photo_deadline, fallback collection_end_at.
+function getPhotoDeadlineMs(e: FeedEvent): number {
+  if (isPaidMemorialEvent(e)) return PAID_MEMORIAL_DEADLINE_MS
+  if (e.photo_deadline) return new Date(e.photo_deadline).getTime()
+  return getDeadlineMs(e)
+}
+
 type Story = {
   id: string
   author_name: string | null
@@ -130,7 +155,6 @@ export default function GuestFeedPage({ params }: PageProps) {
   const [viewerStory, setViewerStory] = useState<Story | null>(null)
   /** Signed-in user for owner-only UI (admin link). */
   const [sessionUser, setSessionUser] = useState<{ id: string; email: string | null } | null>(null)
-  const [myStoryId, setMyStoryId] = useState<string | null>(null)
   const [showPremiumBlurPopup, setShowPremiumBlurPopup] = useState(false)
   const [hasDonatedForBank, setHasDonatedForBank] = useState(false)
   const [revealedBankWithoutDonation, setRevealedBankWithoutDonation] = useState(false)
@@ -162,58 +186,29 @@ export default function GuestFeedPage({ params }: PageProps) {
     return buildGlobalShareMessage(name, guestUrl)
   }, [event, slug])
 
-  const myStoryRankIndex = useMemo(() => {
-    if (!myStoryId) return -1
-    return stories.findIndex((s) => s.id === myStoryId)
-  }, [stories, myStoryId])
+  const [shareModalOpen, setShareModalOpen] = useState(false)
 
-  const [rankShareModalDismissed, setRankShareModalDismissed] = useState(() => {
-    if (typeof window === "undefined") return false
-    try {
-      return sessionStorage.getItem(`aeterna_rank_share_dismissed_${slug}`) === "1"
-    } catch {
-      return false
-    }
-  })
+  const closeShareModal = useCallback(() => {
+    setShareModalOpen(false)
+  }, [])
 
   useEffect(() => {
-    if (typeof window === "undefined" || !slug) return
-    try {
-      setRankShareModalDismissed(sessionStorage.getItem(`aeterna_rank_share_dismissed_${slug}`) === "1")
-    } catch {
-      setRankShareModalDismissed(false)
-    }
-  }, [slug])
-
-  const showRankShareModal = myStoryRankIndex >= 0 && !rankShareModalDismissed
-
-  const dismissRankShareModal = useCallback(() => {
-    setRankShareModalDismissed(true)
-    if (typeof window === "undefined" || !slug) return
-    try {
-      sessionStorage.setItem(`aeterna_rank_share_dismissed_${slug}`, "1")
-    } catch {
-      // ignore
-    }
-  }, [slug])
-
-  useEffect(() => {
-    if (!showRankShareModal) return
+    if (!shareModalOpen) return
     const prev = document.body.style.overflow
     document.body.style.overflow = "hidden"
     return () => {
       document.body.style.overflow = prev
     }
-  }, [showRankShareModal])
+  }, [shareModalOpen])
 
   useEffect(() => {
-    if (!showRankShareModal) return
+    if (!shareModalOpen) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dismissRankShareModal()
+      if (e.key === "Escape") closeShareModal()
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [showRankShareModal, dismissRankShareModal])
+  }, [shareModalOpen, closeShareModal])
 
   const handleRankShareWhatsApp = useCallback(
     (e: MouseEvent) => {
@@ -221,8 +216,9 @@ export default function GuestFeedPage({ params }: PageProps) {
       const text =
         dualRouteShareText || (typeof window !== "undefined" ? window.location.href : "")
       openWhatsAppWithPrefilledText(text)
+      closeShareModal()
     },
-    [dualRouteShareText],
+    [dualRouteShareText, closeShareModal],
   )
 
   const handleRankShareMessage = useCallback(
@@ -230,35 +226,26 @@ export default function GuestFeedPage({ params }: PageProps) {
       e.stopPropagation()
       const text = dualRouteShareText || (typeof window !== "undefined" ? window.location.href : "")
       window.location.href = `sms:?&body=${encodeURIComponent(text)}`
+      closeShareModal()
     },
-    [dualRouteShareText],
+    [dualRouteShareText, closeShareModal],
   )
 
-  const handleRankShareCopy = useCallback((e: MouseEvent) => {
-    e.stopPropagation()
-    const url = typeof window !== "undefined" ? window.location.href : ""
-    void navigator.clipboard.writeText(url).then(() => {
-      if (typeof window !== "undefined") window.alert("Link copied.")
-    })
-  }, [])
+  const handleRankShareCopy = useCallback(
+    (e: MouseEvent) => {
+      e.stopPropagation()
+      const url = typeof window !== "undefined" ? window.location.href : ""
+      void navigator.clipboard.writeText(url).then(() => {
+        if (typeof window !== "undefined") window.alert("Link copied.")
+        closeShareModal()
+      })
+    },
+    [closeShareModal],
+  )
 
-  /** Same footprint for WhatsApp / Message / Copy on the rank-share modal and tile strip. */
-  const rankShareBtnBase =
+  /** WhatsApp / Message / Copy in the share modal. */
+  const shareChannelBtnBase =
     "inline-flex min-h-[40px] w-full min-w-0 items-center justify-center rounded-full px-1.5 text-[10px] font-medium tracking-wide touch-manipulation active:scale-[0.98] sm:min-h-[36px]"
-
-  // Deadline time: prefer expired_at, then collection_end_at, else created_at + 7 days.
-  const getDeadlineMs = (e: FeedEvent) => {
-    if (e.expired_at) return new Date(e.expired_at).getTime()
-    if (e.collection_end_at) return new Date(e.collection_end_at).getTime()
-    const created = e.created_at ? new Date(e.created_at).getTime() : Date.now()
-    return created + 7 * 24 * 60 * 60 * 1000
-  }
-
-  // Photo submission deadline: prefer photo_deadline, fallback collection_end_at.
-  const getPhotoDeadlineMs = (e: FeedEvent) => {
-    if (e.photo_deadline) return new Date(e.photo_deadline).getTime()
-    return getDeadlineMs(e)
-  }
 
   const [photoDeadlineRemainingMs, setPhotoDeadlineRemainingMs] = useState<number | null>(null)
 
@@ -289,9 +276,8 @@ export default function GuestFeedPage({ params }: PageProps) {
   const isClosed = event !== null && remainingMs !== null && remainingMs <= 0
   const isPhotoDeadlinePassed = event !== null && photoDeadlineRemainingMs !== null && photoDeadlineRemainingMs <= 0
   const isExpired = isPhotoDeadlinePassed
-  const isPaidMemorial =
-    event?.tier === "plus" || event?.tier === "premium" || event?.is_premium === true || event?.is_paid === true
-  const isPremiumTier = event?.tier === "premium"
+  const isPaidMemorial = event ? isPaidMemorialEvent(event) : false
+  const isPremiumTier = (event?.tier ?? "").trim().toLowerCase() === "premium"
   const showBlurByDeadline = isExpired && !isPaidMemorial
   const TOP_20_VISIBLE = 20
   const tributeFilmUrl =
@@ -362,18 +348,6 @@ export default function GuestFeedPage({ params }: PageProps) {
     }
   }, [slug, router])
 
-  useEffect(() => {
-    if (!event?.id || typeof window === "undefined") return
-    try {
-      const raw = localStorage.getItem("aeterna_my_stories")
-      if (!raw) return
-      const parsed = JSON.parse(raw) as Record<string, string>
-      setMyStoryId(parsed[event.id] ?? null)
-    } catch {
-      setMyStoryId(null)
-    }
-  }, [event?.id])
-
   // Prevent duplicate hearts: restore already-hearted story IDs from localStorage.
   useEffect(() => {
     if (!heartedStorageKey || typeof window === "undefined") return
@@ -424,6 +398,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         ceremony_time?: string | null
         flower_link?: string | null
         collection_end_at: string | null
+        expired_at?: string | null
         is_paid: boolean | null
         created_at: string | null
         film_url: string | null
@@ -448,8 +423,8 @@ export default function GuestFeedPage({ params }: PageProps) {
           ceremony_time: eventData.ceremony_time ?? null,
           flower_link: eventData.flower_link ?? null,
           collection_end_at: eventData.collection_end_at ?? null,
-          expired_at: eventData.collection_end_at ?? null,
-          is_paid: eventData.is_paid ?? false,
+          expired_at: eventData.expired_at ?? eventData.collection_end_at ?? null,
+          is_paid: eventData.is_paid === true,
           created_at: eventData.created_at ?? null,
           film_url: eventData.film_url ?? null,
           full_film_url: eventData.full_film_url ?? null,
@@ -789,7 +764,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     }
   }
 
-  const isLocked = isClosed && !(event?.tier === "plus" || event?.tier === "premium" || event?.is_paid === true)
+  const isLocked = isClosed && (!event || !isPaidMemorialEvent(event))
   const paywallThreshold = TOP_20_VISIBLE
   const lockedCount = isLocked && stories.length > paywallThreshold ? stories.length - paywallThreshold : 0
   const isBlurredByDeadlineOnly = (index: number) => showBlurByDeadline && index >= TOP_20_VISIBLE
@@ -1085,48 +1060,56 @@ export default function GuestFeedPage({ params }: PageProps) {
         )}
       </AnimatePresence>
 
-      {showRankShareModal &&
+      {shareModalOpen &&
         typeof document !== "undefined" &&
         createPortal(
           <div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="rank-share-title"
+            aria-labelledby="memorial-share-title"
             className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-[3px]"
-            onClick={dismissRankShareModal}
+            onClick={closeShareModal}
           >
             <div
               className="w-full max-w-sm rounded-2xl border border-white/[0.12] bg-[#0a0a0a]/96 px-5 py-5 text-center shadow-[0_24px_64px_rgba(0,0,0,0.55)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <p id="rank-share-title" className="text-[13px] font-medium leading-relaxed text-white">
-                Your memory is currently{" "}
-                <strong className="text-[var(--aeterna-gold)]">#{myStoryRankIndex + 1}</strong>. Invite friends to
-                leave a heart.
+              <p id="memorial-share-title" className="text-[13px] font-medium leading-relaxed text-white">
+                Share this memorial
+              </p>
+              <p className="mt-2 text-[11px] leading-relaxed text-white/70">
+                Invite family and friends to visit and contribute.
               </p>
               <div className="mt-4 grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={handleRankShareWhatsApp}
-                  className={`${rankShareBtnBase} border border-[var(--border-gold)] bg-[#030303]/30 text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold)]/10`}
+                  className={`${shareChannelBtnBase} border border-[var(--border-gold)] bg-[#030303]/30 text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold)]/10`}
                 >
                   WhatsApp
                 </button>
                 <button
                   type="button"
                   onClick={handleRankShareMessage}
-                  className={`${rankShareBtnBase} border border-[var(--border-gold)] bg-[#030303]/35 text-[var(--landing-text-hero)] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10`}
+                  className={`${shareChannelBtnBase} border border-[var(--border-gold)] bg-[#030303]/35 text-[var(--landing-text-hero)] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10`}
                 >
                   Message
                 </button>
                 <button
                   type="button"
                   onClick={handleRankShareCopy}
-                  className={`${rankShareBtnBase} border border-white/20 bg-white/[0.06] text-[var(--landing-text-body)] hover:bg-white/10`}
+                  className={`${shareChannelBtnBase} border border-white/20 bg-white/[0.06] text-[var(--landing-text-body)] hover:bg-white/10`}
                 >
                   Copy link
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={closeShareModal}
+                className="mt-4 w-full min-h-[40px] rounded-full border border-white/15 text-[11px] font-medium tracking-wide text-white/80 hover:bg-white/[0.06] transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>,
           document.body,
@@ -1169,7 +1152,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         ) : null}
 
         <div className="mx-auto flex max-w-lg flex-col items-center text-center">
-          {showAddStoryCta || isOwner ? (
+          {event ? (
             <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-3 px-1">
               {showAddStoryCta ? (
                 <motion.button
@@ -1186,6 +1169,16 @@ export default function GuestFeedPage({ params }: PageProps) {
                   {addStoryLabel}
                 </motion.button>
               ) : null}
+              <motion.button
+                type="button"
+                onClick={() => setShareModalOpen(true)}
+                className="inline-flex min-h-[52px] items-center justify-center rounded-full border border-[var(--aeterna-gold)]/55 bg-[#030303]/40 px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-gold)] shadow-[0_4px_20px_-6px_rgba(197,160,89,0.25)] transition-colors hover:bg-[var(--aeterna-gold)]/10"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                transition={ARTISAN_SPRING}
+              >
+                Share
+              </motion.button>
               {isOwner ? (
                 <Link
                   href={`/p/${slug}/admin`}
@@ -1200,7 +1193,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           {photoDeadlineRemainingMs !== null &&
           photoDeadlineRemainingMs > 0 &&
           !isPhotoDeadlinePassed &&
-          isPaidMemorial ? (
+          !isPaidMemorial ? (
             <p className="mt-5 text-[10px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">
               Photo window ·{" "}
               <span className="font-mono tabular-nums text-[var(--aeterna-gold)]">
@@ -1479,33 +1472,6 @@ export default function GuestFeedPage({ params }: PageProps) {
                         <span className="text-[10px] font-serif uppercase tracking-wider text-white/90">
                           {showBlurByDeadline ? "Premium" : "Locked"}
                         </span>
-                      </div>
-                    )}
-                    {myStoryId === story.id && rankShareModalDismissed && (
-                      <div className="absolute top-2 left-2 right-2 rounded-lg bg-[#030303]/70 backdrop-blur-sm p-2 text-center">
-                        <div className="grid grid-cols-3 gap-1.5">
-                          <button
-                            type="button"
-                            onClick={handleRankShareWhatsApp}
-                            className={`${rankShareBtnBase} border border-[var(--border-gold)] bg-[#030303]/30 text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold)]/10`}
-                          >
-                            WhatsApp
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleRankShareMessage}
-                            className={`${rankShareBtnBase} border border-[var(--border-gold)] bg-[#030303]/35 text-[var(--landing-text-hero)] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10`}
-                          >
-                            Message
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleRankShareCopy}
-                            className={`${rankShareBtnBase} border border-white/20 bg-white/[0.06] text-[var(--landing-text-body)] hover:bg-white/10`}
-                          >
-                            Copy link
-                          </button>
-                        </div>
                       </div>
                     )}
                   </motion.li>

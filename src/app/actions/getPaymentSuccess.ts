@@ -1,6 +1,7 @@
 "use server"
 
 import Stripe from "stripe"
+import { paidMemorialDeadlineFields } from "@/lib/paidMemorialDeadlines"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
@@ -71,16 +72,34 @@ export async function getPaymentSuccessAction(
       }
 
       // Apply paid status + tier from Stripe metadata only (never from client).
+      const deadlines = paidMemorialDeadlineFields()
       const tierMeta = session.metadata?.tier as string | undefined
       if (tierMeta === "premium") {
         await supabase
           .from("events")
-          .update({ is_paid: true, tier: "premium", is_premium: true, video_credits: 3 })
+          .update({
+            is_paid: true,
+            tier: "premium",
+            is_premium: true,
+            video_credits: 3,
+            ...deadlines,
+          })
           .eq("id", eventId)
       } else if (tierMeta === "plus") {
-        await supabase.from("events").update({ is_paid: true, tier: "plus", is_premium: true }).eq("id", eventId)
+        await supabase
+          .from("events")
+          .update({
+            is_paid: true,
+            tier: "plus",
+            is_premium: true,
+            ...deadlines,
+          })
+          .eq("id", eventId)
       } else {
-        await supabase.from("events").update({ is_paid: true }).eq("id", eventId)
+        await supabase
+          .from("events")
+          .update({ is_paid: true, ...deadlines })
+          .eq("id", eventId)
       }
 
       // Fetch event: use full_film_url, preview_film_url, or film_url (film may not be ready yet)

@@ -23,7 +23,12 @@ export function IPhoneShell({
         />
       )}
       <div className="relative z-10 aspect-[9/19.5] w-full overflow-hidden rounded-[1.85rem] bg-[#0f0f0f] ring-1 ring-white/[0.06]">
-        {children}
+        {/* Inset so screen content sits below the island (top 14px + 28px + small gap), like a real device */}
+        <div
+          className={`absolute inset-x-0 bottom-0 overflow-hidden ${island ? "top-[44px]" : "top-0"}`}
+        >
+          {children}
+        </div>
       </div>
     </div>
   )
@@ -58,7 +63,7 @@ function QrGrid() {
   )
 }
 
-/** Step 1 — mirrors /create: progress header, “Who are we honoring?”, two choice cards, Continue. */
+/** Step 1: mirrors /create: progress header, “Who are we honoring?”, two choice cards, Continue. */
 export function StepScreenCreate() {
   return (
     <div className="absolute inset-0 flex flex-col bg-[#0a0a0a] text-[#f4f1ea]">
@@ -104,7 +109,7 @@ export function StepScreenCreate() {
   )
 }
 
-/** Step 2 — memorial share: profile header + large scannable QR (landing). */
+/** Step 2: memorial share: profile header + large scannable QR (landing). */
 export function StepScreenMemorialShare() {
   return (
     <div className="absolute inset-0 flex flex-col bg-[#050712] text-white">
@@ -140,7 +145,7 @@ export function StepScreenMemorialShare() {
   )
 }
 
-/** Guest flow — “Share a memory” step 1 (matches memorial guest modal). */
+/** Guest flow: “Share a memory” step 1 (matches memorial guest modal). */
 export function StepScreenShareMemory() {
   return (
     <div className="absolute inset-0 flex flex-col bg-[#0a0a0a] text-[#f4f1ea]">
@@ -156,7 +161,7 @@ export function StepScreenShareMemory() {
           What is your name?
         </h2>
         <div className="mt-3 h-8 w-full rounded-xl border border-white/[0.08] bg-white/[0.04]" />
-        <p className="mt-2 text-[6px] leading-relaxed text-white/30">Guests contribute from any phone — no app.</p>
+        <p className="mt-2 text-[6px] leading-relaxed text-white/30">Guests contribute from any phone. No app required.</p>
       </div>
       <div className="shrink-0 px-2.5 pb-3 pt-1">
         <div className="flex h-8 items-center justify-center rounded-xl bg-[var(--aeterna-gold)] text-[7px] font-semibold uppercase tracking-[0.12em] text-[#0a0a0a]">
@@ -168,8 +173,8 @@ export function StepScreenShareMemory() {
 }
 
 /**
- * Grandma Legacy Series — six facets of one life (Connect & Vote landing mockup).
- * Alt text carries the narrative; assets are existing art (filters differentiate tone where needed).
+ * Six memory tiles: mixed subjects and eras (Connect & Relive landing mockup).
+ * Shows one life (or one memorial) from many angles: portrait, years, pets, places, people.
  */
 const CONNECT_MOMENTS: {
   id: string
@@ -181,58 +186,58 @@ const CONNECT_MOMENTS: {
   imgClassName?: string
 }[] = [
   {
-    id: "dignified-elder",
-    src: "/landing-connect-grandma-01.png",
-    position: "center 28%",
-    hearts: 42,
-    alt: "Warm studio portrait of a dignified elder grandmother with a gentle smile — the anchor photo for her memorial.",
-    caption: "The Main · Dignified Elder",
+    id: "portrait-anchor",
+    src: "/landing-hero-blasian-patriarch.png",
+    position: "center 22%",
+    hearts: 48,
+    alt: "Warm studio portrait of an elder, calm and present: the kind of image families choose as the main tribute photo.",
+    caption: "The portrait · Center of the story",
   },
   {
-    id: "avid-gardener",
+    id: "garden-light",
     src: "/landing-connect-grandma-02.png",
     position: "center 30%",
-    hearts: 18,
-    alt: "Grandma in a straw hat, laughing with a bright sunflower — a vibrant hobby moment.",
-    caption: "The Hobby · The Avid Gardener",
+    hearts: 22,
+    alt: "A loved one outdoors in a straw hat with bright flowers, sun on their face, hobbies and seasons remembered.",
+    caption: "The garden · Sun & seasons",
   },
   {
-    id: "best-friends",
-    src: "/landing-connect-grandma-03.png",
-    position: "center 28%",
-    hearts: 31,
-    alt: "Best friends — a candid hug with her golden retriever, showing how Aeterna honors people and pets together.",
-    caption: "The Companion · Best Friends",
+    id: "pets-family",
+    src: "/landing-hero-pets.png",
+    position: "center 40%",
+    hearts: 36,
+    alt: "Dogs and cats together, the companions who shared a home: pet memories beside human ones on the same wall.",
+    caption: "The pets · Who walked with them",
   },
   {
-    id: "younger-days",
+    id: "archive-years",
     src: "/landing-connect-grandma-04.png",
     position: "center 32%",
-    hearts: 9,
-    alt: "Restored sepia-toned photo from her twenties — a life remembered across decades on Aeterna.",
-    caption: "The Memory · Younger Days",
+    hearts: 11,
+    alt: "Faded color photo from decades past: early adulthood, a different chapter brought forward by family.",
+    caption: "The years · From the archive",
     imgClassName: "grayscale contrast-[1.08] sepia-[0.42] brightness-[0.98]",
   },
   {
-    id: "peace-sign",
-    src: "/landing-hero-grandmother.png",
-    position: "center 35%",
-    hearts: 56,
-    alt: "Playful birthday snapshot — grandma flashing a peace sign, slightly soft like a phone photo.",
-    caption: "The Silly Moment · Grandma's Peace Sign",
-    imgClassName: "scale-105 brightness-[1.06] saturate-[1.12] blur-[0.5px]",
+    id: "bond-companion",
+    src: "/landing-connect-grandma-03.png",
+    position: "center 28%",
+    hearts: 29,
+    alt: "A candid hug with a golden retriever: friends, neighbors, and animals woven into one story.",
+    caption: "The bond · People & pets",
   },
   {
-    id: "teachers-desk",
-    src: "/hero-elder-portrait.png",
-    position: "center 30%",
-    hearts: 24,
-    alt: "Grandma seated thoughtfully with a book in her library — calm, intellectual, full of wisdom.",
-    caption: "The Wisdom · The Teacher's Desk",
+    id: "gathering-joy",
+    src: "/landing-hero-grandmother.png",
+    position: "center 34%",
+    hearts: 52,
+    alt: "A playful celebration snapshot: laughter at a table, the side of a life guests remember best.",
+    caption: "The gathering · Laughter & light",
+    imgClassName: "scale-105 brightness-[1.06] saturate-[1.12] blur-[0.5px]",
   },
 ]
 
-/** Memorial grid with hearts — Grandma Legacy Series (vote counts vary per card). */
+/** Memorial grid with hearts (vote counts vary per card). */
 export function StepScreenConnectVote() {
   return (
     <div className="absolute inset-0 flex flex-col bg-[#050712] text-white">
@@ -275,7 +280,7 @@ export function StepScreenConnectVote() {
 
 const FILM_PET_IMAGE = "/landing-hero-pets.png"
 
-/** Step 3 — AI tribute film preview (heartwarming pet imagery). */
+/** Step 3: AI tribute film preview (heartwarming pet imagery). */
 export function StepScreenFilmTribute() {
   return (
     <div className="absolute inset-0 flex flex-col bg-[#0a0a0a]">

@@ -42,6 +42,10 @@ function parsePlanQueryParam(param: string | null): StoragePlan | null {
 
 const WIZARD_STEPS_FULL = 9
 
+/** Step-2 profile file survives OAuth redirect / refresh (sessionStorage cap ~5MB). */
+const LS_PROFILE_IMAGE_DRAFT_KEY = "aeterna.create.profile-image.v1"
+const PROFILE_IMAGE_DRAFT_MAX_CHARS = 4_500_000
+
 /** Inline pill next to plan titles (e.g. Eternal Film). */
 const planStatusTagClass =
   "inline-flex shrink-0 items-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]"
@@ -186,12 +190,16 @@ function isMemorialSignInFooterNoise(message: string | null): boolean {
   )
 }
 
-function focusNextField(el: HTMLElement | null) {
+/**
+ * Bring the next control into view after a native <select> change.
+ * Do not call .focus() on the next <select>: it opens its menu immediately and then
+ * closes (flash), especially on mobile Safari and Chrome, which feels broken.
+ */
+function scrollNeighborIntoView(el: HTMLElement | null) {
   if (!el) return
-  el.scrollIntoView({ behavior: "smooth", block: "nearest" })
-  window.setTimeout(() => {
-    el.focus({ preventScroll: true })
-  }, 300)
+  requestAnimationFrame(() => {
+    el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" })
+  })
 }
 
 const stepPresence = artisanPresence
@@ -210,6 +218,8 @@ function CreateEventForm() {
   const [name, setName] = useState("")
   const [profileFile, setProfileFile] = useState<File | null>(null)
   const [profilePreview, setProfilePreview] = useState<string | null>(null)
+  /** Set when the memorial row exists but storage upload failed (user can fix from admin). */
+  const [profileUploadError, setProfileUploadError] = useState<string | null>(null)
   /** Framing inside the circle (CSS object-position %; 50 = center). */
   const [profilePan, setProfilePan] = useState({ x: 50, y: 50 })
   const profileDragRef = useRef<{
@@ -271,6 +281,8 @@ function CreateEventForm() {
   const ceremonyServiceMRef = useRef<HTMLSelectElement>(null)
   const ceremonyServiceDRef = useRef<HTMLSelectElement>(null)
   const ceremonyServiceYRef = useRef<HTMLSelectElement>(null)
+  /** Step 3: scroll here when Born is complete; do not focus a select (avoids opening its menu). */
+  const atRestDateBlockRef = useRef<HTMLDivElement>(null)
   const wizardStepRef = useRef(wizardStep)
   const memorialTypeRef = useRef(memorialType)
   /** When user taps Back from Plan (8) → Account (7), skip the OAuth auto-advance effect so they can stay on 7. */
@@ -324,8 +336,8 @@ function CreateEventForm() {
     if (atRestRevealRef.current) return
     atRestRevealRef.current = true
     const t = window.setTimeout(() => {
-      deathMRef.current?.focus()
-    }, 480)
+      atRestDateBlockRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    }, 200)
     return () => window.clearTimeout(t)
   }, [birthComplete])
 
@@ -564,6 +576,55 @@ function CreateEventForm() {
     return () => URL.revokeObjectURL(url)
   }, [profileFile])
 
+  /** Restore profile image after OAuth redirect or refresh (draft JSON does not include binary). */
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    let cancelled = false
+    try {
+      const raw = sessionStorage.getItem(LS_PROFILE_IMAGE_DRAFT_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as { dataUrl?: string; name?: string; type?: string }
+      if (!parsed.dataUrl || typeof parsed.dataUrl !== "string") return
+      void fetch(parsed.dataUrl)
+        .then((r) => r.blob())
+        .then((blob) => {
+          if (cancelled) return
+          setProfileFile(
+            new File([blob], parsed.name?.trim() || "profile.jpg", {
+              type: parsed.type || blob.type || "image/jpeg",
+            }),
+          )
+        })
+    } catch {
+      // ignore
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  /** Persist profile pick so Google OAuth / reload does not drop the file before create. */
+  useEffect(() => {
+    if (typeof window === "undefined" || !profileFile) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const dataUrl = reader.result
+        if (typeof dataUrl !== "string") return
+        const payload = JSON.stringify({
+          dataUrl,
+          name: profileFile.name,
+          type: profileFile.type,
+        })
+        if (payload.length > PROFILE_IMAGE_DRAFT_MAX_CHARS) return
+        sessionStorage.setItem(LS_PROFILE_IMAGE_DRAFT_KEY, payload)
+      } catch {
+        // quota / privacy mode
+      }
+    }
+    reader.readAsDataURL(profileFile)
+  }, [profileFile])
+
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -632,6 +693,12 @@ function CreateEventForm() {
     setWizardStep(1)
     setName("")
     setProfileFile(null)
+    setProfileUploadError(null)
+    try {
+      sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
+    } catch {
+      // ignore
+    }
     setProfilePan({ x: 50, y: 50 })
     setBirthY("")
     setBirthM("")
@@ -866,6 +933,7 @@ function CreateEventForm() {
 
     setLoading(true)
     setCreateError(null)
+    setProfileUploadError(null)
     const birth_date = buildDateString(birthY, birthM, birthD) || "—"
     const death_date = buildDateString(deathY, deathM, deathD) || "—"
     const ceremony_time =
@@ -898,7 +966,19 @@ function CreateEventForm() {
       if (profileFile && result.slug) {
         const fd = new FormData()
         fd.set("profile_image", profileFile)
-        await uploadNewEventProfileAction(result.slug, fd)
+        const uploadRes = await uploadNewEventProfileAction(result.slug, fd)
+        if (uploadRes.ok) {
+          try {
+            sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
+          } catch {
+            // ignore
+          }
+        } else {
+          setProfileUploadError(
+            uploadRes.error ||
+              "Profile photo could not be uploaded. You can add it from the memorial admin.",
+          )
+        }
       }
 
       if (storagePlan === "plus") {
@@ -1235,7 +1315,23 @@ function CreateEventForm() {
                       </div>
                     </button>
                   )}
-                  <input ref={profileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => setProfileFile(e.target.files?.[0] ?? null)} />
+                  <input
+                    ref={profileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null
+                      setProfileFile(f)
+                      if (!f && typeof window !== "undefined") {
+                        try {
+                          sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
+                        } catch {
+                          // ignore
+                        }
+                      }
+                    }}
+                  />
                 </div>
               )}
 
@@ -1259,7 +1355,7 @@ function CreateEventForm() {
                           value={birthM}
                           onChange={(e) => {
                             setBirthM(e.target.value)
-                            if (e.target.value) focusNextField(birthDRef.current)
+                            if (e.target.value) scrollNeighborIntoView(birthDRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Birth month"
@@ -1276,7 +1372,7 @@ function CreateEventForm() {
                           value={birthD}
                           onChange={(e) => {
                             setBirthD(e.target.value)
-                            if (e.target.value) focusNextField(birthYRef.current)
+                            if (e.target.value) scrollNeighborIntoView(birthYRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Birth day"
@@ -1309,6 +1405,7 @@ function CreateEventForm() {
 
                     {birthComplete && (
                       <motion.div
+                        ref={atRestDateBlockRef}
                         key="at-rest-block"
                         initial={{ opacity: 0, y: 14 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -1322,7 +1419,7 @@ function CreateEventForm() {
                             value={deathM}
                             onChange={(e) => {
                               setDeathM(e.target.value)
-                              if (e.target.value) focusNextField(deathDRef.current)
+                              if (e.target.value) scrollNeighborIntoView(deathDRef.current)
                             }}
                             className={ghostDateSelectClass}
                             aria-label="Month of passing"
@@ -1339,7 +1436,7 @@ function CreateEventForm() {
                             value={deathD}
                             onChange={(e) => {
                               setDeathD(e.target.value)
-                              if (e.target.value) focusNextField(deathYRef.current)
+                              if (e.target.value) scrollNeighborIntoView(deathYRef.current)
                             }}
                             className={ghostDateSelectClass}
                             aria-label="Day of passing"
@@ -1488,7 +1585,7 @@ function CreateEventForm() {
                             const y = ceremonyServiceParts.y || String(CURRENT_YEAR)
                             const d = ceremonyServiceParts.d || "1"
                             setCeremonyDate(buildDateString(y, m, d))
-                            if (m) focusNextField(ceremonyServiceDRef.current)
+                            if (m) scrollNeighborIntoView(ceremonyServiceDRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Service month"
@@ -1508,7 +1605,7 @@ function CreateEventForm() {
                             const y = ceremonyServiceParts.y || String(CURRENT_YEAR)
                             const m = ceremonyServiceParts.m || "1"
                             setCeremonyDate(buildDateString(y, m, d))
-                            if (d) focusNextField(ceremonyServiceYRef.current)
+                            if (d) scrollNeighborIntoView(ceremonyServiceYRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Service day"
@@ -1528,7 +1625,7 @@ function CreateEventForm() {
                             const m = ceremonyServiceParts.m || "1"
                             const d = ceremonyServiceParts.d || "1"
                             setCeremonyDate(buildDateString(y, m, d))
-                            if (y) focusNextField(ceremonyHour12Ref.current)
+                            if (y) scrollNeighborIntoView(ceremonyHour12Ref.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Service year"
@@ -1552,7 +1649,7 @@ function CreateEventForm() {
                           onChange={(e) => {
                             const v = Number(e.target.value)
                             setCeremonyHour12(Number.isFinite(v) ? v : 2)
-                            focusNextField(ceremonyMinuteRef.current)
+                            scrollNeighborIntoView(ceremonyMinuteRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Service hour"
@@ -1568,7 +1665,7 @@ function CreateEventForm() {
                           value={ceremonyM}
                           onChange={(e) => {
                             setCeremonyM(e.target.value)
-                            focusNextField(ceremonyPeriodRef.current)
+                            scrollNeighborIntoView(ceremonyPeriodRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Service minute"
@@ -1871,6 +1968,11 @@ function CreateEventForm() {
                   <p className="text-landing-body mb-8">
                     Share a thoughtful invitation — family and friends can add photos and stories from any device.
                   </p>
+                  {profileUploadError ? (
+                    <p className="mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-100/95">
+                      {profileUploadError}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="mx-auto mb-8 w-full max-w-md shrink-0">
                   <MemorialShareActions name={name} guestUrl={guestUrl} />

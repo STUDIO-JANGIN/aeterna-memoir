@@ -109,9 +109,6 @@ export function StoryMemoryDrawer({
       try {
         const res = await getStoryCommentsAction(sid, eid)
         if (res.ok) {
-          if (res.comments.length === 0) {
-            console.log("Querying comments for UUID:", sid)
-          }
           setComments(res.comments)
         } else {
           console.error("[StoryMemoryDrawer] loadComments failed", {

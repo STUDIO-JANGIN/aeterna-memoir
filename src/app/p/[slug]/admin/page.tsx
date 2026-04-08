@@ -102,6 +102,8 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   const selectedForVideo = approved.filter((s) => s.is_selected === true)
   const currentTier = (event?.tier ?? "free") as "free" | "plus" | "premium"
   const isPlusOrPremium = currentTier === "plus" || currentTier === "premium"
+  /** Paid via Stripe (Eternal Legacy / Eternal Film) — hide free-tier countdown even if tier column lags. */
+  const isPaidMemorial = isPlusOrPremium || event?.is_paid === true
 
   const loadData = useCallback(async () => {
     if (!slug) {
@@ -249,7 +251,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
 
   return (
     <div className="min-h-dvh p-6 md:p-10 md:pb-16">
-      {currentTier === "free" && trialRemainingMs > 0 && (
+      {!isPaidMemorial && trialRemainingMs > 0 && (
         <div className="max-w-6xl mx-auto mb-8 md:mb-10 w-full">
           <MemorialTrialCountdown remainingMs={trialRemainingMs} className="w-full" />
         </div>

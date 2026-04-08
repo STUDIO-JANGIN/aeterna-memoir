@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { headers } from "next/headers"
 import { notifyAdmin } from "@/lib/notifyAdmin"
+import { paidMemorialDeadlineFields } from "@/lib/paidMemorialDeadlines"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
@@ -79,16 +80,28 @@ export async function POST(req: NextRequest) {
           { onConflict: "stripe_session_id" }
         )
 
+        const deadlines = paidMemorialDeadlineFields()
         // For Premium payments, set video_credits to exactly 3.
         if (tier === "premium") {
           await supabase
             .from("events")
-            .update({ is_paid: true, tier, video_credits: 3 })
+            .update({
+              is_paid: true,
+              tier,
+              is_premium: true,
+              video_credits: 3,
+              ...deadlines,
+            })
             .eq("id", eventId)
         } else {
           await supabase
             .from("events")
-            .update({ is_paid: true, tier })
+            .update({
+              is_paid: true,
+              tier,
+              is_premium: true,
+              ...deadlines,
+            })
             .eq("id", eventId)
         }
 

@@ -266,6 +266,8 @@ function CreateEventForm() {
   const deathDRef = useRef<HTMLSelectElement>(null)
   const wizardStepRef = useRef(wizardStep)
   const memorialTypeRef = useRef(memorialType)
+  /** When user taps Back from Plan (6) → Account (5), skip the OAuth auto-advance effect so they can stay on 5. */
+  const blockPlanAutoAdvanceRef = useRef(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -660,6 +662,9 @@ function CreateEventForm() {
     if (wizardStep > 1) {
       setStepSlideDir(-1)
       const nextStep = wizardStep - 1
+      if (wizardStep === 6 && nextStep === 5) {
+        blockPlanAutoAdvanceRef.current = true
+      }
       const d = buildCreateDraft(nextStep)
       if (d) writeCreateDraft(d)
       setWizardStep(nextStep)
@@ -675,6 +680,7 @@ function CreateEventForm() {
     if (!canContinue() || !memorialType) return
     setCreateError(null)
     if (wizardStep < effectiveWizardSteps) {
+      if (wizardStep === 5) blockPlanAutoAdvanceRef.current = false
       setStepSlideDir(1)
       const d = buildCreateDraft(wizardStep + 1)
       if (d) writeCreateDraft(d)
@@ -685,6 +691,7 @@ function CreateEventForm() {
   /** After Google OAuth, advance from Account (5) → Plan (6) as soon as the session is confirmed. */
   useEffect(() => {
     if (wizardStep !== 5 || !signedIn || !memorialType || !authReady) return
+    if (blockPlanAutoAdvanceRef.current) return
     setStepSlideDir(1)
     setWizardStep(6)
     const d = buildCreateDraft(6)

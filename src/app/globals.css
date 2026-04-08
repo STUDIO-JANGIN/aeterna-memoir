@@ -11,8 +11,8 @@
   --aeterna-charcoal: #020617;           /* slate-950 */
   --aeterna-charcoal-soft: #020617;
   --aeterna-charcoal-muted: #1e293b;     /* slate-800 */
-  /* Headline #F4F1EA (Warm Off-white) */
-  --aeterna-headline: #F4F1EA;
+  /* Headline — off-white (easier on eyes than pure white) */
+  --aeterna-headline: #f5f5f7;
   /* Body Text #A0A0A0 (Muted Gray) */
   --aeterna-body: #A0A0A0;
   /* Accent/Logo #C5A059 (Champagne Gold) */
@@ -72,8 +72,8 @@
   --shadow-button: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
   --shadow-gold: 0 0 40px rgba(197, 160, 89, 0.15);
 
-  /* Typography: Serif as primary (Nanum Myeongjo / high-end serif) */
-  --font-serif: "Nanum Myeongjo", "Noto Serif KR", "Times New Roman", serif;
+  /* Typography: Playfair (next/font) + Inter — fallbacks if variables unset */
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: "Syne", "Inter", system-ui, sans-serif;
 
@@ -81,8 +81,8 @@
   /* Warm charcoal (not flat black) — aligns with hero video grade and removes harsh seams */
   --landing-bg: #0f0e0d;
   --landing-bg-section: #0f0e0d;
-  --landing-text-hero: #f4f1ea;
-  --landing-text-title: #e8e4dc;
+  --landing-text-hero: #f5f5f7;
+  --landing-text-title: #f5f5f7;
   --landing-text-body: #a3a3a3;
   --landing-text-muted: #737373;
   --landing-border: rgba(255, 255, 255, 0.06);
@@ -134,12 +134,15 @@
     font-weight: 400;
   }
   h1 {
-    letter-spacing: -0.02em;
+    letter-spacing: 0.05em;
     line-height: 1.12;
   }
   h2, h3 {
-    letter-spacing: -0.02em;
+    letter-spacing: 0.05em;
     line-height: 1.2;
+  }
+  h4, h5, h6 {
+    letter-spacing: 0.05em;
   }
   *,
   *:before,
@@ -253,7 +256,7 @@
     font-size: clamp(2rem, 6vw, 3.25rem);
     font-weight: 400;
     line-height: 1.12;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.05em;
     color: var(--landing-text-hero);
   }
 
@@ -262,7 +265,7 @@
     font-size: 1.5rem;
     line-height: 1.2;
     font-weight: 400;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.05em;
     color: var(--landing-text-title);
   }
   @media (min-width: 768px) {
@@ -308,6 +311,52 @@
     background-color: var(--landing-surface);
     box-shadow: var(--landing-shadow-deep);
     backdrop-filter: blur(12px);
+  }
+
+  /** Gradient edge + glass — pricing / create “treasure box” */
+  .card-treasure {
+    border-radius: 1rem; /* rounded-2xl */
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(197, 160, 89, 0.12) 42%,
+      rgba(255, 255, 255, 0.04) 100%
+    );
+    padding: 1px;
+    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.4);
+  }
+  .card-treasure-inner {
+    border-radius: calc(1rem - 1px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(15, 14, 13, 0.72) 100%);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
+  @keyframes artisan-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.08);
+    }
+    50% {
+      box-shadow: 0 0 28px 4px rgba(197, 160, 89, 0.14);
+    }
+  }
+  .animate-artisan-pulse {
+    animation: artisan-pulse 5s ease-in-out infinite;
+  }
+
+  @keyframes star-fade {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 0.95;
+    }
+  }
+  .animate-star-fade {
+    animation: star-fade 3.5s ease-in-out infinite;
   }
 
   .btn-landing-primary {

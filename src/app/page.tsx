@@ -308,7 +308,7 @@ export default function LandingPage() {
               <p className="text-[9px] md:text-[10px] tracking-[0.32em] md:tracking-[0.35em] uppercase text-[#737373] mb-5 md:mb-4">
                 How it works
               </p>
-              <h2 className="font-[var(--font-serif)] text-[1.35rem] leading-[1.35] sm:text-2xl md:text-[2rem] md:leading-tight text-[#e8e4dc] font-normal tracking-tight text-balance px-1">
+              <h2 className="font-[var(--font-serif)] text-[1.35rem] leading-[1.35] sm:text-2xl md:text-[2rem] md:leading-tight text-[color:var(--landing-text-title)] font-normal tracking-[0.05em] text-balance px-1">
                 Create · Share · Gather
               </h2>
               <p className="mt-5 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance">
@@ -354,11 +354,16 @@ export default function LandingPage() {
         {/* Time window — quiet, not alarmist */}
         <section className="border-t border-white/[0.03] bg-landing px-5 py-16 md:px-10">
           <RevealSection className="max-w-xl mx-auto text-center">
-            <div className="inline-flex items-center justify-center gap-2 text-[#737373] mb-4">
-              <Clock className="h-4 w-4" strokeWidth={1} aria-hidden />
+            <div className="inline-flex items-center justify-center gap-3 text-[#737373] mb-4">
+              <Clock className="h-4 w-4 shrink-0" strokeWidth={1} aria-hidden />
+              <Sparkles
+                className="h-3.5 w-3.5 shrink-0 text-[var(--aeterna-gold)] animate-star-fade"
+                strokeWidth={1.5}
+                aria-hidden
+              />
               <span className="text-[10px] tracking-[0.3em] uppercase">First seven days</span>
             </div>
-            <p className="font-[var(--font-serif)] text-lg md:text-xl text-[#a3a3a3] leading-relaxed">
+            <p className="font-[var(--font-serif)] text-lg md:text-xl text-[#a3a3a3] leading-relaxed tracking-[0.02em]">
               The first 7 days are a free window to gather memories. Upgrade anytime to preserve the shrine forever.
             </p>
           </RevealSection>
@@ -372,52 +377,58 @@ export default function LandingPage() {
           <div className="max-w-3xl mx-auto">
             <RevealSection className="text-center mb-14">
               <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">Pricing</p>
-              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[#e8e4dc] font-normal">Sacred preservation. One-time.</h2>
+              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[color:var(--landing-text-title)] font-normal tracking-[0.05em]">
+                Sacred preservation. One-time.
+              </h2>
             </RevealSection>
 
             <p className="text-center text-xs text-[#737373] mb-8">All prices in US dollars (USD).</p>
             <div className="grid grid-cols-1 md:grid-cols-3 md:items-stretch gap-6 md:gap-4">
               {PLANS.map((plan) => (
                 <RevealSection key={plan.price} className="h-full">
-                  <div
-                    className={`rounded-2xl border px-6 py-8 text-center h-full min-h-full flex flex-col ${
-                      plan.emphasis === "gold"
-                        ? "border-[var(--aeterna-gold)]/35 bg-[var(--aeterna-gold)]/[0.04]"
-                        : "border-white/[0.06] bg-white/[0.02]"
-                    }`}
-                  >
-                    {/* Fixed min-height so $ amounts line up across columns (badge + title stack). */}
-                    <div className="flex min-h-[7.25rem] w-full flex-col items-center justify-end md:min-h-[7.75rem]">
-                      {plan.statusTag ? (
-                        <span className="mb-3 inline-flex max-w-[14rem] items-center justify-center self-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]">
-                          {plan.statusTag}
-                        </span>
-                      ) : null}
-                      <p className="font-[var(--font-display)] text-[10px] tracking-[0.18em] text-[#c4a86a] uppercase mb-1">
-                        {plan.tierName}
-                      </p>
-                      {plan.planLabel ? (
-                        <p className="font-[var(--font-display)] text-[9px] tracking-[0.22em] text-[#9a8a6e] uppercase mb-2">
-                          {plan.planLabel}
-                        </p>
-                      ) : null}
-                    </div>
-                    <p className="font-[var(--font-serif)] text-3xl md:text-4xl text-[#f4f1ea] tabular-nums">
-                      {plan.price}{" "}
-                      <span className="text-lg font-normal text-white/35 md:text-xl">USD</span>
-                    </p>
-                    <p className="mt-4 font-[var(--font-sans)] text-sm text-[#a3a3a3] leading-snug">{plan.value}</p>
-                    <div className="flex-1" />
-                    <Link
-                      href={plan.href}
-                      className={`mt-8 inline-flex min-h-[44px] items-center justify-center rounded-full text-[10px] tracking-[0.16em] uppercase font-medium transition-colors ${
+                  <div className="card-treasure h-full rounded-2xl">
+                    <div
+                      className={`card-treasure-inner flex h-full min-h-full flex-col rounded-2xl px-6 py-8 text-center ${
                         plan.emphasis === "gold"
-                          ? "bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] hover:bg-[var(--aeterna-gold-light)]"
-                          : "border border-white/[0.12] text-[#e8e4dc] hover:bg-white/[0.04]"
+                          ? "ring-1 ring-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.06]"
+                          : ""
                       }`}
                     >
-                      {plan.cta}
-                    </Link>
+                      {/* min-h aligns price row across cards */}
+                      <div className="flex min-h-[80px] w-full flex-col items-center justify-end md:min-h-[88px]">
+                        {plan.statusTag ? (
+                          <span className="mb-3 inline-flex max-w-[14rem] items-center justify-center self-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]">
+                            {plan.statusTag}
+                          </span>
+                        ) : null}
+                        <p className="font-[var(--font-display)] text-[10px] tracking-[0.18em] text-[#c4a86a] uppercase mb-1">
+                          {plan.tierName}
+                        </p>
+                        {plan.planLabel ? (
+                          <p className="font-[var(--font-display)] text-[9px] tracking-[0.22em] text-[#9a8a6e] uppercase mb-2">
+                            {plan.planLabel}
+                          </p>
+                        ) : null}
+                      </div>
+                      <p className="font-[var(--font-serif)] text-3xl md:text-4xl text-[color:var(--landing-text-hero)] tabular-nums tracking-[0.02em]">
+                        {plan.price}{" "}
+                        <span className="text-lg font-normal text-white/35 md:text-xl">USD</span>
+                      </p>
+                      <p className="mt-4 font-[var(--font-sans)] text-sm text-[#a3a3a3] leading-snug">{plan.value}</p>
+                      <div className="flex-1" />
+                      <Link
+                        href={plan.href}
+                        className={`btn-tap mt-8 inline-flex min-h-[48px] items-center justify-center rounded-full text-[10px] tracking-[0.16em] uppercase font-medium transition-colors ${
+                          plan.statusTag
+                            ? "animate-artisan-pulse border border-[var(--aeterna-gold)]/35 text-[color:var(--landing-text-hero)] hover:bg-white/[0.06]"
+                            : plan.emphasis === "gold"
+                              ? "bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] hover:bg-[var(--aeterna-gold-light)]"
+                              : "border border-white/[0.12] text-[color:var(--landing-text-title)] hover:bg-white/[0.04]"
+                        }`}
+                      >
+                        {plan.cta}
+                      </Link>
+                    </div>
                   </div>
                 </RevealSection>
               ))}
@@ -433,7 +444,7 @@ export default function LandingPage() {
           <div className="max-w-2xl mx-auto">
             <RevealSection className="text-center mb-14 md:mb-16">
               <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">FAQ</p>
-              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[#e8e4dc] font-normal tracking-tight">
+              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[color:var(--landing-text-title)] font-normal tracking-[0.05em]">
                 Questions, gently answered
               </h2>
               <p className="mt-5 max-w-md mx-auto font-[var(--font-sans)] text-sm md:text-[15px] text-[#8a8a8a] leading-relaxed">

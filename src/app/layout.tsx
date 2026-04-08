@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from 'next'
-import { Nanum_Myeongjo, Inter, Syne, Playfair_Display } from 'next/font/google'
+import { Inter, Syne, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import { SmoothScrollProvider } from '@/components/SmoothScrollProvider'
 import { getAppBaseUrl } from '@/lib/appUrl'
 
-const nanum = Nanum_Myeongjo({
+/** Headings & memorial titles — premium serif */
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  weight: ['400', '700'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-serif',
   display: 'swap',
-  preload: false, // avoids Turbopack font resolution errors (module not found)
 })
 
 const inter = Inter({
@@ -22,13 +22,6 @@ const syne = Syne({
   subsets: ['latin'],
   weight: ['600', '700', '800'],
   variable: '--font-display',
-  display: 'swap',
-})
-
-const playfairInvitation = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-invitation-serif',
   display: 'swap',
 })
 
@@ -72,10 +65,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${nanum.variable} ${inter.variable} ${syne.variable} ${playfairInvitation.variable}`}
-    >
+    <html lang="en" className={`${playfair.variable} ${inter.variable} ${syne.variable}`}>
       <body className="antialiased bg-[color:var(--landing-bg)]">
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>

@@ -162,7 +162,7 @@ export function MemorialInvitationCard({
 
       <div className="h-px w-20 max-w-[40%] shrink-0 bg-[rgba(197,160,89,0.35)]" aria-hidden />
 
-      <p className="max-w-[min(260px,88vw)] shrink-0 text-[11px] leading-relaxed tracking-[0.28em] text-[#8a857c] uppercase [font-family:var(--font-invitation-serif),Georgia,serif]">
+      <p className="max-w-[min(260px,88vw)] shrink-0 text-[11px] leading-relaxed tracking-[0.28em] text-[#8a857c] uppercase font-[var(--font-serif)]">
         Printable invitation · 9:16 · ink-friendly
       </p>
 

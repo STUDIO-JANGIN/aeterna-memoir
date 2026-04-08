@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic"
 
 import { useState, useEffect, useRef, Suspense } from "react"
-import { Flower2, Gift, MapPin, Sparkles } from "lucide-react"
+import { Clock, Flower2, Gift, MapPin, Sparkles } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
@@ -84,22 +84,23 @@ const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
 const MINUTES = ["00", "15", "30", "45"]
 
 const inputBase =
-  "w-full rounded-2xl bg-white/[0.04] px-5 py-4 text-lg text-[var(--landing-text-hero)] placeholder:text-white/35 outline-none transition-colors focus:bg-white/[0.07] focus:ring-1 focus:ring-[var(--aeterna-gold)]/30"
+  "w-full rounded-2xl bg-white/[0.04] px-5 py-4 text-lg text-[color:var(--landing-text-hero)] placeholder:text-white/35 shadow-[inset_0_1px_3px_rgba(0,0,0,0.35)] outline-none transition-all focus:bg-white/[0.07] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.28),0_0_0_1px_rgba(197,160,89,0.25)] focus:ring-0"
 
 const selectBase =
   "w-full min-h-[52px] rounded-2xl bg-white/[0.04] px-4 py-3 text-base text-[var(--landing-text-hero)] outline-none transition-colors focus:bg-white/[0.07] focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 appearance-none"
 
-/** Step 3 date selects — softer empty state, matches “treasure box” panels */
+/** Step 3 date selects — inner depth + gold catch-light on focus */
 const selectJourneyBase =
-  "w-full min-h-[52px] rounded-xl border border-white/[0.1] bg-white/[0.035] px-4 py-3 text-base font-light text-[#ebe6df] outline-none transition-colors focus:border-[var(--aeterna-gold)]/35 focus:bg-white/[0.05] focus:ring-1 focus:ring-[var(--aeterna-gold)]/25 appearance-none [color-scheme:dark]"
+  "w-full min-h-[52px] rounded-xl border border-white/[0.1] bg-white/[0.035] px-4 py-3 text-base font-medium text-[color:var(--landing-text-hero)] outline-none transition-all shadow-[inset_0_1px_3px_rgba(0,0,0,0.42)] focus:border-[var(--aeterna-gold)]/40 focus:bg-white/[0.06] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.35),0_0_0_1px_rgba(197,160,89,0.32),0_0_22px_-4px_rgba(197,160,89,0.18)] focus:ring-0 appearance-none [color-scheme:dark]"
 
+/** Quieter than values — guide only (~60% opacity) */
 const journeyChapterLabel =
-  "font-[var(--font-serif)] text-[15px] font-normal italic tracking-[0.02em] text-[#d4cfc4]"
+  "font-[var(--font-serif)] text-[11px] md:text-xs font-normal italic tracking-[0.04em] text-[#f5f5f7]/60"
 
 /** Memorial details: minimal border, landing-aligned */
-const fieldLabelClass = "block text-[10px] tracking-[0.22em] uppercase text-white/40 mb-2"
+const fieldLabelClass = "block text-[10px] tracking-[0.22em] uppercase text-[#f5f5f7]/60 mb-2"
 const inputMemorial =
-  "w-full rounded-xl bg-white/[0.035] px-4 py-3.5 text-base text-[#f4f1ea] placeholder:text-white/32 outline-none transition-colors focus:bg-white/[0.06] focus:ring-1 focus:ring-[var(--aeterna-gold)]/22 border border-white/[0.07]"
+  "w-full rounded-xl bg-white/[0.035] px-4 py-3.5 text-base text-[color:var(--landing-text-hero)] placeholder:text-white/32 outline-none transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] focus:bg-white/[0.06] focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.28),0_0_20px_-6px_rgba(197,160,89,0.12)] border border-white/[0.07]"
 const inputMemorialDate =
   `${inputMemorial} [color-scheme:dark] min-h-[52px]`
 const selectMemorial =
@@ -201,6 +202,12 @@ function CreateEventForm() {
   const [showResumeToast, setShowResumeToast] = useState(false)
   const resumeToastAfterAuthRef = useRef(false)
   const profileInputRef = useRef<HTMLInputElement>(null)
+  const birthYRef = useRef<HTMLSelectElement>(null)
+  const birthMRef = useRef<HTMLSelectElement>(null)
+  const birthDRef = useRef<HTMLSelectElement>(null)
+  const deathYRef = useRef<HTMLSelectElement>(null)
+  const deathMRef = useRef<HTMLSelectElement>(null)
+  const deathDRef = useRef<HTMLSelectElement>(null)
   const wizardStepRef = useRef(wizardStep)
   const memorialTypeRef = useRef(memorialType)
   const router = useRouter()
@@ -811,7 +818,7 @@ function CreateEventForm() {
               <button
                 type="button"
                 onClick={() => pickType("person")}
-                className="flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-3xl bg-white/[0.03] py-8 transition-transform active:scale-[0.98] md:min-h-[180px] md:hover:bg-white/[0.05]"
+                className="flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-3xl border border-white/[0.08] bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform active:scale-[0.98] md:min-h-[180px] md:hover:bg-white/[0.06]"
               >
                 <Sparkles className="h-10 w-10 text-[var(--aeterna-gold)]" strokeWidth={1} aria-hidden />
                 <span className="text-sm text-white/80">Someone dear</span>
@@ -819,7 +826,7 @@ function CreateEventForm() {
               <button
                 type="button"
                 onClick={() => pickType("pet")}
-                className="flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-3xl bg-white/[0.03] py-8 transition-transform active:scale-[0.98] md:min-h-[180px] md:hover:bg-white/[0.05]"
+                className="flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-3xl border border-white/[0.08] bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform active:scale-[0.98] md:min-h-[180px] md:hover:bg-white/[0.06]"
               >
                 <span className="text-4xl" aria-hidden>
                   🐾
@@ -916,116 +923,139 @@ function CreateEventForm() {
               {wizardStep === 3 && (
                 <div className="space-y-10 pt-4">
                   <div className="max-w-xl">
-                    <h2 className="font-[var(--font-serif)] text-2xl font-normal tracking-tight text-[#f0ebe3] md:text-3xl">
+                    <h2 className="font-[var(--font-serif)] text-2xl font-normal tracking-[0.05em] text-[color:var(--landing-text-hero)] md:text-3xl">
                       Honoring Their Journey
                     </h2>
-                    <p className="mt-5 text-[15px] leading-[1.75] text-[#b8b0a2] md:text-base md:leading-[1.7]">
-                      Every life is a story told in chapters. If you don&apos;t have exact dates, an approximate year is a
-                      perfect start. Your memorial begins with a 7-day gathering period for loved ones to share
-                      memories—securing their legacy for eternity.
-                    </p>
+                    <div className="mt-5 flex gap-3.5">
+                      <div className="mt-0.5 flex shrink-0 flex-col items-center gap-2.5" aria-hidden>
+                        <Clock className="h-4 w-4 text-[var(--aeterna-gold)]/55" strokeWidth={1.15} />
+                        <Sparkles className="h-4 w-4 text-[var(--aeterna-gold)] animate-star-fade" strokeWidth={1.15} />
+                      </div>
+                      <p className="text-[15px] leading-[1.75] text-[#b8b0a2] md:text-base md:leading-[1.7]">
+                        Every life is a story told in chapters. If you don&apos;t have exact dates, an approximate year is a
+                        perfect start. Your memorial begins with a 7-day gathering period for loved ones to share
+                        memories—securing their legacy for eternity.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="space-y-8 md:space-y-10">
-                    <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-b from-white/[0.045] to-white/[0.015] px-5 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_24px_48px_rgba(0,0,0,0.35)] md:px-7 md:py-8">
-                      <div
-                        className="pointer-events-none absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--aeterna-gold)]/25 to-transparent"
-                        aria-hidden
-                      />
-                      <div className="mb-6 border-b border-white/[0.06] pb-6">
-                        <p className={journeyChapterLabel}>Sunrise</p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3 md:gap-4">
-                        <select
-                          value={birthY}
-                          onChange={(e) => setBirthY(e.target.value)}
-                          className={selectJourneyBase}
-                          aria-label="Birth year"
-                        >
-                          <option value="">YYYY</option>
-                          {YEARS.map((y) => (
-                            <option key={y} value={y}>
-                              {y}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={birthM}
-                          onChange={(e) => setBirthM(e.target.value)}
-                          className={selectJourneyBase}
-                          aria-label="Birth month"
-                        >
-                          <option value="">MM</option>
-                          {MONTHS.map((m) => (
-                            <option key={m} value={m}>
-                              {m}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={birthD}
-                          onChange={(e) => setBirthD(e.target.value)}
-                          className={selectJourneyBase}
-                          aria-label="Birth day"
-                        >
-                          <option value="">DD</option>
-                          {DAYS.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
-                          ))}
-                        </select>
+                    <div className="card-treasure rounded-2xl">
+                      <div className="card-treasure-inner rounded-2xl px-5 py-7 md:px-7 md:py-8">
+                        <div className="mb-6 border-b border-white/[0.06] pb-6">
+                          <p className={journeyChapterLabel}>Sunrise</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 md:gap-4">
+                          <select
+                            ref={birthYRef}
+                            value={birthY}
+                            onChange={(e) => {
+                              setBirthY(e.target.value)
+                              if (e.target.value) birthMRef.current?.focus()
+                            }}
+                            className={selectJourneyBase}
+                            aria-label="Birth year"
+                          >
+                            <option value="">YYYY</option>
+                            {YEARS.map((y) => (
+                              <option key={y} value={y}>
+                                {y}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            ref={birthMRef}
+                            value={birthM}
+                            onChange={(e) => {
+                              setBirthM(e.target.value)
+                              if (e.target.value) birthDRef.current?.focus()
+                            }}
+                            className={selectJourneyBase}
+                            aria-label="Birth month"
+                          >
+                            <option value="">MM</option>
+                            {MONTHS.map((m) => (
+                              <option key={m} value={m}>
+                                {m}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            ref={birthDRef}
+                            value={birthD}
+                            onChange={(e) => {
+                              setBirthD(e.target.value)
+                              if (e.target.value) deathYRef.current?.focus()
+                            }}
+                            className={selectJourneyBase}
+                            aria-label="Birth day"
+                          >
+                            <option value="">DD</option>
+                            {DAYS.map((d) => (
+                              <option key={d} value={d}>
+                                {d}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-b from-white/[0.045] to-white/[0.015] px-5 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_24px_48px_rgba(0,0,0,0.35)] md:px-7 md:py-8">
-                      <div
-                        className="pointer-events-none absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--aeterna-gold)]/22 to-transparent"
-                        aria-hidden
-                      />
-                      <div className="mb-6 border-b border-white/[0.06] pb-6">
-                        <p className={journeyChapterLabel}>Sunset</p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3 md:gap-4">
-                        <select
-                          value={deathY}
-                          onChange={(e) => setDeathY(e.target.value)}
-                          className={selectJourneyBase}
-                          aria-label="Year of passing"
-                        >
-                          <option value="">YYYY</option>
-                          {YEARS.map((y) => (
-                            <option key={y} value={y}>
-                              {y}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={deathM}
-                          onChange={(e) => setDeathM(e.target.value)}
-                          className={selectJourneyBase}
-                          aria-label="Month of passing"
-                        >
-                          <option value="">MM</option>
-                          {MONTHS.map((m) => (
-                            <option key={m} value={m}>
-                              {m}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={deathD}
-                          onChange={(e) => setDeathD(e.target.value)}
-                          className={selectJourneyBase}
-                          aria-label="Day of passing"
-                        >
-                          <option value="">DD</option>
-                          {DAYS.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
-                          ))}
-                        </select>
+                    <div className="card-treasure rounded-2xl">
+                      <div className="card-treasure-inner rounded-2xl px-5 py-7 md:px-7 md:py-8">
+                        <div className="mb-6 border-b border-white/[0.06] pb-6">
+                          <p className={journeyChapterLabel}>Sunset</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 md:gap-4">
+                          <select
+                            ref={deathYRef}
+                            value={deathY}
+                            onChange={(e) => {
+                              setDeathY(e.target.value)
+                              if (e.target.value) deathMRef.current?.focus()
+                            }}
+                            className={selectJourneyBase}
+                            aria-label="Year of passing"
+                          >
+                            <option value="">YYYY</option>
+                            {YEARS.map((y) => (
+                              <option key={y} value={y}>
+                                {y}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            ref={deathMRef}
+                            value={deathM}
+                            onChange={(e) => {
+                              setDeathM(e.target.value)
+                              if (e.target.value) deathDRef.current?.focus()
+                            }}
+                            className={selectJourneyBase}
+                            aria-label="Month of passing"
+                          >
+                            <option value="">MM</option>
+                            {MONTHS.map((m) => (
+                              <option key={m} value={m}>
+                                {m}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            ref={deathDRef}
+                            value={deathD}
+                            onChange={(e) => setDeathD(e.target.value)}
+                            className={selectJourneyBase}
+                            aria-label="Day of passing"
+                          >
+                            <option value="">DD</option>
+                            {DAYS.map((d) => (
+                              <option key={d} value={d}>
+                                {d}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1034,7 +1064,8 @@ function CreateEventForm() {
 
               {wizardStep === 4 && (
                 <div className="space-y-8 pt-4">
-                  <div className="rounded-2xl border border-white/[0.07] bg-black/25 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:p-6">
+                  <div className="card-treasure rounded-2xl">
+                    <div className="card-treasure-inner rounded-2xl p-5 md:p-6">
                     <p className="text-[9px] tracking-[0.28em] uppercase text-white/32">Optional</p>
                     <h3 className="mt-2 font-[var(--font-serif)] text-lg font-normal leading-snug text-[#e8e4dc] md:text-xl">
                       Memorial Service &amp; Support Family
@@ -1085,6 +1116,7 @@ function CreateEventForm() {
                     </div>
                   </div>
                 </div>
+              </div>
               )}
 
               {wizardStep === 5 && (
@@ -1268,7 +1300,9 @@ function CreateEventForm() {
                 type="button"
                 disabled={loading || !canContinue()}
                 onClick={onPrimaryPress}
-                className="min-h-[52px] flex-1 rounded-2xl bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] text-sm font-semibold tracking-wide transition-opacity disabled:opacity-35 sm:min-h-[56px]"
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 520, damping: 28 }}
+                className="btn-tap min-h-[56px] flex-1 rounded-2xl bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] text-sm font-semibold tracking-wide shadow-[0_8px_32px_-8px_rgba(197,160,89,0.45)] transition-[opacity,box-shadow] disabled:opacity-35 active:shadow-[0_4px_20px_-6px_rgba(197,160,89,0.35)] sm:min-h-[60px]"
               >
                 {loading
                   ? "Creating…"

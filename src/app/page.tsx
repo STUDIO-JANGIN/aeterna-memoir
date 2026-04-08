@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useState, useEffect, type ReactNode } from "react"
 import Link from "next/link"
 import { Clock, Heart, QrCode, Sparkles } from "lucide-react"
 import { Navbar, NavbarCreateLink } from "@/components/Layout/Navbar"
@@ -90,6 +90,9 @@ type PlanRow = {
   statusTag?: string
 }
 
+const LANDING_NAV_IDS = ["how-it-works", "pricing", "faq"] as const
+type LandingNavId = (typeof LANDING_NAV_IDS)[number]
+
 const PLANS: PlanRow[] = [
   {
     tierName: "Sacred Window",
@@ -162,11 +165,44 @@ function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_STEPS)[numb
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [videoError, setVideoError] = useState(false)
+  const [activeNavId, setActiveNavId] = useState<LandingNavId | null>(null)
   const hasVideo = !!LANDING_BACKGROUND_VIDEO_URL
   const showPlaceholder = !hasVideo || videoError
 
+  useEffect(() => {
+    const elements = LANDING_NAV_IDS.map((id) => document.getElementById(id)).filter(
+      (el): el is HTMLElement => Boolean(el),
+    )
+    if (elements.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting && e.intersectionRatio > 0.04)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
+        const first = visible[0]
+        if (first?.target.id && LANDING_NAV_IDS.includes(first.target.id as LandingNavId)) {
+          setActiveNavId(first.target.id as LandingNavId)
+        }
+      },
+      { root: null, rootMargin: "-42% 0px -42% 0px", threshold: [0, 0.05, 0.1, 0.15, 0.25, 0.35, 0.5] },
+    )
+    elements.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  const landingNavButtonClass = (id: LandingNavId) => {
+    const active = activeNavId === id
+    return [
+      "text-[10px] md:text-[11px] uppercase tracking-[0.2em] md:tracking-[0.22em] pb-1 border-b-[0.5px] transition-colors duration-200",
+      active
+        ? "border-[rgba(255,255,255,0.1)] text-[#f5f5f7] bg-[linear-gradient(to_right,transparent,rgba(212,175,55,0.1),transparent)]"
+        : "border-transparent text-[rgba(245,245,247,0.72)] hover:text-[#f5f5f7]",
+    ].join(" ")
   }
 
   return (
@@ -175,13 +211,21 @@ export default function LandingPage() {
       <Navbar
         end={<NavbarCreateLink />}
       >
-        <button type="button" onClick={() => scrollTo("how-it-works")} className="text-landing-nav hover:text-[#e8e4dc] transition-colors">
+        <button
+          type="button"
+          onClick={() => scrollTo("how-it-works")}
+          className={landingNavButtonClass("how-it-works")}
+        >
           How it works
         </button>
-        <button type="button" onClick={() => scrollTo("pricing")} className="text-landing-nav hover:text-[#e8e4dc] transition-colors">
+        <button
+          type="button"
+          onClick={() => scrollTo("pricing")}
+          className={landingNavButtonClass("pricing")}
+        >
           Pricing
         </button>
-        <button type="button" onClick={() => scrollTo("faq")} className="text-landing-nav hover:text-[#e8e4dc] transition-colors">
+        <button type="button" onClick={() => scrollTo("faq")} className={landingNavButtonClass("faq")}>
           FAQ
         </button>
       </Navbar>
@@ -214,7 +258,7 @@ export default function LandingPage() {
         <div aria-hidden className="landing-hero-vignette" />
       </div>
 
-      <div className="relative z-10 pt-[76px]">
+      <div className="relative z-0 pt-[76px]">
         {/* Hero: copy + mockups */}
         <main className="px-5 md:px-10 pt-10 pb-20 md:pt-20 md:pb-32">
           <div className="max-w-6xl mx-auto">

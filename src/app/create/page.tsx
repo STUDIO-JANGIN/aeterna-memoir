@@ -616,6 +616,11 @@ function CreateEventForm() {
       setMemorialType(null)
       return
     }
+    /** Step 6 + URL-locked plan: first Back closes the plan grid and returns to summary. */
+    if (wizardStep === 6 && planLockedFromUrl && showPlanChangeOptions) {
+      setShowPlanChangeOptions(false)
+      return
+    }
     const nextStep = wizardStep - 1
     const d = buildCreateDraft(nextStep)
     if (d) writeCreateDraft(d)
@@ -861,16 +866,16 @@ function CreateEventForm() {
 
       {/* Thin progress + step label (fixed so it stays visible while scrolling) */}
       {memorialType !== null && (
-        <header className="fixed top-0 left-0 right-0 z-40 pt-[env(safe-area-inset-top,0px)]">
+        <header className="pointer-events-auto fixed top-0 left-0 right-0 z-[50] pt-[env(safe-area-inset-top,0px)]">
           <div className="h-[2px] w-full overflow-hidden bg-white/[0.08]">
             <motion.div
-              className="h-full bg-[var(--aeterna-gold)]"
+              className="h-full bg-[#D4AF37]"
               initial={false}
               animate={{ width: `${progress * 100}%` }}
               transition={ARTISAN_SPRING}
             />
           </div>
-          <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] bg-landing/95 px-4 py-2.5 backdrop-blur-md md:px-8">
+          <div className="flex items-center justify-between gap-3 border-b-[0.5px] border-[rgba(255,255,255,0.1)] bg-[rgba(3,3,3,0.92)] px-4 py-2.5 backdrop-blur-[20px] md:px-8">
             <p className="text-[10px] tracking-[0.28em] uppercase text-white/45 tabular-nums">
               Step {wizardStep} of {effectiveWizardSteps}
             </p>
@@ -1397,7 +1402,7 @@ function CreateEventForm() {
 
       {/* Fixed thumb zone */}
       {memorialType !== null && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/[0.06] bg-landing/95 backdrop-blur-xl px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="pointer-events-auto fixed bottom-0 left-0 right-0 z-[50] border-t-[0.5px] border-[rgba(255,255,255,0.1)] bg-[rgba(3,3,3,0.96)] px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] backdrop-blur-[20px]">
           <div className="mx-auto w-full max-w-lg space-y-3">
             {showFooterCreateError && (
               <p className="text-center text-sm text-red-400/90" role="alert">

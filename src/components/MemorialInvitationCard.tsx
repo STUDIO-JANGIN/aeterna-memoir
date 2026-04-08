@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Download, Printer } from "lucide-react"
+import { createPortal } from "react-dom"
+import { Download, Printer, X } from "lucide-react"
 import { PDFDocument } from "pdf-lib"
 import {
   canvasToPngBlob,
@@ -57,6 +58,7 @@ export function MemorialInvitationCard({
 }: MemorialInvitationCardProps) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [zoomOpen, setZoomOpen] = useState(false)
 
   const renderCanvas = useCallback(async () => {
     return renderMemorialInvitationCanvas(
@@ -147,21 +149,81 @@ export function MemorialInvitationCard({
     }
   }, [renderCanvas, slug])
 
+  useEffect(() => {
+    if (!zoomOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoomOpen(false)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener("keydown", onKey)
+    }
+  }, [zoomOpen])
+
   const btnClass =
     "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#c5a059]/40 bg-[#f2ebe0]/90 px-5 text-[13px] font-normal tracking-wide text-[#333] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[#ebe3d6] disabled:opacity-40 [font-family:var(--font-sans)]"
 
+  const zoomLightbox =
+    zoomOpen &&
+    previewSrc &&
+    typeof document !== "undefined" &&
+    createPortal(
+      <div
+        className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Invitation preview enlarged"
+      >
+        <button
+          type="button"
+          className="absolute inset-0 bg-[#030303]/80 backdrop-blur-[2px]"
+          aria-label="Close preview"
+          onClick={() => setZoomOpen(false)}
+        />
+        <div className="relative z-[1] flex max-h-[min(92dvh,920px)] w-full max-w-[min(92vw,540px)] flex-col rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.55)] ring-1 ring-white/10">
+          <button
+            type="button"
+            className="absolute right-2 top-2 z-[2] flex h-10 w-10 items-center justify-center rounded-full bg-[#030303]/65 text-[#f4f1ea] ring-1 ring-white/15 transition-colors hover:bg-[#030303]/85"
+            aria-label="Close"
+            onClick={() => setZoomOpen(false)}
+          >
+            <X className="h-5 w-5" strokeWidth={1.75} />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewSrc}
+            alt=""
+            className="max-h-[min(92dvh,920px)] w-full rounded-2xl object-contain object-top"
+          />
+        </div>
+      </div>,
+      document.body,
+    )
+
   return (
     <div className={`flex flex-col items-center gap-5 py-2 text-center ${className}`}>
-      <MemorialCard className="w-full max-w-[min(200px,38vw)] shrink-0 rounded-[32px] border border-[rgba(197,160,89,0.38)] bg-[#faf8f5] shadow-[0_20px_50px_-18px_rgba(51,51,51,0.18),0_2px_8px_rgba(51,51,51,0.06)] [aspect-ratio:9/16]">
-        {previewSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={previewSrc} alt="" className="h-full w-full object-cover object-top" />
-        ) : (
-          <div className="flex h-full min-h-[min(300px,40vh)] w-full items-center justify-center bg-[#f0ebe4] text-sm text-[#6b6b6b] [font-family:var(--font-sans)]">
-            Preparing invitation…
-          </div>
-        )}
-      </MemorialCard>
+      <button
+        type="button"
+        onClick={() => previewSrc && setZoomOpen(true)}
+        disabled={!previewSrc}
+        className="group relative w-full max-w-[min(200px,38vw)] shrink-0 cursor-zoom-in rounded-[32px] border-0 bg-transparent p-0 text-left shadow-[0_20px_50px_-18px_rgba(51,51,51,0.18),0_2px_8px_rgba(51,51,51,0.06)] transition-transform hover:scale-[1.02] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a] disabled:cursor-wait disabled:opacity-70 [aspect-ratio:9/16]"
+        aria-label={previewSrc ? "View invitation full size" : "Invitation preview loading"}
+      >
+        <MemorialCard className="h-full w-full rounded-[32px] border border-[rgba(197,160,89,0.38)] bg-[#faf8f5] [aspect-ratio:9/16]">
+          {previewSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewSrc} alt="" className="pointer-events-none h-full w-full object-cover object-top" />
+          ) : (
+            <div className="flex h-full min-h-[min(300px,40vh)] w-full items-center justify-center bg-[#f0ebe4] text-sm text-[#6b6b6b] [font-family:var(--font-sans)]">
+              Preparing invitation…
+            </div>
+          )}
+        </MemorialCard>
+      </button>
+      {zoomLightbox}
 
       <div className="h-px w-20 max-w-[40%] shrink-0 bg-[rgba(197,160,89,0.35)]" aria-hidden />
 

@@ -1013,7 +1013,7 @@ export default function GuestFeedPage({ params }: PageProps) {
 
       <header className="relative w-full px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8">
         <div className="mx-auto flex max-w-lg flex-col items-center text-center">
-          <div className="mb-6 aspect-square w-[min(88vw,22rem)] max-w-[90vw] shrink-0 overflow-hidden rounded-full border border-white/[0.12] bg-[#030303]/[0.15] shadow-[0_28px_72px_-24px_rgba(0,0,0,0.65)]">
+          <div className="mb-6 aspect-square w-[min(76vw,20rem)] max-w-[85vw] sm:w-[min(82vw,22rem)] sm:max-w-[90vw] shrink-0 overflow-hidden rounded-full border border-white/[0.12] bg-[#030303]/[0.15] shadow-[0_28px_72px_-24px_rgba(0,0,0,0.65)]">
             {profileSrc ? (
               <img src={profileSrc} alt="" className="memorial-thumbnail h-full w-full object-cover" loading="eager" decoding="async" />
             ) : (

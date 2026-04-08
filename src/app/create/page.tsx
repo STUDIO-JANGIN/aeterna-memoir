@@ -105,6 +105,8 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1)
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1)
 const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
 const MINUTES = ["00", "15", "30", "45"]
+/** Memorial service date — past + upcoming years (matches Born/At Rest ghost selects) */
+const CEREMONY_YEARS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR - 2 + i)
 
 const inputBase =
   "w-full rounded-[32px] bg-white/[0.04] px-5 py-4 text-lg text-[color:var(--landing-text-hero)] placeholder:text-white/35 shadow-[inset_0_1px_3px_rgba(0,0,0,0.35)] outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:bg-white/[0.07] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.28),0_0_0_1px_rgba(197,160,89,0.25)] focus:ring-0"
@@ -198,7 +200,7 @@ function CreateEventForm() {
   const { user, ready: authReady, refresh: refreshAuthUser } = useSupabaseUser()
   const signedIn = Boolean(user?.id)
   const [googleLoading, setGoogleLoading] = useState(false)
-  /** Blocks “Continue with Google” until sign-out has fully cleared session (avoids OAuth races). */
+  /** Blocks primary continue until sign-out has fully cleared session (avoids OAuth races). */
   const [signingOut, setSigningOut] = useState(false)
   const oauthStartLockRef = useRef(false)
 
@@ -266,6 +268,9 @@ function CreateEventForm() {
   const ceremonyHour12Ref = useRef<HTMLSelectElement>(null)
   const ceremonyMinuteRef = useRef<HTMLSelectElement>(null)
   const ceremonyPeriodRef = useRef<HTMLSelectElement>(null)
+  const ceremonyServiceMRef = useRef<HTMLSelectElement>(null)
+  const ceremonyServiceDRef = useRef<HTMLSelectElement>(null)
+  const ceremonyServiceYRef = useRef<HTMLSelectElement>(null)
   const wizardStepRef = useRef(wizardStep)
   const memorialTypeRef = useRef(memorialType)
   /** When user taps Back from Plan (8) → Account (7), skip the OAuth auto-advance effect so they can stay on 7. */
@@ -283,6 +288,14 @@ function CreateEventForm() {
     if (wizardStep >= 8) return wizardStep - 2
     return wizardStep
   }, [wizardStep, serviceStepsSkipped])
+
+  /** Step 6 service date — parse ISO yyyy-mm-dd for MM / DD / YYYY selects */
+  const ceremonyServiceParts = useMemo(() => {
+    const s = ceremonyDate.trim()
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return { y: "", m: "", d: "" }
+    const [y, mo, da] = s.split("-")
+    return { y, m: String(Number(mo)), d: String(Number(da)) }
+  }, [ceremonyDate])
 
   useEffect(() => {
     wizardStepRef.current = wizardStep
@@ -1396,7 +1409,7 @@ function CreateEventForm() {
                       Will you host a memorial service?
                     </h2>
                     <p className="text-base text-white/45 leading-relaxed max-w-md mx-auto">
-                      If yes, you can add location and time next. If not, we&apos;ll move on — you can always add details later from the memorial page.
+                      If yes, you can add location, date, and time next. If not, we&apos;ll move on — you can always add details later from the memorial page.
                     </p>
                   </div>
                   <div className="mx-auto flex w-full max-w-sm flex-col gap-3 sm:flex-row sm:justify-center">
@@ -1462,6 +1475,72 @@ function CreateEventForm() {
                         className={ghostLineInputClass}
                         aria-label="Location"
                       />
+                    </div>
+
+                    <div className="space-y-6">
+                      <h3 className={stepSectionTitleClass}>Date</h3>
+                      <div className="grid grid-cols-3 gap-4 md:gap-5">
+                        <select
+                          ref={ceremonyServiceMRef}
+                          value={ceremonyServiceParts.m}
+                          onChange={(e) => {
+                            const m = e.target.value
+                            const y = ceremonyServiceParts.y || String(CURRENT_YEAR)
+                            const d = ceremonyServiceParts.d || "1"
+                            setCeremonyDate(buildDateString(y, m, d))
+                            if (m) focusNextField(ceremonyServiceDRef.current)
+                          }}
+                          className={ghostDateSelectClass}
+                          aria-label="Service month"
+                        >
+                          <option value="">MM</option>
+                          {MONTHS.map((mo) => (
+                            <option key={mo} value={mo}>
+                              {mo}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          ref={ceremonyServiceDRef}
+                          value={ceremonyServiceParts.d}
+                          onChange={(e) => {
+                            const d = e.target.value
+                            const y = ceremonyServiceParts.y || String(CURRENT_YEAR)
+                            const m = ceremonyServiceParts.m || "1"
+                            setCeremonyDate(buildDateString(y, m, d))
+                            if (d) focusNextField(ceremonyServiceYRef.current)
+                          }}
+                          className={ghostDateSelectClass}
+                          aria-label="Service day"
+                        >
+                          <option value="">DD</option>
+                          {DAYS.map((day) => (
+                            <option key={day} value={day}>
+                              {day}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          ref={ceremonyServiceYRef}
+                          value={ceremonyServiceParts.y}
+                          onChange={(e) => {
+                            const y = e.target.value
+                            const m = ceremonyServiceParts.m || "1"
+                            const d = ceremonyServiceParts.d || "1"
+                            setCeremonyDate(buildDateString(y, m, d))
+                            if (y) focusNextField(ceremonyHour12Ref.current)
+                          }}
+                          className={ghostDateSelectClass}
+                          aria-label="Service year"
+                        >
+                          <option value="">YYYY</option>
+                          {CEREMONY_YEARS.map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     <div className="space-y-6">
@@ -1596,7 +1675,7 @@ function CreateEventForm() {
                           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                         />
                       </svg>
-                      {googleLoading ? "Redirecting…" : "Continue the Story with Google"}
+                      {googleLoading ? "Redirecting…" : "Continue the story"}
                     </button>
                   )}
                 </div>
@@ -1750,7 +1829,7 @@ function CreateEventForm() {
                   : wizardStep === 8 && !authReady
                     ? "Checking account…"
                     : wizardStep === 8 && !signedIn
-                      ? "Continue the Story with Google"
+                      ? "Continue the story"
                       : wizardStep < WIZARD_STEPS_FULL
                     ? "Continue the Story"
                     : isPlanSummaryView

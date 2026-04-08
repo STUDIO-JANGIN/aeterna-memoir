@@ -267,16 +267,18 @@ export default function LandingPage() {
         <div aria-hidden className="landing-hero-vignette" />
       </div>
 
-      <div className="relative z-0 pt-[6.75rem] md:pt-[76px]">
+      <div className="relative z-0 pt-20 md:pt-[76px]">
         {/* Hero: copy + mockups */}
-        <main className="px-5 md:px-10 pt-6 pb-16 md:pt-20 md:pb-32">
+        <main className="px-5 md:px-10 pt-6 pb-24 md:pt-20 md:pb-32">
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 gap-y-14 lg:grid-cols-2 lg:gap-12 xl:gap-16 lg:items-center lg:gap-y-0">
               {/* Value proposition — always on top on mobile; left column on desktop */}
               <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-left px-1 sm:px-2 pb-2 sm:pb-10 lg:pb-0">
                 <RevealSection className="w-full max-w-xl mx-auto lg:mx-0 lg:max-w-xl space-y-0">
-                  <h1 className="text-landing-hero font-semibold text-balance max-md:!text-[clamp(1.25rem,4.2vw,1.65rem)] max-md:!leading-[1.38] max-md:tracking-[-0.03em] md:leading-[1.1]">
-                    A Digital Shrine for Sacred Memory
+                  <h1 className="text-landing-hero font-semibold text-balance md:leading-[1.1] max-md:!text-[clamp(1.875rem,7.5vw,2.75rem)] max-md:!leading-[1.14] max-md:tracking-[-0.035em]">
+                    A Digital Shrine for{" "}
+                    <br className="md:hidden" aria-hidden />
+                    Sacred Memory
                   </h1>
                   <p className="mt-4 md:mt-8 text-[13px] md:text-lg leading-[1.72] md:leading-[1.6] text-[#f5f5f7]/90 font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance max-md:px-0.5">
                     A lasting space for people and pets—preserved with dignity. Share instantly by QR or link: no app, no friction; guests add photos and stories from any phone. A gentle memorial feed where visitors heart and comment on each memory—like a sacred timeline of their legacy.
@@ -343,7 +345,7 @@ export default function LandingPage() {
         {/* How it works — 3-column scan (icons + bold headers + mockups) */}
         <section
           id="how-it-works"
-          className="scroll-mt-24 bg-landing px-5 py-16 md:px-10 md:py-28"
+          className="scroll-mt-24 bg-landing px-5 pt-28 pb-16 md:px-10 md:py-28"
         >
           <div className="max-w-6xl mx-auto">
             <RevealSection className="text-center mb-12 md:mb-20">

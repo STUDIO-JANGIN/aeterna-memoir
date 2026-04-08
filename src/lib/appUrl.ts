@@ -20,30 +20,51 @@ export function getAppBaseUrl(): string {
   return "http://localhost:3000"
 }
 
-/** Production site when env is missing (SSR / CLI). OAuth should still use a stable host. */
-const CANONICAL_PRODUCTION_ORIGIN = "https://aeternamemoir.com"
+/** Public production origin — OAuth never uses `*.vercel.app` as `redirectTo` (avoids DEPLOYMENT_NOT_FOUND). */
+export const CANONICAL_SITE_ORIGIN = "https://aeternamemoir.com"
+
+function trimBase(url: string): string {
+  return url.replace(/\/+$/, "")
+}
+
+function isLocalHost(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]"
+}
+
+function isVercelPreviewHost(hostname: string): boolean {
+  return hostname.endsWith(".vercel.app")
+}
 
 /**
  * Base URL for Supabase OAuth `redirectTo` (must match an entry in Supabase Auth → Redirect URLs).
- * Prefer NEXT_PUBLIC_APP_URL / NEXT_PUBLIC_SITE_URL so production never sends users to a stale *.vercel.app URL.
+ *
+ * Order: `NEXT_PUBLIC_APP_URL` → `NEXT_PUBLIC_SITE_URL` → (browser) localhost stays local;
+ * **`*.vercel.app` always maps to {@link CANONICAL_SITE_ORIGIN}** so Google never returns to a dead preview URL.
  */
 export function getOAuthRedirectBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "")
+    return trimBase(process.env.NEXT_PUBLIC_APP_URL)
   }
   if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, "")
+    return trimBase(process.env.NEXT_PUBLIC_SITE_URL)
   }
   if (typeof window !== "undefined") {
+    const host = window.location.hostname
+    if (isLocalHost(host)) {
+      return window.location.origin
+    }
+    if (isVercelPreviewHost(host)) {
+      return CANONICAL_SITE_ORIGIN
+    }
     return window.location.origin
   }
   if (typeof process.env.VERCEL_URL === "string" && process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`
+    return CANONICAL_SITE_ORIGIN
   }
   if (process.env.NODE_ENV === "development") {
     return "http://localhost:3000"
   }
-  return CANONICAL_PRODUCTION_ORIGIN
+  return CANONICAL_SITE_ORIGIN
 }
 
 /** Supabase Google OAuth redirect: `/auth/callback` exchanges the code (SSR) then sends the user to `next`. */

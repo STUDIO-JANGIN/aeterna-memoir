@@ -4,8 +4,11 @@
 
 1. **Vercel → Environment Variables (Production)**  
    - `NEXT_PUBLIC_APP_URL=https://aeternamemoir.com`  
-   - `NEXT_PUBLIC_SITE_URL` can match the same value if you use it elsewhere.  
-   This ensures OAuth `redirectTo` uses your custom domain, not a preview `*.vercel.app` URL (which triggers `404: DEPLOYMENT_NOT_FOUND` when that deployment no longer exists).
+   - `NEXT_PUBLIC_SITE_URL=https://aeternamemoir.com`  
+   - `NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co` (Supabase → **Settings → API** → Project URL)  
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon public>` (same page)  
+   - `SUPABASE_SERVICE_ROLE_KEY=<service role>` (server-only; never prefix with `NEXT_PUBLIC_`)  
+   Code falls back to `https://aeternamemoir.com` for OAuth when the browser is on `*.vercel.app`, but you should still set the URLs above so `redirectTo` is explicit. Redeploy after changing env.
 
 2. **Supabase Dashboard → Authentication → URL Configuration**  
    - **Site URL:** `https://aeternamemoir.com`  

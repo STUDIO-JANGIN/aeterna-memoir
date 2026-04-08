@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { createPortal } from "react-dom"
 import {
   type ReactNode,
   Children,
@@ -41,6 +42,11 @@ function chainNavClick(
  */
 export function Navbar({ children, end }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!mobileOpen) return
@@ -63,6 +69,46 @@ export function Navbar({ children, end }: NavbarProps) {
   const closeMenu = () => setMobileOpen(false)
 
   const navWithClose = Children.map(children, (child) => chainNavClick(child, closeMenu))
+
+  const mobileMenu =
+    mobileOpen && mounted
+      ? createPortal(
+          <>
+            <button
+              type="button"
+              className="fixed inset-x-0 bottom-0 top-[4.25rem] z-[200] bg-[#030303]/70 backdrop-blur-[2px] md:hidden"
+              aria-label="Close menu"
+              onClick={closeMenu}
+            />
+            <div
+              id="landing-mobile-nav"
+              className="fixed bottom-0 right-0 top-[4.25rem] z-[201] flex w-[85vw] max-w-[320px] min-w-[12rem] flex-col border-l border-white/[0.12] bg-[#0a0a0a] shadow-[-24px_0_48px_rgba(0,0,0,0.55)] backdrop-blur-xl md:hidden"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Site navigation"
+            >
+              <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 py-3">
+                <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#a1a1a6]">Menu</p>
+                <button
+                  type="button"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#f5f5f7] hover:bg-white/[0.08]"
+                  aria-label="Close menu"
+                  onClick={closeMenu}
+                >
+                  <X className="h-5 w-5" strokeWidth={1.75} />
+                </button>
+              </div>
+              <nav
+                className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain px-2 pb-6 pt-2 [&_button]:min-h-[3rem] [&_button]:w-full [&_button]:rounded-lg [&_button]:border-0 [&_button]:border-b [&_button]:border-white/[0.08] [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-3 [&_button]:text-left [&_button]:text-[13px] [&_button]:font-medium [&_button]:normal-case [&_button]:tracking-[0.02em] [&_button]:text-[#f5f5f7] [&_button]:last:border-b-0 [&_button]:hover:bg-white/[0.06] [&_button]:active:bg-white/[0.08]"
+                aria-label="Sections"
+              >
+                {navWithClose}
+              </nav>
+            </div>
+          </>,
+          document.body,
+        )
+      : null
 
   return (
     <header className="pointer-events-auto fixed top-0 left-0 right-0 z-[70] border-b-[0.5px] border-[rgba(255,255,255,0.1)] bg-[rgba(3,3,3,0.92)] backdrop-blur-[20px] md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-0 md:px-10 md:py-5">
@@ -98,42 +144,8 @@ export function Navbar({ children, end }: NavbarProps) {
         {end}
       </div>
 
-      {/* Mobile: dim page below header; sheet from right */}
-      {mobileOpen ? (
-        <>
-          <button
-            type="button"
-            className="fixed inset-x-0 bottom-0 top-[4.25rem] z-[60] bg-[#030303]/65 backdrop-blur-[2px] md:hidden"
-            aria-label="Close menu"
-            onClick={closeMenu}
-          />
-          <div
-            id="landing-mobile-nav"
-            className="fixed bottom-0 right-0 top-[4.25rem] z-[65] flex w-[min(100vw-2rem,20rem)] flex-col border-l border-white/[0.08] bg-[rgba(8,8,8,0.98)] shadow-[-24px_0_48px_rgba(0,0,0,0.45)] backdrop-blur-xl md:hidden"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Site navigation"
-          >
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-              <p className="text-[10px] uppercase tracking-[0.28em] text-[#737373]">Menu</p>
-              <button
-                type="button"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#f5f5f7] hover:bg-white/[0.06]"
-                aria-label="Close menu"
-                onClick={closeMenu}
-              >
-                <X className="h-5 w-5" strokeWidth={1.75} />
-              </button>
-            </div>
-            <nav
-              className="flex flex-1 flex-col gap-0 overflow-y-auto px-2 py-4 [&_button]:w-full [&_button]:border-0 [&_button]:border-b [&_button]:border-white/[0.06] [&_button]:bg-transparent [&_button]:py-4 [&_button]:text-left [&_button]:text-[11px] [&_button]:uppercase [&_button]:tracking-[0.22em] [&_button:last-child]:border-b-0"
-              aria-label="Sections"
-            >
-              {navWithClose}
-            </nav>
-          </div>
-        </>
-      ) : null}
+      {/* Mobile sheet portaled to body so page layers never cover it; links use readable size/contrast */}
+      {mobileMenu}
     </header>
   )
 }

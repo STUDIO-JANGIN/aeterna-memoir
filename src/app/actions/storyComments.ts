@@ -7,6 +7,19 @@ import { parseUuidString } from "@/lib/uuid"
 const MAX_TEXT = 500
 const MAX_NAME = 60
 
+/** PostgREST / drivers may return booleans as bool, string, or null — treat only clear approvals as true. */
+function rowIsApproved(value: unknown): boolean {
+  if (value === true) return true
+  if (value === false || value == null) return false
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase()
+    if (v === "false" || v === "f" || v === "0" || v === "no" || v === "") return false
+    return v === "true" || v === "t" || v === "1" || v === "yes"
+  }
+  if (typeof value === "number") return value === 1
+  return false
+}
+
 export type StoryCommentPublic = {
   id: string
   visitor_name: string
@@ -38,15 +51,11 @@ export async function getStoryCommentsAction(
     return { ok: true, comments: [] }
   }
 
-  /** Trimmed UUID strings for PostgREST `.eq` — must match `uuid` columns in the DB. */
-  const photoIdEq = rawPhoto.trim()
-  const eventIdEq = rawEvent.trim()
-
   const supabase = getSupabaseAdmin()
   const { data: storyRow, error: storyErr } = await supabase
     .from("stories")
     .select("id, event_id, is_approved")
-    .eq("id", photoIdEq)
+    .eq("id", photoIdUuid)
     .maybeSingle()
   if (storyErr || !storyRow) {
     return { ok: true, comments: [] }
@@ -60,7 +69,7 @@ export async function getStoryCommentsAction(
     !rowEventId ||
     rowStoryId !== photoIdUuid ||
     rowEventId !== eventIdUuid ||
-    storyRow.is_approved !== true
+    !rowIsApproved(storyRow.is_approved)
   ) {
     return { ok: true, comments: [] }
   }
@@ -68,8 +77,8 @@ export async function getStoryCommentsAction(
   const { data, error } = await supabase
     .from("comments")
     .select("id, visitor_name, text, created_at")
-    .eq("photo_id", photoIdEq)
-    .eq("event_id", eventIdEq)
+    .eq("photo_id", photoIdUuid)
+    .eq("event_id", eventIdUuid)
     .eq("is_reported", false)
     .order("created_at", { ascending: true })
 
@@ -96,6 +105,8 @@ export async function addStoryCommentAction(
   visitorName: string,
   text: string,
 ): Promise<AddCommentResult> {
+  noStore()
+
   const rawPhoto =
     clientPhotoId != null && typeof clientPhotoId === "string"
       ? clientPhotoId.trim()
@@ -153,7 +164,7 @@ export async function addStoryCommentAction(
   if (eventId !== parsedClientEventId) {
     return { ok: false, error: "Memory not found." }
   }
-  if (story.is_approved !== true) {
+  if (!rowIsApproved(story.is_approved)) {
     return { ok: false, error: "You can share a memory once this photo has been approved." }
   }
 
@@ -164,6 +175,7 @@ export async function addStoryCommentAction(
       event_id: eventId,
       text: body,
       visitor_name: name,
+      is_reported: false,
     })
     .select("id, visitor_name, text, created_at")
     .single()

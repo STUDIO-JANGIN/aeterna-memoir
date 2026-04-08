@@ -1,6 +1,7 @@
 "use client"
 
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { use, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
@@ -160,6 +161,90 @@ export default function GuestFeedPage({ params }: PageProps) {
     const guestUrl = `${base}/p/${encodeURIComponent(slug)}`
     return buildGlobalShareMessage(name, guestUrl)
   }, [event, slug])
+
+  const myStoryRankIndex = useMemo(() => {
+    if (!myStoryId) return -1
+    return stories.findIndex((s) => s.id === myStoryId)
+  }, [stories, myStoryId])
+
+  const [rankShareModalDismissed, setRankShareModalDismissed] = useState(() => {
+    if (typeof window === "undefined") return false
+    try {
+      return sessionStorage.getItem(`aeterna_rank_share_dismissed_${slug}`) === "1"
+    } catch {
+      return false
+    }
+  })
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !slug) return
+    try {
+      setRankShareModalDismissed(sessionStorage.getItem(`aeterna_rank_share_dismissed_${slug}`) === "1")
+    } catch {
+      setRankShareModalDismissed(false)
+    }
+  }, [slug])
+
+  const showRankShareModal = myStoryRankIndex >= 0 && !rankShareModalDismissed
+
+  const dismissRankShareModal = useCallback(() => {
+    setRankShareModalDismissed(true)
+    if (typeof window === "undefined" || !slug) return
+    try {
+      sessionStorage.setItem(`aeterna_rank_share_dismissed_${slug}`, "1")
+    } catch {
+      // ignore
+    }
+  }, [slug])
+
+  useEffect(() => {
+    if (!showRankShareModal) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [showRankShareModal])
+
+  useEffect(() => {
+    if (!showRankShareModal) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") dismissRankShareModal()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [showRankShareModal, dismissRankShareModal])
+
+  const handleRankShareWhatsApp = useCallback(
+    (e: MouseEvent) => {
+      e.stopPropagation()
+      const text =
+        dualRouteShareText || (typeof window !== "undefined" ? window.location.href : "")
+      openWhatsAppWithPrefilledText(text)
+    },
+    [dualRouteShareText],
+  )
+
+  const handleRankShareMessage = useCallback(
+    (e: MouseEvent) => {
+      e.stopPropagation()
+      const text = dualRouteShareText || (typeof window !== "undefined" ? window.location.href : "")
+      window.location.href = `sms:?&body=${encodeURIComponent(text)}`
+    },
+    [dualRouteShareText],
+  )
+
+  const handleRankShareCopy = useCallback((e: MouseEvent) => {
+    e.stopPropagation()
+    const url = typeof window !== "undefined" ? window.location.href : ""
+    void navigator.clipboard.writeText(url).then(() => {
+      if (typeof window !== "undefined") window.alert("Link copied.")
+    })
+  }, [])
+
+  /** Same footprint for WhatsApp / Message / Copy on the rank-share modal and tile strip. */
+  const rankShareBtnBase =
+    "inline-flex min-h-[40px] w-full min-w-0 items-center justify-center rounded-full px-1.5 text-[10px] font-medium tracking-wide touch-manipulation active:scale-[0.98] sm:min-h-[36px]"
 
   // Deadline time: prefer expired_at, then collection_end_at, else created_at + 7 days.
   const getDeadlineMs = (e: FeedEvent) => {
@@ -1000,6 +1085,53 @@ export default function GuestFeedPage({ params }: PageProps) {
         )}
       </AnimatePresence>
 
+      {showRankShareModal &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rank-share-title"
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-[3px]"
+            onClick={dismissRankShareModal}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl border border-white/[0.12] bg-[#0a0a0a]/96 px-5 py-5 text-center shadow-[0_24px_64px_rgba(0,0,0,0.55)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p id="rank-share-title" className="text-[13px] font-medium leading-relaxed text-white">
+                Your memory is currently{" "}
+                <strong className="text-[var(--aeterna-gold)]">#{myStoryRankIndex + 1}</strong>. Invite friends to
+                leave a heart.
+              </p>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={handleRankShareWhatsApp}
+                  className={`${rankShareBtnBase} border border-[var(--border-gold)] bg-[#030303]/30 text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold)]/10`}
+                >
+                  WhatsApp
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRankShareMessage}
+                  className={`${rankShareBtnBase} border border-[var(--border-gold)] bg-[#030303]/35 text-[var(--landing-text-hero)] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10`}
+                >
+                  Message
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRankShareCopy}
+                  className={`${rankShareBtnBase} border border-white/20 bg-white/[0.06] text-[var(--landing-text-body)] hover:bg-white/10`}
+                >
+                  Copy link
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
       {/* Free tier: preservation banner — full width at top (safe area for notched phones) */}
       {event &&
         !isPaidMemorial &&
@@ -1349,46 +1481,27 @@ export default function GuestFeedPage({ params }: PageProps) {
                         </span>
                       </div>
                     )}
-                    {myStoryId === story.id && (
-                      <div className="absolute top-2 left-2 right-2 rounded-lg bg-[#030303]/70 backdrop-blur-sm p-2.5 text-center">
-                        <p className="text-[10px] text-white font-medium mb-2">
-                          Your memory is currently <strong className="text-[var(--aeterna-gold)]">#{index + 1}</strong>. Invite friends to leave a heart.
-                        </p>
-                        <div className="flex flex-wrap items-stretch justify-center gap-2">
+                    {myStoryId === story.id && rankShareModalDismissed && (
+                      <div className="absolute top-2 left-2 right-2 rounded-lg bg-[#030303]/70 backdrop-blur-sm p-2 text-center">
+                        <div className="grid grid-cols-3 gap-1.5">
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const text =
-                                dualRouteShareText ||
-                                (typeof window !== "undefined" ? window.location.href : "")
-                              openWhatsAppWithPrefilledText(text)
-                            }}
-                            className="inline-flex min-h-[40px] min-w-[5.25rem] flex-1 items-center justify-center rounded-full border border-[var(--border-gold)] bg-[#030303]/30 px-2.5 text-[10px] font-medium tracking-wide text-[var(--aeterna-gold)] touch-manipulation active:scale-[0.98] sm:min-h-[36px] hover:bg-[var(--aeterna-gold)]/10"
+                            onClick={handleRankShareWhatsApp}
+                            className={`${rankShareBtnBase} border border-[var(--border-gold)] bg-[#030303]/30 text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold)]/10`}
                           >
                             WhatsApp
                           </button>
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const text = dualRouteShareText || (typeof window !== "undefined" ? window.location.href : "")
-                              window.location.href = `sms:?&body=${encodeURIComponent(text)}`
-                            }}
-                            className="inline-flex min-h-[44px] min-w-[6.5rem] flex-[1.15] items-center justify-center gap-1 rounded-full border border-[var(--border-gold)] bg-[#030303]/35 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-hero)] shadow-[0_8px_28px_-8px_rgba(0,0,0,0.55)] touch-manipulation active:scale-[0.98] sm:min-h-[40px] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10"
+                            onClick={handleRankShareMessage}
+                            className={`${rankShareBtnBase} border border-[var(--border-gold)] bg-[#030303]/35 text-[var(--landing-text-hero)] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10`}
                           >
                             Message
                           </button>
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const url = typeof window !== "undefined" ? window.location.href : ""
-                              void navigator.clipboard.writeText(url).then(() => {
-                                if (typeof window !== "undefined") window.alert("Link copied.")
-                              })
-                            }}
-                            className="inline-flex min-h-[40px] min-w-[5rem] flex-1 items-center justify-center rounded-full border border-white/20 bg-white/[0.06] px-2.5 text-[10px] font-medium text-[var(--landing-text-body)] touch-manipulation active:scale-[0.98] sm:min-h-[36px] hover:bg-white/10"
+                            onClick={handleRankShareCopy}
+                            className={`${rankShareBtnBase} border border-white/20 bg-white/[0.06] text-[var(--landing-text-body)] hover:bg-white/10`}
                           >
                             Copy link
                           </button>

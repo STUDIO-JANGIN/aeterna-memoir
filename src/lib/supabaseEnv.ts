@@ -1,7 +1,7 @@
 /**
- * Single source for Supabase project URL + anon key fallbacks (browser, server, legacy `supabase.ts`).
- * Set `NEXT_PUBLIC_SUPABASE_URL` in Vercel to the **Project URL** from Supabase → Settings → API
- * (e.g. `https://<ref>.supabase.co`).
+ * Supabase **API** host (always `https://<project-ref>.supabase.co`).
+ * This is not your public app domain (`aeternamemoir.com`). Set `NEXT_PUBLIC_SUPABASE_URL` in Vercel from
+ * Supabase → Settings → API → **Project URL**.
  */
 export const SUPABASE_PROJECT_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://clnxgqhbejscniwhvmjc.supabase.co"

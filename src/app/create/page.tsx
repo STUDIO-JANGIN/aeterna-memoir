@@ -25,7 +25,7 @@ import {
   type StoragePlan,
 } from "@/lib/createFlowStorage"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
-import { buildOAuthCallbackRedirectUrl } from "@/lib/appUrl"
+import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
 
 /** URL `plan=` → internal tier. Legacy: `basic` = Plus; marketing: `forever` = Plus, `film` = Premium. */
 function parsePlanQueryParam(param: string | null): StoragePlan | null {
@@ -430,7 +430,7 @@ function CreateEventForm() {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.NEXT_PUBLIC_SITE_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "https://aeternamemoir.com")
+    (typeof window !== "undefined" ? window.location.origin : CANONICAL_SITE_ORIGIN)
   const guestUrl = createdSlug ? `${baseUrl.replace(/\/$/, "")}/p/${createdSlug}` : ""
 
   const handleContinueWithGoogle = async () => {
@@ -442,6 +442,7 @@ function CreateEventForm() {
     setCreateError(null)
     const planQs = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("plan") : null
     const nextPath = planQs ? `/create?plan=${encodeURIComponent(planQs)}` : "/create"
+    /** Must match Supabase Auth → Redirect URLs (`https://aeternamemoir.com/auth/callback`). */
     const redirectTo = buildOAuthCallbackRedirectUrl(nextPath)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",

@@ -2,8 +2,10 @@
 
 import { useRef, useCallback } from "react"
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react"
+import { CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://aeterna.com"
+const BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || CANONICAL_SITE_ORIGIN
 
 type MemorialQRCardProps = {
   slug: string

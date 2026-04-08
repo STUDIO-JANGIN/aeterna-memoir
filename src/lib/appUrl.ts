@@ -20,8 +20,14 @@ export function getAppBaseUrl(): string {
   return "http://localhost:3000"
 }
 
-/** Public production origin — OAuth never uses `*.vercel.app` as `redirectTo` (avoids DEPLOYMENT_NOT_FOUND). */
+/** Public production app origin (Vercel: set `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_SITE_URL` to this). */
 export const CANONICAL_SITE_ORIGIN = "https://aeternamemoir.com"
+
+/**
+ * OAuth redirect registered in Supabase → Auth → Redirect URLs.
+ * `signInWithOAuth({ options: { redirectTo } })` uses {@link buildOAuthCallbackRedirectUrl} → this URL (+ query).
+ */
+export const PRODUCTION_OAUTH_CALLBACK_URL = `${CANONICAL_SITE_ORIGIN}/auth/callback`
 
 function trimBase(url: string): string {
   return url.replace(/\/+$/, "")

@@ -5,7 +5,7 @@
 1. **Vercel → Environment Variables (Production)**  
    - `NEXT_PUBLIC_APP_URL=https://aeternamemoir.com`  
    - `NEXT_PUBLIC_SITE_URL=https://aeternamemoir.com`  
-   - `NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co` (Supabase → **Settings → API** → Project URL)  
+   - `NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co` — Supabase **API** URL, not `aeternamemoir.com` (see **Settings → API** → Project URL)  
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon public>` (same page)  
    - `SUPABASE_SERVICE_ROLE_KEY=<service role>` (server-only; never prefix with `NEXT_PUBLIC_`)  
    Code falls back to `https://aeternamemoir.com` for OAuth when the browser is on `*.vercel.app`, but you should still set the URLs above so `redirectTo` is explicit. Redeploy after changing env.

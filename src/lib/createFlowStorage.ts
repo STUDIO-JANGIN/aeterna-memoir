@@ -7,10 +7,12 @@ export type MemorialType = "person" | "pet"
 export type StoragePlan = "free" | "plus" | "premium"
 
 export type CreateDraftV1 = {
-  /** `4` = 7-step flow (… service → support → account → plan). `3` = legacy 6-step; migrated on read. */
-  v: 3 | 4
+  /** `5` = 8-step flow (hosting? → service → support → …). Older drafts migrated on read. */
+  v: 3 | 4 | 5
   memorialType: MemorialType | null
   wizardStep: number
+  /** Step 4: if false, Memorial Service + Support Family are skipped. */
+  willHostMemorialService?: boolean | null
   name: string
   birthY: string
   birthM: string
@@ -63,8 +65,8 @@ export function clearPendingCheckout(): void {
   localStorage.removeItem(LS_PENDING_CHECKOUT_KEY)
 }
 
-/** Create wizard: 7 steps — service 4; support 5; account 6; plan 7. */
-const DRAFT_MAX_STEP = 7
+/** Create wizard: 8 steps — hosting 4; service 5; support 6; account 7; plan 8. */
+const DRAFT_MAX_STEP = 8
 const LEGACY_V3_MAX_STEP = 6
 
 /** Map drafts from older 10-step wizard into the current flow. */
@@ -93,7 +95,7 @@ export function readCreateDraft(): CreateDraftV1 | null {
     if (!raw) return null
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const ver = parsed.v
-    if (ver !== 1 && ver !== 2 && ver !== 3 && ver !== 4) return null
+    if (ver !== 1 && ver !== 2 && ver !== 3 && ver !== 4 && ver !== 5) return null
     const rawStep = typeof parsed.wizardStep === "number" ? (parsed.wizardStep as number) : 1
     let step: number
     if (ver === 1) step = migrateV1WizardStep(rawStep)
@@ -105,7 +107,23 @@ export function readCreateDraft(): CreateDraftV1 | null {
     if (ver <= 3 && step >= 5) step += 1
     step = Math.min(step, DRAFT_MAX_STEP)
 
-    return { ...(parsed as unknown as Partial<CreateDraftV1>), v: 4, wizardStep: step } as CreateDraftV1
+    let willHost = parsed.willHostMemorialService as boolean | null | undefined
+    /** v:4 → v:5: insert “hosting?” step 4; drafts on old step ≥4 were in service+ flow. */
+    if (ver === 4 && willHost === undefined) {
+      if (step >= 4) {
+        step += 1
+        willHost = true
+      } else {
+        willHost = null
+      }
+      step = Math.min(step, DRAFT_MAX_STEP)
+    }
+    return {
+      ...(parsed as unknown as Partial<CreateDraftV1>),
+      v: 5,
+      wizardStep: step,
+      willHostMemorialService: willHost ?? null,
+    } as CreateDraftV1
   } catch {
     return null
   }

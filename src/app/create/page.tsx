@@ -1,7 +1,7 @@
 "use client"
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect, useRef, Suspense } from "react"
+import { useState, useEffect, useRef, useMemo, Suspense } from "react"
 import { Flower2, Sparkles } from "lucide-react"
 import { SacredWelcomeLoadingFallback } from "@/components/Auth/LoadingOverlay"
 import { supabase } from "@/lib/supabase/browser"
@@ -40,11 +40,7 @@ function parsePlanQueryParam(param: string | null): StoragePlan | null {
   return null
 }
 
-const WIZARD_STEPS_FULL = 7
-
-/** Matches pricing cards on the landing page (`statusTag`). */
-const stepOptionalTagClass =
-  "mb-2 inline-flex items-center justify-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]"
+const WIZARD_STEPS_FULL = 8
 
 /** Inline pill next to plan titles (e.g. Eternal Film). */
 const planStatusTagClass =
@@ -238,6 +234,8 @@ function CreateEventForm() {
   const [fundLink, setFundLink] = useState("")
   /** Printable invitation — words of remembrance */
   const [invitationBio, setInvitationBio] = useState("")
+  /** Step 4: whether they host a service; if false, steps 5–6 are skipped. */
+  const [willHostMemorialService, setWillHostMemorialService] = useState<boolean | null>(null)
   /** When URL locked a plan, user can open full plan grid to switch. */
   const [showPlanChangeOptions, setShowPlanChangeOptions] = useState(false)
 
@@ -261,16 +259,26 @@ function CreateEventForm() {
   const deathYRef = useRef<HTMLSelectElement>(null)
   const deathMRef = useRef<HTMLSelectElement>(null)
   const deathDRef = useRef<HTMLSelectElement>(null)
+  const ceremonyHour12Ref = useRef<HTMLSelectElement>(null)
+  const ceremonyMinuteRef = useRef<HTMLSelectElement>(null)
+  const ceremonyPeriodRef = useRef<HTMLSelectElement>(null)
   const wizardStepRef = useRef(wizardStep)
   const memorialTypeRef = useRef(memorialType)
-  /** When user taps Back from Plan (7) → Account (6), skip the OAuth auto-advance effect so they can stay on 6. */
+  /** When user taps Back from Plan (8) → Account (7), skip the OAuth auto-advance effect so they can stay on 7. */
   const blockPlanAutoAdvanceRef = useRef(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const planParam = searchParams.get("plan")?.trim().toLowerCase() ?? null
   const planLockedFromUrl = parsePlanQueryParam(planParam) !== null
-  const effectiveWizardSteps = WIZARD_STEPS_FULL
+  const serviceStepsSkipped = willHostMemorialService === false
+  const stepsForProgress = serviceStepsSkipped ? 6 : 8
+  const progressStep = useMemo(() => {
+    if (!serviceStepsSkipped) return wizardStep
+    if (wizardStep <= 4) return wizardStep
+    if (wizardStep >= 7) return wizardStep - 2
+    return wizardStep
+  }, [wizardStep, serviceStepsSkipped])
 
   useEffect(() => {
     wizardStepRef.current = wizardStep
@@ -280,8 +288,8 @@ function CreateEventForm() {
     if (!memorialType) return
     const t = window.setTimeout(() => {
       if (wizardStep === 1) nameInputRef.current?.focus()
-      if (wizardStep === 4) locationInputRef.current?.focus()
-      if (wizardStep === 5) fundInputRef.current?.focus()
+      if (wizardStep === 5) locationInputRef.current?.focus()
+      if (wizardStep === 6) fundInputRef.current?.focus()
     }, 80)
     return () => window.clearTimeout(t)
   }, [wizardStep, memorialType])
@@ -316,6 +324,18 @@ function CreateEventForm() {
   useEffect(() => {
     setShowPlanChangeOptions(false)
   }, [planParam])
+
+  useEffect(() => {
+    if (!showSuccessPopup) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setShowSuccessPopup(false)
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [showSuccessPopup])
 
   useEffect(() => {
     const authErr = searchParams.get("auth_error")
@@ -373,6 +393,9 @@ function CreateEventForm() {
       }
       setFundLink(draft.fundLink)
       setInvitationBio(draft.invitationBio ?? "")
+      setWillHostMemorialService(
+        typeof draft.willHostMemorialService === "boolean" ? draft.willHostMemorialService : null
+      )
       if (!locked) setStoragePlan(draft.storagePlan)
     }
 
@@ -411,9 +434,10 @@ function CreateEventForm() {
     if (typeof window === "undefined") return
     if (!memorialType) return
     const draft: CreateDraftV1 = {
-      v: 4,
+      v: 5,
       memorialType,
       wizardStep,
+      willHostMemorialService,
       name,
       birthY,
       birthM,
@@ -450,6 +474,7 @@ function CreateEventForm() {
     fundLink,
     invitationBio,
     storagePlan,
+    willHostMemorialService,
   ])
 
   useEffect(() => {
@@ -465,10 +490,10 @@ function CreateEventForm() {
         await refreshAuthUser()
         router.refresh()
         const draft = readCreateDraft()
-        if (draft?.memorialType && draft.wizardStep === 6) {
+        if (draft?.memorialType && draft.wizardStep === 7) {
           setStepSlideDir(1)
-          setWizardStep(7)
-          writeCreateDraft({ ...draft, wizardStep: 7 })
+          setWizardStep(8)
+          writeCreateDraft({ ...draft, wizardStep: 8 })
         }
         // If React state lags behind the new session (common right after OAuth), resync once.
         fallbackTimer = window.setTimeout(async () => {
@@ -505,11 +530,11 @@ function CreateEventForm() {
       }
       await refreshAuthUser()
       router.refresh()
-      if (memorialTypeRef.current && wizardStepRef.current === 6) {
+      if (memorialTypeRef.current && wizardStepRef.current === 7) {
         setStepSlideDir(1)
-        setWizardStep(7)
+        setWizardStep(8)
         const d = readCreateDraft()
-        if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 7 })
+        if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 8 })
       }
     })
     return () => subscription.unsubscribe()
@@ -557,9 +582,9 @@ function CreateEventForm() {
     clearPendingCheckout()
     setPendingCheckout(null)
     setUser(null)
-    if (wizardStep >= 7) {
+    if (wizardStep >= 8) {
       setStepSlideDir(1)
-      setWizardStep(6)
+      setWizardStep(7)
     }
   }
 
@@ -588,6 +613,7 @@ function CreateEventForm() {
     setCeremonyPeriod("PM")
     setFundLink("")
     setInvitationBio("")
+    setWillHostMemorialService(null)
     const mapped = parsePlanQueryParam(
       typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("plan") : null
     )
@@ -636,15 +662,17 @@ function CreateEventForm() {
     setMemorialType(t)
     setStepSlideDir(1)
     setWizardStep(1)
+    setWillHostMemorialService(null)
     setCreateError(null)
   }
 
   const buildCreateDraft = (stepForDraft: number): CreateDraftV1 | null => {
     if (!memorialType) return null
     return {
-      v: 4,
+      v: 5,
       memorialType,
       wizardStep: stepForDraft,
+      willHostMemorialService,
       name,
       birthY,
       birthM,
@@ -670,12 +698,14 @@ function CreateEventForm() {
         return name.trim().length > 0
       case 2:
       case 3:
-      case 4:
       case 5:
-        return true
       case 6:
-        return authReady
+        return true
+      case 4:
+        return willHostMemorialService !== null
       case 7:
+        return authReady
+      case 8:
         return true
       default:
         return false
@@ -691,8 +721,8 @@ function CreateEventForm() {
     setCreateError(null)
     if (!memorialType) return
 
-    /** Step 7 + URL-locked plan: first Back closes the plan grid and returns to summary. */
-    if (wizardStep === 7 && planLockedFromUrl && showPlanChangeOptions) {
+    /** Step 8 + URL-locked plan: first Back closes the plan grid and returns to summary. */
+    if (wizardStep === 8 && planLockedFromUrl && showPlanChangeOptions) {
       setShowPlanChangeOptions(false)
       window.scrollTo({ top: 0, behavior: "smooth" })
       return
@@ -700,8 +730,12 @@ function CreateEventForm() {
 
     if (wizardStep > 1) {
       setStepSlideDir(-1)
-      const nextStep = wizardStep - 1
-      if (wizardStep === 7 && nextStep === 6) {
+      let nextStep: number
+      if (wizardStep === 8) nextStep = 7
+      else if (wizardStep === 7 && serviceStepsSkipped) nextStep = 4
+      else nextStep = wizardStep - 1
+
+      if (wizardStep === 8 && nextStep === 7) {
         blockPlanAutoAdvanceRef.current = true
       }
       const d = buildCreateDraft(nextStep)
@@ -718,8 +752,33 @@ function CreateEventForm() {
   const goNext = () => {
     if (!canContinue() || !memorialType) return
     setCreateError(null)
-    if (wizardStep < effectiveWizardSteps) {
-      if (wizardStep === 6) blockPlanAutoAdvanceRef.current = false
+
+    if (wizardStep === 4) {
+      if (willHostMemorialService !== true && willHostMemorialService !== false) return
+      setStepSlideDir(1)
+      if (willHostMemorialService === false) {
+        setLocation("")
+        setCeremonyDate("")
+        setCeremonyHour12(2)
+        setCeremonyM("00")
+        setCeremonyPeriod("PM")
+        setFundLink("")
+        const next = 7
+        const d = buildCreateDraft(next)
+        if (d) writeCreateDraft(d)
+        setWizardStep(next)
+      } else {
+        const next = 5
+        const d = buildCreateDraft(next)
+        if (d) writeCreateDraft(d)
+        setWizardStep(next)
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" })
+      return
+    }
+
+    if (wizardStep < WIZARD_STEPS_FULL) {
+      if (wizardStep === 7) blockPlanAutoAdvanceRef.current = false
       setStepSlideDir(1)
       const d = buildCreateDraft(wizardStep + 1)
       if (d) writeCreateDraft(d)
@@ -727,18 +786,18 @@ function CreateEventForm() {
     }
   }
 
-  /** After Google OAuth, advance from Account (6) → Plan (7) as soon as the session is confirmed. */
+  /** After Google OAuth, advance from Account (7) → Plan (8) as soon as the session is confirmed. */
   useEffect(() => {
-    if (wizardStep !== 6 || !signedIn || !memorialType || !authReady) return
+    if (wizardStep !== 7 || !signedIn || !memorialType || !authReady) return
     if (blockPlanAutoAdvanceRef.current) return
     setStepSlideDir(1)
-    setWizardStep(7)
-    const d = buildCreateDraft(7)
+    setWizardStep(8)
+    const d = buildCreateDraft(8)
     if (d) writeCreateDraft(d)
   }, [wizardStep, signedIn, memorialType, authReady])
 
   const handleCreate = async () => {
-    if (memorialType === null || wizardStep !== effectiveWizardSteps) return
+    if (memorialType === null || wizardStep !== WIZARD_STEPS_FULL) return
     if (!canContinue()) return
 
     playShutterClick()
@@ -880,19 +939,19 @@ function CreateEventForm() {
 
   const onPrimaryPress = () => {
     if (!memorialType) return
-    if (wizardStep === 6 && authReady && !signedIn) {
+    if (wizardStep === 7 && authReady && !signedIn) {
       void handleContinueWithGoogle()
       return
     }
-    if (wizardStep < effectiveWizardSteps) goNext()
+    if (wizardStep < WIZARD_STEPS_FULL) goNext()
     else handleCreate()
   }
 
-  const progress = memorialType ? wizardStep / effectiveWizardSteps : 0
+  const progress = memorialType ? progressStep / stepsForProgress : 0
 
   const isPlanSummaryView =
     memorialType !== null &&
-    wizardStep === 7 &&
+    wizardStep === 8 &&
     planLockedFromUrl &&
     !showPlanChangeOptions
 
@@ -907,7 +966,7 @@ function CreateEventForm() {
     Boolean(createError) &&
       !(
       isMemorialSignInFooterNoise(createError) &&
-      (wizardStep === 6 || wizardStep === 7 || signedIn)
+      (wizardStep === 7 || wizardStep === 8 || signedIn)
     )
 
   return (
@@ -969,13 +1028,13 @@ function CreateEventForm() {
           </div>
           <div className="flex items-center justify-between gap-3 border-b-[0.5px] border-[rgba(255,255,255,0.1)] bg-[rgba(3,3,3,0.92)] px-4 py-2.5 backdrop-blur-[20px] md:px-8">
             <p className="text-[10px] tracking-[0.28em] uppercase text-white/45 tabular-nums">
-              Step {wizardStep} of {effectiveWizardSteps}
+              Step {progressStep} of {stepsForProgress}
             </p>
             {signedIn ? (
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="shrink-0 min-h-[36px] px-1 text-[10px] tracking-[0.2em] text-white/35 hover:text-white/55 uppercase transition-colors duration-300 ease-in-out"
+                className="shrink-0 min-h-[36px] rounded-full border border-white/20 bg-white/[0.07] px-3 py-1.5 text-[10px] font-medium tracking-[0.18em] text-white/80 uppercase shadow-[0_1px_0_rgba(255,255,255,0.06)] transition-[color,background-color,border-color,box-shadow] duration-300 ease-in-out hover:border-white/30 hover:bg-white/[0.12] hover:text-[#f4f1ea] hover:shadow-[0_0_0_1px_rgba(212,175,55,0.15)] active:scale-[0.98]"
               >
                 Sign out
               </button>
@@ -1278,47 +1337,139 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 4 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4 text-center">
                   <div className="space-y-3">
-                    <div className="flex flex-col items-center text-center">
-                      <span className={stepOptionalTagClass}>Optional</span>
-                      <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
-                        Memorial Service
-                      </h2>
-                      <p className="mt-3 text-base text-white/45 leading-relaxed max-w-md">
-                        Please input service details. You can skip and add later.
-                      </p>
-                    </div>
+                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
+                      Will you host a memorial service?
+                    </h2>
+                    <p className="text-base text-white/45 leading-relaxed max-w-md mx-auto">
+                      If yes, you can add location and time next. If not, we&apos;ll move on — you can always add details later from the memorial page.
+                    </p>
                   </div>
-                  <div className="space-y-6">
-                    <h3 className={stepSectionTitleClass}>Location</h3>
-                    <input
-                      ref={locationInputRef}
-                      id="memorial-location-opt"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault()
-                          goNext()
-                        }
+                  <div className="mx-auto flex w-full max-w-sm flex-col gap-3 sm:flex-row sm:justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWillHostMemorialService(true)
+                        setStepSlideDir(1)
                       }}
-                      placeholder="Place and time — or city"
-                      autoComplete="off"
-                      className={ghostLineInputClass}
-                      aria-label="Location"
-                    />
+                      className={`cta-silk min-h-[52px] flex-1 rounded-[32px] border px-6 text-sm font-medium transition-colors duration-300 ease-in-out sm:min-h-[56px] ${
+                        willHostMemorialService === true
+                          ? "border-[var(--aeterna-gold)] bg-[var(--aeterna-gold)]/15 text-[#f4f1ea] ring-1 ring-[var(--aeterna-gold)]/35"
+                          : "border-white/[0.14] bg-transparent text-white/75 hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWillHostMemorialService(false)
+                        setStepSlideDir(1)
+                      }}
+                      className={`cta-silk min-h-[52px] flex-1 rounded-[32px] border px-6 text-sm font-medium transition-colors duration-300 ease-in-out sm:min-h-[56px] ${
+                        willHostMemorialService === false
+                          ? "border-[var(--aeterna-gold)] bg-[var(--aeterna-gold)]/15 text-[#f4f1ea] ring-1 ring-[var(--aeterna-gold)]/35"
+                          : "border-white/[0.14] bg-transparent text-white/75 hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      No
+                    </button>
                   </div>
                 </div>
               )}
 
               {wizardStep === 5 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
-                  <div className="space-y-3 text-center">
+                  <div className="space-y-3">
+                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
+                      Memorial Service
+                    </h2>
+                    <p className="text-base text-white/45 leading-relaxed">
+                      Please input service details. You can skip and add later.
+                    </p>
+                  </div>
+
+                  <div className="space-y-10">
+                    <div className="space-y-6">
+                      <h3 className={stepSectionTitleClass}>Location</h3>
+                      <input
+                        ref={locationInputRef}
+                        id="memorial-location-opt"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault()
+                            goNext()
+                          }
+                        }}
+                        placeholder="Venue, address, or city"
+                        autoComplete="off"
+                        className={ghostLineInputClass}
+                        aria-label="Location"
+                      />
+                    </div>
+
+                    <div className="space-y-6">
+                      <h3 className={stepSectionTitleClass}>Time</h3>
+                      <div className="grid grid-cols-3 gap-4 md:gap-5">
+                        <select
+                          ref={ceremonyHour12Ref}
+                          value={ceremonyHour12}
+                          onChange={(e) => {
+                            const v = Number(e.target.value)
+                            setCeremonyHour12(Number.isFinite(v) ? v : 2)
+                            focusNextField(ceremonyMinuteRef.current)
+                          }}
+                          className={ghostDateSelectClass}
+                          aria-label="Service hour"
+                        >
+                          {HOURS_12.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          ref={ceremonyMinuteRef}
+                          value={ceremonyM}
+                          onChange={(e) => {
+                            setCeremonyM(e.target.value)
+                            focusNextField(ceremonyPeriodRef.current)
+                          }}
+                          className={ghostDateSelectClass}
+                          aria-label="Service minute"
+                        >
+                          {MINUTES.map((m) => (
+                            <option key={m} value={m}>
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          ref={ceremonyPeriodRef}
+                          value={ceremonyPeriod}
+                          onChange={(e) => setCeremonyPeriod(e.target.value as "AM" | "PM")}
+                          className={ghostDateSelectClass}
+                          aria-label="AM or PM"
+                        >
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 6 && (
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                  <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
                       Support Family
                     </h2>
-                    <p className="text-base text-white/45 leading-relaxed max-w-md mx-auto">
+                    <p className="text-base text-white/45 leading-relaxed">
                       Please add a support link. You can skip and add later.
                     </p>
                   </div>
@@ -1346,13 +1497,13 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 6 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-8 pt-4 text-center">
-                  <div>
+              {wizardStep === 7 && (
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                  <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
                       Claim your memorial
                     </h2>
-                    <p className="mt-3 text-base text-white/45 leading-relaxed max-w-sm mx-auto">
+                    <p className="text-base text-white/45 leading-relaxed">
                       Sign in so you can keep this memorial safe and change it anytime.
                     </p>
                   </div>
@@ -1452,7 +1603,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 7 && (!isPlanSummaryView || showPlanChangeOptions) && (
+              {wizardStep === 8 && (!isPlanSummaryView || showPlanChangeOptions) && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-6 pt-4">
                   {planLockedFromUrl && showPlanChangeOptions && (
                     <button
@@ -1543,11 +1694,11 @@ function CreateEventForm() {
               >
                 {loading
                   ? "Creating…"
-                  : wizardStep === 6 && !authReady
+                  : wizardStep === 7 && !authReady
                     ? "Checking account…"
-                    : wizardStep === 6 && !signedIn
+                    : wizardStep === 7 && !signedIn
                       ? "Continue the Story with Google"
-                      : wizardStep < effectiveWizardSteps
+                      : wizardStep < WIZARD_STEPS_FULL
                     ? "Continue the Story"
                     : isPlanSummaryView
                       ? storagePlan === "free"
@@ -1565,17 +1716,26 @@ function CreateEventForm() {
       <AnimatePresence>
         {showSuccessPopup && createdSlug && (
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="invitation-ready-title"
             initial={stepPresence.initial}
             animate={stepPresence.animate}
             exit={stepPresence.exit}
             transition={ARTISAN_SPRING}
             className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-landing/90 backdrop-blur-xl"
+            onClick={() => setShowSuccessPopup(false)}
           >
             <div className="flex min-h-[100dvh] w-full flex-col items-center justify-center px-4 py-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-8">
-              <div className="card-landing-airy flex w-full max-w-lg flex-col gap-0 p-6 text-center md:p-10">
+              <div
+                className="card-landing-airy flex w-full max-w-lg flex-col gap-0 p-6 text-center md:p-10"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="shrink-0">
                   <p className="text-[10px] tracking-[0.35em] uppercase text-white/40 mb-3">Invitation ready</p>
-                  <h2 className="text-landing-section-title mb-3">Memorial for {name} is ready</h2>
+                  <h2 id="invitation-ready-title" className="text-landing-section-title mb-3">
+                    Memorial for {name} is ready
+                  </h2>
                   <p className="text-landing-body mb-8">
                     Share a thoughtful invitation — family and friends can add photos and stories from any device.
                   </p>

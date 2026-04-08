@@ -25,6 +25,7 @@ import {
   type StoragePlan,
 } from "@/lib/createFlowStorage"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
+import { buildOAuthCallbackRedirectUrl } from "@/lib/appUrl"
 
 /** URL `plan=` → internal tier. Legacy: `basic` = Plus; marketing: `forever` = Plus, `film` = Premium. */
 function parsePlanQueryParam(param: string | null): StoragePlan | null {
@@ -36,7 +37,7 @@ function parsePlanQueryParam(param: string | null): StoragePlan | null {
   return null
 }
 
-const WIZARD_STEPS_FULL = 5
+const WIZARD_STEPS_FULL = 6
 
 /** Canonical query for Stripe cancel / return links (matches landing `?plan=`). */
 function storagePlanToUrlPlan(p: StoragePlan): "basic" | "premium" | "free" | "forever" | "film" {
@@ -88,6 +89,13 @@ const inputBase =
 const selectBase =
   "w-full min-h-[52px] rounded-2xl bg-white/[0.04] px-4 py-3 text-base text-[var(--landing-text-hero)] outline-none transition-colors focus:bg-white/[0.07] focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 appearance-none"
 
+/** Step 3 date selects — softer empty state, matches “treasure box” panels */
+const selectJourneyBase =
+  "w-full min-h-[52px] rounded-xl border border-white/[0.1] bg-white/[0.035] px-4 py-3 text-base font-light text-[#ebe6df] outline-none transition-colors focus:border-[var(--aeterna-gold)]/35 focus:bg-white/[0.05] focus:ring-1 focus:ring-[var(--aeterna-gold)]/25 appearance-none [color-scheme:dark]"
+
+const journeyChapterLabel =
+  "font-[var(--font-serif)] text-[15px] font-normal italic tracking-[0.02em] text-[#d4cfc4]"
+
 /** Memorial details: minimal border, landing-aligned */
 const fieldLabelClass = "block text-[10px] tracking-[0.22em] uppercase text-white/40 mb-2"
 const inputMemorial =
@@ -138,7 +146,7 @@ function buildCeremonyDisplay(
   return `${long} · ${timeStr}`
 }
 
-/** Footer-only noise: never block Step 4 (account) or Step 5 (plan) with stale sign-in copy. */
+/** Footer-only noise: never block Step 5 (account) or Step 6 (plan) with stale sign-in copy. */
 function isMemorialSignInFooterNoise(message: string | null): boolean {
   if (!message) return false
   const m = message.toLowerCase()
@@ -146,17 +154,6 @@ function isMemorialSignInFooterNoise(message: string | null): boolean {
     (m.includes("please sign in") && m.includes("memorial")) ||
     m.includes("sign in with google to create")
   )
-}
-
-function getRedirectUrl(): string {
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://aeterna.com"
-  if (typeof window !== "undefined") {
-    const plan = new URLSearchParams(window.location.search).get("plan")
-    if (plan) return `${window.location.origin}/create?plan=${encodeURIComponent(plan)}`
-    return `${window.location.origin}/create`
-  }
-  return `${base.replace(/\/$/, "")}/create`
 }
 
 const slide = {
@@ -236,13 +233,24 @@ function CreateEventForm() {
   }, [planParam])
 
   useEffect(() => {
+    const authErr = searchParams.get("auth_error")
+    if (!authErr) return
+    setCreateError(decodeURIComponent(authErr.replace(/\+/g, " ")))
+    if (typeof window !== "undefined") {
+      const u = new URL(window.location.href)
+      u.searchParams.delete("auth_error")
+      window.history.replaceState({}, "", `${u.pathname}${u.search}${u.hash}`)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
     const draft = readCreateDraft()
     const params = new URLSearchParams(window.location.search)
     const planQs = params.get("plan")?.trim().toLowerCase() ?? null
     const locked = parsePlanQueryParam(planQs) !== null
     const maxStep = WIZARD_STEPS_FULL
 
-    if (draft?.v === 2) {
+    if (draft) {
       setMemorialType(draft.memorialType)
       setWizardStep(Math.min(Math.max(1, draft.wizardStep), maxStep))
       if (draft.memorialType !== null) {
@@ -312,7 +320,7 @@ function CreateEventForm() {
     if (typeof window === "undefined") return
     if (!memorialType) return
     const draft: CreateDraftV1 = {
-      v: 2,
+      v: 3,
       memorialType,
       wizardStep,
       name,
@@ -366,9 +374,9 @@ function CreateEventForm() {
         await refreshAuthUser()
         router.refresh()
         const draft = readCreateDraft()
-        if (draft?.memorialType && draft.wizardStep === 4) {
-          setWizardStep(5)
-          writeCreateDraft({ ...draft, wizardStep: 5 })
+        if (draft?.memorialType && draft.wizardStep === 5) {
+          setWizardStep(6)
+          writeCreateDraft({ ...draft, wizardStep: 6 })
         }
         // If React state lags behind the new session (common right after OAuth), resync once.
         fallbackTimer = window.setTimeout(async () => {
@@ -400,10 +408,10 @@ function CreateEventForm() {
       if (!session?.user) return
       await refreshAuthUser()
       router.refresh()
-      if (memorialTypeRef.current && wizardStepRef.current === 4) {
-        setWizardStep(5)
+      if (memorialTypeRef.current && wizardStepRef.current === 5) {
+        setWizardStep(6)
         const d = readCreateDraft()
-        if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 5 })
+        if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 6 })
       }
     })
     return () => subscription.unsubscribe()
@@ -419,7 +427,10 @@ function CreateEventForm() {
     return () => URL.revokeObjectURL(url)
   }, [profileFile])
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "https://aeterna.com")
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "https://aeternamemoir.com")
   const guestUrl = createdSlug ? `${baseUrl.replace(/\/$/, "")}/p/${createdSlug}` : ""
 
   const handleContinueWithGoogle = async () => {
@@ -429,7 +440,9 @@ function CreateEventForm() {
     }
     setGoogleLoading(true)
     setCreateError(null)
-    const redirectTo = getRedirectUrl()
+    const planQs = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("plan") : null
+    const nextPath = planQs ? `/create?plan=${encodeURIComponent(planQs)}` : "/create"
+    const redirectTo = buildOAuthCallbackRedirectUrl(nextPath)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },
@@ -443,7 +456,7 @@ function CreateEventForm() {
     clearPendingCheckout()
     setPendingCheckout(null)
     setUser(null)
-    if (wizardStep > 5) setWizardStep(4)
+    if (wizardStep > 6) setWizardStep(5)
   }
 
   const resetFlow = () => {
@@ -485,7 +498,7 @@ function CreateEventForm() {
   const buildCreateDraft = (stepForDraft: number): CreateDraftV1 | null => {
     if (!memorialType) return null
     return {
-      v: 2,
+      v: 3,
       memorialType,
       wizardStep: stepForDraft,
       name,
@@ -513,10 +526,11 @@ function CreateEventForm() {
         return name.trim().length > 0
       case 2:
       case 3:
-        return true
       case 4:
-        return authReady
+        return true
       case 5:
+        return authReady
+      case 6:
         return true
       default:
         return false
@@ -546,11 +560,11 @@ function CreateEventForm() {
     }
   }
 
-  /** After Google OAuth, advance from Claim (4) → Plan (5) as soon as the session is confirmed. */
+  /** After Google OAuth, advance from Account (5) → Plan (6) as soon as the session is confirmed. */
   useEffect(() => {
-    if (wizardStep !== 4 || !signedIn || !memorialType || !authReady) return
-    setWizardStep(5)
-    const d = buildCreateDraft(5)
+    if (wizardStep !== 5 || !signedIn || !memorialType || !authReady) return
+    setWizardStep(6)
+    const d = buildCreateDraft(6)
     if (d) writeCreateDraft(d)
   }, [wizardStep, signedIn, memorialType, authReady])
 
@@ -695,7 +709,7 @@ function CreateEventForm() {
 
   const onPrimaryPress = () => {
     if (!memorialType) return
-    if (wizardStep === 4 && authReady && !signedIn) {
+    if (wizardStep === 5 && authReady && !signedIn) {
       void handleContinueWithGoogle()
       return
     }
@@ -707,7 +721,7 @@ function CreateEventForm() {
 
   const isPlanSummaryView =
     memorialType !== null &&
-    wizardStep === 5 &&
+    wizardStep === 6 &&
     planLockedFromUrl &&
     !showPlanChangeOptions
 
@@ -722,7 +736,7 @@ function CreateEventForm() {
     Boolean(createError) &&
       !(
       isMemorialSignInFooterNoise(createError) &&
-      (wizardStep === 4 || wizardStep === 5 || signedIn)
+      (wizardStep === 5 || wizardStep === 6 || signedIn)
     )
 
   return (
@@ -900,78 +914,131 @@ function CreateEventForm() {
 
               {wizardStep === 3 && (
                 <div className="space-y-10 pt-4">
-                  <div>
-                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">Their years</h2>
-                    <p className="mt-2 text-base text-white/45">Rough is fine. It holds the story.</p>
-                    <p className="mt-3 text-sm text-white/35 leading-relaxed">
-                      Every memorial begins with seven days for loved ones to gather memories—no extra step. Upgrade anytime to preserve the shrine forever.
+                  <div className="max-w-xl">
+                    <h2 className="font-[var(--font-serif)] text-2xl font-normal tracking-tight text-[#f0ebe3] md:text-3xl">
+                      Honoring Their Journey
+                    </h2>
+                    <p className="mt-5 text-[15px] leading-[1.75] text-[#b8b0a2] md:text-base md:leading-[1.7]">
+                      Every life is a story told in chapters. If you don&apos;t have exact dates, an approximate year is a
+                      perfect start. Your memorial begins with a 7-day gathering period for loved ones to share
+                      memories—securing their legacy for eternity.
                     </p>
                   </div>
-                  <div className="space-y-6">
-                    <p className="text-xs tracking-[0.2em] text-white/35">Born</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      <select value={birthY} onChange={(e) => setBirthY(e.target.value)} className={selectBase}>
-                        <option value="">Year</option>
-                        {YEARS.map((y) => (
-                          <option key={y} value={y}>
-                            {y}
-                          </option>
-                        ))}
-                      </select>
-                      <select value={birthM} onChange={(e) => setBirthM(e.target.value)} className={selectBase}>
-                        <option value="">Month</option>
-                        {MONTHS.map((m) => (
-                          <option key={m} value={m}>
-                            {m}
-                          </option>
-                        ))}
-                      </select>
-                      <select value={birthD} onChange={(e) => setBirthD(e.target.value)} className={selectBase}>
-                        <option value="">Day</option>
-                        {DAYS.map((d) => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="space-y-6">
-                    <p className="text-xs tracking-[0.2em] text-white/35">At rest</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      <select value={deathY} onChange={(e) => setDeathY(e.target.value)} className={selectBase}>
-                        <option value="">Year</option>
-                        {YEARS.map((y) => (
-                          <option key={y} value={y}>
-                            {y}
-                          </option>
-                        ))}
-                      </select>
-                      <select value={deathM} onChange={(e) => setDeathM(e.target.value)} className={selectBase}>
-                        <option value="">Month</option>
-                        {MONTHS.map((m) => (
-                          <option key={m} value={m}>
-                            {m}
-                          </option>
-                        ))}
-                      </select>
-                      <select value={deathD} onChange={(e) => setDeathD(e.target.value)} className={selectBase}>
-                        <option value="">Day</option>
-                        {DAYS.map((d) => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
 
-                  <div className="mt-8 rounded-2xl border border-white/[0.07] bg-black/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:mt-10 md:p-5">
+                  <div className="space-y-8 md:space-y-10">
+                    <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-b from-white/[0.045] to-white/[0.015] px-5 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_24px_48px_rgba(0,0,0,0.35)] md:px-7 md:py-8">
+                      <div
+                        className="pointer-events-none absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--aeterna-gold)]/25 to-transparent"
+                        aria-hidden
+                      />
+                      <div className="mb-6 border-b border-white/[0.06] pb-6">
+                        <p className={journeyChapterLabel}>Sunrise</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 md:gap-4">
+                        <select
+                          value={birthY}
+                          onChange={(e) => setBirthY(e.target.value)}
+                          className={selectJourneyBase}
+                          aria-label="Birth year"
+                        >
+                          <option value="">YYYY</option>
+                          {YEARS.map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={birthM}
+                          onChange={(e) => setBirthM(e.target.value)}
+                          className={selectJourneyBase}
+                          aria-label="Birth month"
+                        >
+                          <option value="">MM</option>
+                          {MONTHS.map((m) => (
+                            <option key={m} value={m}>
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={birthD}
+                          onChange={(e) => setBirthD(e.target.value)}
+                          className={selectJourneyBase}
+                          aria-label="Birth day"
+                        >
+                          <option value="">DD</option>
+                          {DAYS.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-b from-white/[0.045] to-white/[0.015] px-5 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_24px_48px_rgba(0,0,0,0.35)] md:px-7 md:py-8">
+                      <div
+                        className="pointer-events-none absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--aeterna-gold)]/22 to-transparent"
+                        aria-hidden
+                      />
+                      <div className="mb-6 border-b border-white/[0.06] pb-6">
+                        <p className={journeyChapterLabel}>Sunset</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 md:gap-4">
+                        <select
+                          value={deathY}
+                          onChange={(e) => setDeathY(e.target.value)}
+                          className={selectJourneyBase}
+                          aria-label="Year of passing"
+                        >
+                          <option value="">YYYY</option>
+                          {YEARS.map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={deathM}
+                          onChange={(e) => setDeathM(e.target.value)}
+                          className={selectJourneyBase}
+                          aria-label="Month of passing"
+                        >
+                          <option value="">MM</option>
+                          {MONTHS.map((m) => (
+                            <option key={m} value={m}>
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={deathD}
+                          onChange={(e) => setDeathD(e.target.value)}
+                          className={selectJourneyBase}
+                          aria-label="Day of passing"
+                        >
+                          <option value="">DD</option>
+                          {DAYS.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 4 && (
+                <div className="space-y-8 pt-4">
+                  <div className="rounded-2xl border border-white/[0.07] bg-black/25 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:p-6">
                     <p className="text-[9px] tracking-[0.28em] uppercase text-white/32">Optional</p>
-                    <h3 className="mt-1.5 font-[var(--font-serif)] text-lg font-normal text-[#e8e4dc] md:text-xl">
-                      Service &amp; Support
+                    <h3 className="mt-2 font-[var(--font-serif)] text-lg font-normal leading-snug text-[#e8e4dc] md:text-xl">
+                      Memorial Service &amp; Support Family
                     </h3>
-                    <div className="mt-5 space-y-4">
+                    <div className="mt-6 space-y-5">
                       <div>
                         <label htmlFor="memorial-location-opt" className={`${fieldLabelClass} mb-1.5 !tracking-[0.18em]`}>
                           Location
@@ -1019,7 +1086,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 4 && (
+              {wizardStep === 5 && (
                 <div className="space-y-8 pt-4 text-center">
                   <div>
                     <p className="text-[10px] tracking-[0.28em] uppercase text-white/40 mb-3">Account</p>
@@ -1119,7 +1186,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 5 && (!isPlanSummaryView || showPlanChangeOptions) && (
+              {wizardStep === 6 && (!isPlanSummaryView || showPlanChangeOptions) && (
                 <div className="space-y-6 pt-4">
                   {planLockedFromUrl && showPlanChangeOptions && (
                     <button
@@ -1204,9 +1271,9 @@ function CreateEventForm() {
               >
                 {loading
                   ? "Creating…"
-                  : wizardStep === 4 && !authReady
+                  : wizardStep === 5 && !authReady
                     ? "Checking account…"
-                    : wizardStep === 4 && !signedIn
+                    : wizardStep === 5 && !signedIn
                       ? "Continue with Google"
                       : wizardStep < effectiveWizardSteps
                     ? "Continue"

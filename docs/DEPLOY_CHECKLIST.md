@@ -1,5 +1,25 @@
 # Deployment Readiness Checklist
 
+## Supabase Auth & Google OAuth (required for `/create` sign-in)
+
+1. **Vercel → Environment Variables (Production)**  
+   - `NEXT_PUBLIC_APP_URL=https://aeternamemoir.com`  
+   - `NEXT_PUBLIC_SITE_URL` can match the same value if you use it elsewhere.  
+   This ensures OAuth `redirectTo` uses your custom domain, not a preview `*.vercel.app` URL (which triggers `404: DEPLOYMENT_NOT_FOUND` when that deployment no longer exists).
+
+2. **Supabase Dashboard → Authentication → URL Configuration**  
+   - **Site URL:** `https://aeternamemoir.com`  
+   - **Redirect URLs** (add all that apply):  
+     - `https://aeternamemoir.com/auth/callback`  
+     - `http://localhost:3000/auth/callback`  
+
+3. **Google Cloud Console** (OAuth client used by Supabase):  
+   - Authorized redirect URIs must include Supabase’s callback, e.g.  
+     `https://clnxgqhbejscniwhvmjc.supabase.co/auth/v1/callback`  
+   (exact value is under Supabase → Authentication → Providers → Google.)
+
+The app exchanges the OAuth `code` at `/auth/callback` (see `src/app/auth/callback/route.ts`) then redirects to `/create` (or `/create?plan=…`).
+
 ## 0. Environment Variables (Optional - Landing Background Video)
 
 If you add the following to `.env.local`, the landing page background uses a video. Without it, a calm nature-image placeholder is used.

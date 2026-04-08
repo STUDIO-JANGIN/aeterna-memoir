@@ -18,20 +18,32 @@ const LANDING_BACKGROUND_POSTER_URL =
 
 const FAQ_ITEMS = [
   {
-    q: "How does Aeterna work?",
-    a: "Aeterna is a digital shrine. Create a space, share a QR or link, and let family and friends add photos and stories. No app needed; they just scan and contribute. The first 7 days are a free window to gather memories. Upgrade anytime to preserve the shrine forever.",
+    q: "What is Aeterna?",
+    a: "Aeterna is a digital treasure box for the memories of those we love—both people and pets. It's a special place where their smiles, voices, and stories live forever, instead of being lost in a phone gallery or a dusty album.",
   },
   {
-    q: "Is it for pets too?",
-    a: "Yes. We believe every soul that leaves footprints on our hearts—human or pet—deserves a sacred space.",
+    q: "Why did you start this?",
+    a: "Our founder started Aeterna after losing his father. He realized there was no beautiful, shared space to celebrate a life with others digitally. He created Aeterna to make sure no one has to feel alone in their remembrance, turning a \"shrine\" into a living celebration of love.",
   },
   {
-    q: "Can guests participate without an app?",
-    a: "Absolutely. Anyone with the link or QR can open it in their browser, upload a photo, and leave a heart or comment instantly.",
+    q: "How do I start a memorial?",
+    a: "It's as simple as planting a seed. First, you create a profile for your loved one. Second, you share a link or a QR code with family and friends. There's no app to download and no complicated login—just a direct path to sharing love.",
   },
   {
-    q: "What is the 'AI Tribute Film'?",
-    a: "It's our upcoming V2 feature. It will transform the community's most-loved photos into a cinematic 1-minute film. Pre-order is available with The Eternal Film (V2) tier.",
+    q: "How do friends and family help?",
+    a: "Once they receive the link, they can instantly upload photos, leave \"likes,\" or share a heartwarming comment. It's like a group hug where everyone brings their favorite memory to help the story grow.",
+  },
+  {
+    q: "Can I use this for a physical service?",
+    a: "Yes. You can create a beautiful PDF invitation with a unique QR code. Print it and place it at a memorial service or send it digitally. Visitors can simply scan it with their phones to contribute their photos and messages in real-time.",
+  },
+  {
+    q: "Is it safe and private?",
+    a: "Absolutely. Like a secret garden, only the people you invite can enter. Your memories aren't products for the public; they are sacred treasures kept safe and private for those who truly knew the deceased.",
+  },
+  {
+    q: "What happens in the long run?",
+    a: "We believe memories should move and speak. In the future, we will help you turn the most-loved photos into a beautiful AI tribute film—a living movie of a life well-lived, so the story stays vibrant for generations to come.",
   },
 ]
 
@@ -95,11 +107,10 @@ const PLANS: PlanRow[] = [
     emphasis: "gold",
   },
   {
-    tierName: "The Eternal Film (V2)",
-    statusTag: "PRE-ORDER / COMING SOON",
+    tierName: "The Eternal Film",
+    statusTag: "Coming Soon",
     price: "$39.99",
-    value:
-      "Everything in Legacy, plus priority access to your 1-minute AI tribute film once V2 launches.",
+    value: "Everything in Legacy, plus priority access to your 1-minute AI tribute film.",
     cta: "Select",
     href: "/create?plan=film",
     emphasis: "subtle",
@@ -298,7 +309,7 @@ export default function LandingPage() {
                 How it works
               </p>
               <h2 className="font-[var(--font-serif)] text-[1.35rem] leading-[1.35] sm:text-2xl md:text-[2rem] md:leading-tight text-[#e8e4dc] font-normal tracking-tight text-balance px-1">
-                Shrine · Share · Gather
+                Create · Share · Gather
               </h2>
               <p className="mt-5 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance">
                 Three pillars: a digital shrine for humans and pets; zero-friction access by QR or link with no app; and a community memorial where visitors heart and comment—so the moments that matter stay in view.
@@ -365,29 +376,32 @@ export default function LandingPage() {
             </RevealSection>
 
             <p className="text-center text-xs text-[#737373] mb-8">All prices in US dollars (USD).</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 md:items-stretch gap-6 md:gap-4">
               {PLANS.map((plan) => (
-                <RevealSection key={plan.price}>
+                <RevealSection key={plan.price} className="h-full">
                   <div
-                    className={`rounded-2xl border px-6 py-8 text-center h-full flex flex-col ${
+                    className={`rounded-2xl border px-6 py-8 text-center h-full min-h-full flex flex-col ${
                       plan.emphasis === "gold"
                         ? "border-[var(--aeterna-gold)]/35 bg-[var(--aeterna-gold)]/[0.04]"
                         : "border-white/[0.06] bg-white/[0.02]"
                     }`}
                   >
-                    <p className="font-[var(--font-display)] text-[10px] tracking-[0.18em] text-[#c4a86a] uppercase mb-1">
-                      {plan.tierName}
-                    </p>
-                    {plan.planLabel ? (
-                      <p className="font-[var(--font-display)] text-[9px] tracking-[0.22em] text-[#9a8a6e] uppercase mb-2">
-                        {plan.planLabel}
+                    {/* Fixed min-height so $ amounts line up across columns (badge + title stack). */}
+                    <div className="flex min-h-[7.25rem] w-full flex-col items-center justify-end md:min-h-[7.75rem]">
+                      {plan.statusTag ? (
+                        <span className="mb-3 inline-flex max-w-[14rem] items-center justify-center self-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]">
+                          {plan.statusTag}
+                        </span>
+                      ) : null}
+                      <p className="font-[var(--font-display)] text-[10px] tracking-[0.18em] text-[#c4a86a] uppercase mb-1">
+                        {plan.tierName}
                       </p>
-                    ) : null}
-                    {plan.statusTag ? (
-                      <span className="mb-3 inline-flex max-w-[14rem] items-center justify-center self-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]">
-                        {plan.statusTag}
-                      </span>
-                    ) : null}
+                      {plan.planLabel ? (
+                        <p className="font-[var(--font-display)] text-[9px] tracking-[0.22em] text-[#9a8a6e] uppercase mb-2">
+                          {plan.planLabel}
+                        </p>
+                      ) : null}
+                    </div>
                     <p className="font-[var(--font-serif)] text-3xl md:text-4xl text-[#f4f1ea] tabular-nums">
                       {plan.price}{" "}
                       <span className="text-lg font-normal text-white/35 md:text-xl">USD</span>
@@ -417,21 +431,36 @@ export default function LandingPage() {
           className="scroll-mt-24 border-t border-white/[0.03] bg-landing px-5 py-20 md:px-10 md:py-28"
         >
           <div className="max-w-2xl mx-auto">
-            <RevealSection className="text-center mb-12">
+            <RevealSection className="text-center mb-14 md:mb-16">
               <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">FAQ</p>
-              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[#e8e4dc] font-normal">Guidance</h2>
+              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[#e8e4dc] font-normal tracking-tight">
+                Questions, gently answered
+              </h2>
+              <p className="mt-5 max-w-md mx-auto font-[var(--font-sans)] text-sm md:text-[15px] text-[#8a8a8a] leading-relaxed">
+                Artisan care for families across the US, Australia, and beyond.
+              </p>
             </RevealSection>
-            <div className="space-y-2">
+            <div className="space-y-3 md:space-y-4">
               {FAQ_ITEMS.map((faq, i) => (
                 <RevealSection key={i}>
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-                    <button type="button" onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full px-5 py-4 text-left flex items-center justify-between gap-4">
-                      <span className="font-[var(--font-sans)] text-sm text-[#d4d4d4] pr-2">{faq.q}</span>
-                      <span className="shrink-0 text-[#737373] text-lg leading-none w-6 text-center">{openFaq === i ? "−" : "+"}</span>
+                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                      className="w-full px-6 py-5 md:py-[1.375rem] text-left flex items-start justify-between gap-5"
+                    >
+                      <span className="font-[var(--font-sans)] text-[15px] md:text-base text-[#e5e5e5] leading-snug pr-2 tracking-[-0.01em]">
+                        {faq.q}
+                      </span>
+                      <span className="shrink-0 mt-0.5 text-[#737373] text-xl leading-none w-7 text-center tabular-nums font-light">
+                        {openFaq === i ? "−" : "+"}
+                      </span>
                     </button>
                     {openFaq === i && (
-                      <div className="px-5 pb-5 pt-0">
-                        <p className="font-[var(--font-sans)] text-sm text-[#737373] leading-relaxed border-t border-white/[0.06] pt-4">{faq.a}</p>
+                      <div className="px-6 pb-6 md:pb-7 pt-0">
+                        <p className="font-[var(--font-sans)] text-[15px] text-[#9ca3a3] leading-[1.75] border-t border-white/[0.06] pt-5">
+                          {faq.a}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -443,7 +472,7 @@ export default function LandingPage() {
 
         <footer className="border-t border-white/[0.03] bg-landing px-5 py-14 text-center">
           <p className="text-[10px] tracking-[0.22em] uppercase text-[#525252]">
-            For celebration-of-life professionals & care providers · partnerships@aeterna.com
+            For celebration-of-life professionals & care providers · hoon@aya.yale.edu
           </p>
         </footer>
       </div>

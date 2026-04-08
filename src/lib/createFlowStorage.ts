@@ -7,8 +7,8 @@ export type MemorialType = "person" | "pet"
 export type StoragePlan = "free" | "plus" | "premium"
 
 export type CreateDraftV1 = {
-  /** `2` = current flow (auth step 4 + plan step 5). Reads still accept legacy `1`. */
-  v: 2
+  /** `3` = 6-step flow (name → photo → dates → service → account → plan). Older stored `v: 2` drafts are migrated on read. */
+  v: 3
   memorialType: MemorialType | null
   wizardStep: number
   name: string
@@ -63,20 +63,26 @@ export function clearPendingCheckout(): void {
   localStorage.removeItem(LS_PENDING_CHECKOUT_KEY)
 }
 
-/** Create wizard: 1 name → 2 photo → 3 years → 4 account → 5 plan (7-day gathering is default). */
-const DRAFT_MAX_STEP = 5
+/** Create wizard: 6 steps — service/location is step 4; account 5; plan 6. */
+const DRAFT_MAX_STEP = 6
 
-/** Map drafts from older 10-step wizard into the current 5-step flow. */
-function migrateWizardStep(rawStep: number, ver: unknown): number {
+/** Map drafts from older 10-step wizard into the current flow. */
+function migrateV1WizardStep(rawStep: number): number {
   let step = rawStep
-  if (ver === 1) {
-    if (step === 6) step = 10
-  }
+  if (step === 6) step = 10
   if (step <= 3) return step
   if (step === 4) return 4
   if (step >= 5 && step <= 9) return 4
-  if (step === 10) return 5
+  if (step === 10) return 6
   return Math.min(Math.max(1, step), DRAFT_MAX_STEP)
+}
+
+/** 5-step drafts (v2): account was 4 → plan 5. Shift +1 for new service step. */
+function migrateV2WizardStepToV3(rawStep: number): number {
+  if (rawStep <= 3) return rawStep
+  if (rawStep === 4) return 5
+  if (rawStep === 5) return 6
+  return Math.min(Math.max(1, rawStep), DRAFT_MAX_STEP)
 }
 
 export function readCreateDraft(): CreateDraftV1 | null {
@@ -86,10 +92,14 @@ export function readCreateDraft(): CreateDraftV1 | null {
     if (!raw) return null
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const ver = parsed.v
-    if (ver !== 1 && ver !== 2) return null
+    if (ver !== 1 && ver !== 2 && ver !== 3) return null
     const rawStep = typeof parsed.wizardStep === "number" ? (parsed.wizardStep as number) : 1
-    const step = migrateWizardStep(rawStep, ver)
-    return { ...(parsed as unknown as Partial<CreateDraftV1>), v: 2, wizardStep: step } as CreateDraftV1
+    let step: number
+    if (ver === 1) step = migrateV1WizardStep(rawStep)
+    else if (ver === 2) step = migrateV2WizardStepToV3(rawStep)
+    else step = Math.min(Math.max(1, rawStep), DRAFT_MAX_STEP)
+
+    return { ...(parsed as unknown as Partial<CreateDraftV1>), v: 3, wizardStep: step } as CreateDraftV1
   } catch {
     return null
   }

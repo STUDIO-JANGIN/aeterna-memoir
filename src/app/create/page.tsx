@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, Suspense } from "react"
 import { Clock, Flower2, Gift, MapPin, Sparkles } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
 import { useRouter, useSearchParams } from "next/navigation"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
 import { playShutterClick } from "@/lib/shutterClick"
 import { ArtisanCardLight } from "@/components/ArtisanCardLight"
@@ -42,6 +42,22 @@ function parsePlanQueryParam(param: string | null): StoragePlan | null {
 }
 
 const WIZARD_STEPS_FULL = 6
+
+/** 1 = forward (enter from right), -1 = back (enter from left). Drives X-axis spring slides. */
+const WIZARD_STEP_SLIDE_VARIANTS: Variants = {
+  initial: (dir: number) => ({
+    opacity: 0,
+    x: dir === 1 ? 40 : -40,
+  }),
+  animate: {
+    opacity: 1,
+    x: 0,
+  },
+  exit: (dir: number) => ({
+    opacity: 0,
+    x: dir === 1 ? -36 : 36,
+  }),
+}
 
 /** Canonical query for Stripe cancel / return links (matches landing `?plan=`). */
 function storagePlanToUrlPlan(p: StoragePlan): "basic" | "premium" | "free" | "forever" | "film" {
@@ -193,6 +209,7 @@ function CreateEventForm() {
 
   const [memorialType, setMemorialType] = useState<MemorialType | null>(null)
   const [wizardStep, setWizardStep] = useState(1)
+  const [stepSlideDir, setStepSlideDir] = useState<1 | -1>(1)
   const [name, setName] = useState("")
   const [profileFile, setProfileFile] = useState<File | null>(null)
   const [profilePreview, setProfilePreview] = useState<string | null>(null)
@@ -441,6 +458,7 @@ function CreateEventForm() {
         router.refresh()
         const draft = readCreateDraft()
         if (draft?.memorialType && draft.wizardStep === 5) {
+          setStepSlideDir(1)
           setWizardStep(6)
           writeCreateDraft({ ...draft, wizardStep: 6 })
         }
@@ -480,6 +498,7 @@ function CreateEventForm() {
       await refreshAuthUser()
       router.refresh()
       if (memorialTypeRef.current && wizardStepRef.current === 5) {
+        setStepSlideDir(1)
         setWizardStep(6)
         const d = readCreateDraft()
         if (d?.memorialType) writeCreateDraft({ ...d, wizardStep: 6 })
@@ -528,7 +547,10 @@ function CreateEventForm() {
     clearPendingCheckout()
     setPendingCheckout(null)
     setUser(null)
-    if (wizardStep > 6) setWizardStep(5)
+    if (wizardStep > 6) {
+      setStepSlideDir(1)
+      setWizardStep(5)
+    }
   }
 
   const resetFlow = () => {
@@ -538,6 +560,7 @@ function CreateEventForm() {
     clearPendingCheckout()
     setPendingCheckout(null)
     setMemorialType(null)
+    setStepSlideDir(1)
     setWizardStep(1)
     setName("")
     setProfileFile(null)
@@ -563,6 +586,7 @@ function CreateEventForm() {
 
   const pickType = (t: MemorialType) => {
     setMemorialType(t)
+    setStepSlideDir(1)
     setWizardStep(1)
     setCreateError(null)
   }
@@ -621,16 +645,25 @@ function CreateEventForm() {
       setShowPlanChangeOptions(false)
       return
     }
+    setStepSlideDir(-1)
     const nextStep = wizardStep - 1
     const d = buildCreateDraft(nextStep)
     if (d) writeCreateDraft(d)
     setWizardStep(nextStep)
   }
 
+  const handleBack = () => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("Back button clicked", { wizardStep })
+    }
+    goBack()
+  }
+
   const goNext = () => {
     if (!canContinue() || !memorialType) return
     setCreateError(null)
     if (wizardStep < effectiveWizardSteps) {
+      setStepSlideDir(1)
       const d = buildCreateDraft(wizardStep + 1)
       if (d) writeCreateDraft(d)
       setWizardStep((s) => s + 1)
@@ -640,6 +673,7 @@ function CreateEventForm() {
   /** After Google OAuth, advance from Account (5) → Plan (6) as soon as the session is confirmed. */
   useEffect(() => {
     if (wizardStep !== 5 || !signedIn || !memorialType || !authReady) return
+    setStepSlideDir(1)
     setWizardStep(6)
     const d = buildCreateDraft(6)
     if (d) writeCreateDraft(d)
@@ -951,12 +985,14 @@ function CreateEventForm() {
                 </button>
               </div>
             )}
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" custom={stepSlideDir}>
             <motion.div
               key={wizardStep}
-              initial={stepPresence.initial}
-              animate={stepPresence.animate}
-              exit={stepPresence.exit}
+              custom={stepSlideDir}
+              variants={WIZARD_STEP_SLIDE_VARIANTS}
+              initial="initial"
+              animate="animate"
+              exit="exit"
               transition={ARTISAN_SPRING}
               className="w-full flex-1"
             >
@@ -1409,12 +1445,12 @@ function CreateEventForm() {
                 {createError}
               </p>
             )}
-            <div className="flex flex-row items-stretch gap-3">
+            <div className="relative z-[50] flex flex-row items-stretch gap-3 pointer-events-auto">
               <button
                 type="button"
-                onClick={goBack}
+                onClick={handleBack}
                 disabled={loading}
-                className="cta-silk shrink-0 min-h-[52px] min-w-[5.5rem] rounded-[32px] border border-white/[0.14] bg-transparent px-4 text-sm font-medium tracking-wide text-white/65 hover:bg-white/[0.05] hover:text-white disabled:opacity-40 sm:min-h-[56px]"
+                className="cta-silk relative z-[50] pointer-events-auto shrink-0 min-h-[52px] min-w-[5.5rem] rounded-[32px] border border-white/[0.14] bg-transparent px-4 text-sm font-medium tracking-wide text-white/65 hover:bg-white/[0.05] hover:text-white disabled:opacity-40 sm:min-h-[56px]"
               >
                 Back
               </button>

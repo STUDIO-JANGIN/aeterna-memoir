@@ -4,11 +4,14 @@ import { useCallback, useEffect, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase/browser"
 
+/** Never block `ready` forever if getUser() hangs (offline, extension, or network stall). */
+const AUTH_INIT_TIMEOUT_MS = 8_000
+
 /**
  * Single source of truth for the browser Supabase user.
  * Prefer getUser() (validates JWT) over getSession() alone (can be briefly stale after OAuth).
  *
- * `ready` becomes true after the first auth resolution attempt and stays true after OAuth
+ * `ready` becomes true after the first auth resolution attempt (or timeout) and stays true after OAuth
  * (SIGNED_IN / TOKEN_REFRESHED) so UI never sticks on “Checking your account…”.
  */
 export function useSupabaseUser() {
@@ -34,7 +37,12 @@ export function useSupabaseUser() {
 
     const init = async () => {
       try {
-        await refresh()
+        await Promise.race([
+          refresh(),
+          new Promise<void>((resolve) => {
+            setTimeout(resolve, AUTH_INIT_TIMEOUT_MS)
+          }),
+        ])
       } catch {
         // Network or transient errors — still unblock UI; listener will sync session.
       } finally {

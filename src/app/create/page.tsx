@@ -117,9 +117,9 @@ const ghostDateSelectClass =
 const ghostLineInputClass =
   "w-full rounded-none border-0 border-b-[0.5px] border-[rgba(255,255,255,0.1)] bg-transparent px-0 py-3.5 text-base text-[#f4f1ea] placeholder:text-white/30 outline-none transition-[box-shadow,border-color] duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:border-[rgba(212,175,55,0.55)] focus:shadow-[0_1px_0_0_rgba(212,175,55,0.38)]"
 
-/** Born / At Rest — same serif scale as Step 1 titles + announcement tracking */
+/** Born / At Rest / Location / Support — compact serif section labels */
 const stepSectionTitleClass =
-  "font-[var(--font-serif)] text-2xl font-normal uppercase tracking-[0.15em] text-[#f4f1ea]/50 md:text-3xl"
+  "font-[var(--font-serif)] text-base font-normal uppercase tracking-[0.15em] text-[#f4f1ea]/50 md:text-lg"
 
 /** Memorial details: minimal border, landing-aligned */
 const fieldLabelClass = "block text-[10px] tracking-[0.22em] uppercase text-[#f5f5f7]/60 mb-2"
@@ -221,6 +221,15 @@ function CreateEventForm() {
   const [name, setName] = useState("")
   const [profileFile, setProfileFile] = useState<File | null>(null)
   const [profilePreview, setProfilePreview] = useState<string | null>(null)
+  /** Framing inside the circle (CSS object-position %; 50 = center). */
+  const [profilePan, setProfilePan] = useState({ x: 50, y: 50 })
+  const profileDragRef = useRef<{
+    pointerId: number
+    startX: number
+    startY: number
+    originX: number
+    originY: number
+  } | null>(null)
 
   const [birthY, setBirthY] = useState("")
   const [birthM, setBirthM] = useState("")
@@ -520,8 +529,10 @@ function CreateEventForm() {
   useEffect(() => {
     if (!profileFile) {
       setProfilePreview(null)
+      setProfilePan({ x: 50, y: 50 })
       return
     }
+    setProfilePan({ x: 50, y: 50 })
     const url = URL.createObjectURL(profileFile)
     setProfilePreview(url)
     return () => URL.revokeObjectURL(url)
@@ -574,6 +585,7 @@ function CreateEventForm() {
     setWizardStep(1)
     setName("")
     setProfileFile(null)
+    setProfilePan({ x: 50, y: 50 })
     setBirthY("")
     setBirthM("")
     setBirthD("")
@@ -592,6 +604,43 @@ function CreateEventForm() {
     )
     setStoragePlan(mapped ?? "premium")
     setCreateError(null)
+  }
+
+  const handleProfilePanPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!profilePreview) return
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    profileDragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      originX: profilePan.x,
+      originY: profilePan.y,
+    }
+  }
+
+  const handleProfilePanPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = profileDragRef.current
+    if (!d || e.pointerId !== d.pointerId) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const w = Math.max(rect.width, 1)
+    const h = Math.max(rect.height, 1)
+    const dx = e.clientX - d.startX
+    const dy = e.clientY - d.startY
+    const nextX = Math.min(100, Math.max(0, d.originX - (dx / w) * 100))
+    const nextY = Math.min(100, Math.max(0, d.originY - (dy / h) * 100))
+    setProfilePan({ x: nextX, y: nextY })
+  }
+
+  const handleProfilePanPointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = profileDragRef.current
+    if (!d || e.pointerId !== d.pointerId) return
+    profileDragRef.current = null
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {
+      /* ignore */
+    }
   }
 
   const pickType = (t: MemorialType) => {
@@ -1041,17 +1090,46 @@ function CreateEventForm() {
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-4 pt-4 text-center">
                   <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">A face to remember</h2>
                   <p className="text-base text-white/50 max-w-md mx-auto leading-relaxed">
-                    A photo helps people recognize them. Tap the circle to add one.
+                    {profilePreview
+                      ? "Drag on the photo to adjust how it sits in the circle."
+                      : "A photo helps people recognize them. Tap the circle to add one."}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => profileInputRef.current?.click()}
-                    aria-label="Add a Spark of Memory"
-                    className="group mx-auto mt-10 flex h-48 w-48 items-center justify-center overflow-hidden rounded-full bg-white/[0.04] ring-1 ring-[var(--aeterna-gold)]/28 transition-all duration-300 ease-in-out active:scale-[0.98] md:h-56 md:w-56 hover:ring-[var(--aeterna-gold)]/45"
-                  >
-                    {profilePreview ? (
-                      <img src={profilePreview} alt="" className="h-full w-full object-cover" />
-                    ) : (
+                  {profilePreview ? (
+                    <div className="mx-auto mt-10 flex flex-col items-center gap-4">
+                      <div
+                        role="img"
+                        aria-label="Profile preview — drag to reposition"
+                        className="touch-none cursor-grab active:cursor-grabbing select-none"
+                        onPointerDown={handleProfilePanPointerDown}
+                        onPointerMove={handleProfilePanPointerMove}
+                        onPointerUp={handleProfilePanPointerEnd}
+                        onPointerCancel={handleProfilePanPointerEnd}
+                      >
+                        <div className="h-48 w-48 overflow-hidden rounded-full bg-white/[0.04] ring-1 ring-[var(--aeterna-gold)]/28 md:h-56 md:w-56">
+                          <img
+                            src={profilePreview}
+                            alt=""
+                            className="pointer-events-none h-full w-full object-cover"
+                            style={{ objectPosition: `${profilePan.x}% ${profilePan.y}%` }}
+                            draggable={false}
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => profileInputRef.current?.click()}
+                        className="text-sm text-white/45 underline decoration-white/20 underline-offset-4 transition-colors hover:text-white/70"
+                      >
+                        Choose a different photo
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => profileInputRef.current?.click()}
+                      aria-label="Add a Spark of Memory"
+                      className="group mx-auto mt-10 flex h-48 w-48 items-center justify-center overflow-hidden rounded-full bg-white/[0.04] ring-1 ring-[var(--aeterna-gold)]/28 transition-all duration-300 ease-in-out active:scale-[0.98] md:h-56 md:w-56 hover:ring-[var(--aeterna-gold)]/45"
+                    >
                       <div className="relative flex h-full w-full flex-col items-center justify-center gap-3">
                         <div
                           className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_32%,rgba(197,160,89,0.22),transparent_58%)]"
@@ -1070,8 +1148,8 @@ function CreateEventForm() {
                           Add a Spark of Memory
                         </span>
                       </div>
-                    )}
-                  </button>
+                    </button>
+                  )}
                   <input ref={profileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => setProfileFile(e.target.files?.[0] ?? null)} />
                 </div>
               )}
@@ -1083,8 +1161,7 @@ function CreateEventForm() {
                       Honoring Their Journey
                     </h2>
                     <p className="text-base text-white/45 leading-relaxed">
-                      Exact dates are lovely; a year alone is fine if that&apos;s what you have. When the page opens,
-                      loved ones get seven gentle days to add photos and stories.
+                      Exact dates are lovely; a year alone is fine if that&apos;s what you have.
                     </p>
                   </div>
 
@@ -1211,60 +1288,49 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 4 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-8 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
                       Memorial Service &amp; Support Family
                     </h2>
                     <p className="text-base text-white/45 leading-relaxed">
-                      Optional — service details or a support link. You can skip and add these later.
+                      Service details or a support link. You can skip and add these later.
                     </p>
                   </div>
-                  <div className="rounded-[32px] border border-white/[0.08] bg-white/[0.03] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md md:p-8">
-                    <p className="text-[10px] tracking-[0.28em] uppercase text-[#f5f5f7]/50">Optional</p>
-                    <div className="mt-8 space-y-8">
-                      <div>
-                        <label
-                          htmlFor="memorial-location-opt"
-                          className="mb-2 block text-[10px] font-medium uppercase tracking-[0.22em] text-[#f5f5f7]/50"
-                        >
-                          Location
-                        </label>
-                        <input
-                          ref={locationInputRef}
-                          id="memorial-location-opt"
-                          value={location}
-                          onChange={(e) => setLocation(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && location.trim()) {
-                              e.preventDefault()
-                              focusNextField(fundInputRef.current)
-                            }
-                          }}
-                          placeholder="Place and time — or city"
-                          autoComplete="off"
-                          className={ghostLineInputClass}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="memorial-support-opt"
-                          className="mb-2 block text-[10px] font-medium uppercase tracking-[0.22em] text-[#f5f5f7]/50"
-                        >
-                          Support
-                        </label>
-                        <input
-                          ref={fundInputRef}
-                          id="memorial-support-opt"
-                          type="text"
-                          inputMode="url"
-                          value={fundLink}
-                          onChange={(e) => setFundLink(e.target.value)}
-                          placeholder="Fund or charity link (optional)"
-                          autoComplete="off"
-                          className={ghostLineInputClass}
-                        />
-                      </div>
+                  <div className="space-y-10">
+                    <div className="space-y-6">
+                      <h3 className={stepSectionTitleClass}>Location</h3>
+                      <input
+                        ref={locationInputRef}
+                        id="memorial-location-opt"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && location.trim()) {
+                            e.preventDefault()
+                            focusNextField(fundInputRef.current)
+                          }
+                        }}
+                        placeholder="Place and time — or city"
+                        autoComplete="off"
+                        className={ghostLineInputClass}
+                        aria-label="Location"
+                      />
+                    </div>
+                    <div className="space-y-6">
+                      <h3 className={stepSectionTitleClass}>Support</h3>
+                      <input
+                        ref={fundInputRef}
+                        id="memorial-support-opt"
+                        type="text"
+                        inputMode="url"
+                        value={fundLink}
+                        onChange={(e) => setFundLink(e.target.value)}
+                        placeholder="Fund or charity link"
+                        autoComplete="off"
+                        className={ghostLineInputClass}
+                        aria-label="Support"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1273,7 +1339,6 @@ function CreateEventForm() {
               {wizardStep === 5 && (
                 <div className="space-y-8 pt-4 text-center">
                   <div>
-                    <p className="text-[10px] tracking-[0.28em] uppercase text-white/40 mb-3">Account</p>
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
                       Claim your memorial
                     </h2>
@@ -1508,6 +1573,7 @@ function CreateEventForm() {
                     ceremonyTime={invitationCeremony}
                     fundLink={fundLink}
                     profileImageUrl={profilePreview}
+                    profileImagePan={profilePan}
                     remembranceBio={invitationBio.trim() || undefined}
                   />
                 </div>

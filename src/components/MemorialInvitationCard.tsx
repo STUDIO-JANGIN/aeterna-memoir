@@ -21,6 +21,8 @@ export type MemorialInvitationCardProps = {
   ceremonyTime?: string | null
   fundLink?: string | null
   profileImageUrl?: string | null
+  /** Framing for profile photo (matches create-flow drag). */
+  profileImagePan?: { x: number; y: number } | null
   remembranceBio?: string | null
 }
 
@@ -34,6 +36,7 @@ function buildCanvasInput(p: MemorialInvitationCardProps): MemorialInvitationCan
     ceremonyTime: p.ceremonyTime,
     fundLink: p.fundLink,
     profileImageUrl: p.profileImageUrl,
+    profileImagePan: p.profileImagePan,
     remembranceBio: p.remembranceBio,
   }
 }
@@ -49,6 +52,7 @@ export function MemorialInvitationCard({
   ceremonyTime,
   fundLink,
   profileImageUrl,
+  profileImagePan,
   remembranceBio,
 }: MemorialInvitationCardProps) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
@@ -66,10 +70,11 @@ export function MemorialInvitationCard({
         ceremonyTime,
         fundLink,
         profileImageUrl,
+        profileImagePan,
         remembranceBio,
       }),
     )
-  }, [name, slug, guestUrl, birthDate, deathDate, location, ceremonyTime, fundLink, profileImageUrl, remembranceBio])
+  }, [name, slug, guestUrl, birthDate, deathDate, location, ceremonyTime, fundLink, profileImageUrl, profileImagePan, remembranceBio])
 
   useEffect(() => {
     let cancelled = false

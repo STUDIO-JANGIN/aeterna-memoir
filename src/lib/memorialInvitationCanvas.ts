@@ -128,6 +128,8 @@ export type MemorialInvitationCanvasInput = {
   ceremonyTime?: string | null
   fundLink?: string | null
   profileImageUrl?: string | null
+  /** 0–100 each, matches CSS `object-position` (50 = centered). */
+  profileImagePan?: { x: number; y: number } | null
   remembranceBio?: string | null
 }
 
@@ -143,6 +145,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     ceremonyTime,
     fundLink,
     profileImageUrl,
+    profileImagePan,
     remembranceBio,
   } = input
 
@@ -216,8 +219,10 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
       const scale = Math.max(photoW / iw, photoH / ih)
       const dw = iw * scale
       const dh = ih * scale
-      const dx = photoX + (photoW - dw) / 2
-      const dy = photoY + (photoH - dh) / 2
+      const px = Math.min(100, Math.max(0, profileImagePan?.x ?? 50))
+      const py = Math.min(100, Math.max(0, profileImagePan?.y ?? 50))
+      const dx = photoX + (photoW - dw) + (px / 100) * (dw - photoW)
+      const dy = photoY + (photoH - dh) + (py / 100) * (dh - photoH)
       ctx.drawImage(img, dx, dy, dw, dh)
       drewPhoto = true
     }

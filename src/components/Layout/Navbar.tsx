@@ -18,6 +18,11 @@ type NavbarProps = {
   children?: ReactNode
   /** Right-side CTA (e.g. Create) */
   end?: ReactNode
+  /**
+   * Must match the page locale’s `dir`. Portaled mobile UI does not inherit document `dir`
+   * from the main tree, so this sets `dir` on the overlay and aligns the drawer to the inline end.
+   */
+  pageDir?: "ltr" | "rtl"
 }
 
 function chainNavClick(
@@ -40,7 +45,7 @@ function chainNavClick(
  * Mobile: single row (logo + hamburger); nav opens as a vertical sheet (once.film–style).
  * Desktop: 3-column grid with centered nav.
  */
-export function Navbar({ children, end }: NavbarProps) {
+export function Navbar({ children, end, pageDir = "ltr" }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -77,13 +82,15 @@ export function Navbar({ children, end }: NavbarProps) {
           <>
             <button
               type="button"
+              dir={pageDir}
               className="fixed inset-x-0 bottom-0 top-[4.25rem] z-[200] bg-[#030303]/70 backdrop-blur-[2px] md:hidden"
               aria-label="Close menu"
               onClick={closeMenu}
             />
             <div
               id="landing-mobile-nav"
-              className="fixed bottom-0 right-0 top-[4.25rem] z-[201] flex w-[85vw] max-w-[320px] min-w-[12rem] flex-col border-l border-white/[0.12] bg-[#0a0a0a] shadow-[-24px_0_48px_rgba(0,0,0,0.55)] backdrop-blur-xl md:hidden"
+              dir={pageDir}
+              className="fixed bottom-0 end-0 top-[4.25rem] z-[201] flex w-[85vw] max-w-[320px] min-w-[12rem] flex-col border-s border-white/[0.12] bg-[#0a0a0a] shadow-[0_12px_48px_rgba(0,0,0,0.55)] backdrop-blur-xl md:hidden"
               role="dialog"
               aria-modal="true"
               aria-label="Site navigation"
@@ -99,7 +106,7 @@ export function Navbar({ children, end }: NavbarProps) {
                 </button>
               </div>
               <nav
-                className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain px-2 pb-6 pt-1 [&_button]:min-h-[3rem] [&_button]:w-full [&_button]:rounded-lg [&_button]:border-0 [&_button]:border-b [&_button]:border-white/[0.08] [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-3 [&_button]:text-left [&_button]:text-[12px] [&_button]:font-semibold [&_button]:uppercase [&_button]:tracking-[0.18em] [&_button]:text-[#f5f5f7] [&_button]:last:border-b-0 [&_button]:hover:bg-white/[0.06] [&_button]:active:bg-white/[0.08]"
+                className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain px-2 pb-6 pt-1 [&_button]:min-h-[3rem] [&_button]:w-full [&_button]:rounded-lg [&_button]:border-0 [&_button]:border-b [&_button]:border-white/[0.08] [&_button]:bg-transparent [&_button]:px-3 [&_button]:py-3 [&_button]:text-start [&_button]:text-[12px] [&_button]:font-semibold [&_button]:uppercase [&_button]:tracking-[0.18em] [&_button]:text-[#f5f5f7] [&_button]:last:border-b-0 [&_button]:hover:bg-white/[0.06] [&_button]:active:bg-white/[0.08]"
                 aria-label="Sections"
               >
                 {navWithClose}
@@ -111,10 +118,13 @@ export function Navbar({ children, end }: NavbarProps) {
       : null
 
   return (
-    <header className="pointer-events-auto fixed top-0 left-0 right-0 z-[70] border-b-[0.5px] border-[rgba(255,255,255,0.1)] bg-[rgba(3,3,3,0.92)] backdrop-blur-[20px] md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-0 md:px-10 md:py-5">
-      {/* Mobile: logo + menu trigger */}
+    <header
+      dir={pageDir}
+      className="pointer-events-auto fixed top-0 left-0 right-0 z-[70] border-b-[0.5px] border-[rgba(255,255,255,0.1)] bg-[rgba(3,3,3,0.92)] backdrop-blur-[20px] md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-0 md:px-10 md:py-5"
+    >
+      {/* Mobile: logo + menu trigger — brand mark stays LTR (no mirroring) */}
       <div className="flex items-center justify-between px-4 py-3 md:contents">
-        <div className="flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:row-start-1 md:justify-self-start">
+        <div className="flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:row-start-1 md:justify-self-start" dir="ltr">
           <img src="/aeterna-logo.png" alt="Aeterna" className="h-7 w-7 shrink-0 object-contain opacity-90 md:h-8 md:w-8" />
           <span className="min-w-0 truncate font-[var(--font-display)] text-sm uppercase tracking-[0.12em] text-[#e8e4dc] md:text-base">
             Aeterna

@@ -30,6 +30,10 @@ export type LandingStrings = {
     tagline: string
     ctaCreate: string
     ctaMyMemorial: string
+    /** Screen-reader / SEO: describes the foreground phone image for this locale’s cultural framing. */
+    heroPortraitAlt: string
+    /** Secondary phone image (e.g. pets, family scene, quiet memorial mood). */
+    heroSecondaryAlt: string
   }
   howItWorks: {
     kicker: string
@@ -67,6 +71,9 @@ const EN: LandingStrings = {
     tagline: "Footprints, remembrance, and preservation in one hallowed place.",
     ctaCreate: "Create a Memorial Now",
     ctaMyMemorial: "My memorial",
+    heroPortraitAlt:
+      "Portrait of a dignified elder on a memorial page — meant to evoke your own grandparents and family.",
+    heroSecondaryAlt: "Pets and companions as part of the family story.",
   },
   howItWorks: {
     kicker: "How it works",
@@ -158,12 +165,16 @@ const EN: LandingStrings = {
 const KO: LandingStrings = {
   nav: { howItWorks: "이용 방법", pricing: "요금", faq: "자주 묻는 질문" },
   hero: {
-    title1: "소중한 기억을 위한",
+    title1: "가족의 기억을 품은",
     title2: "디지털 기념 공간",
-    body: "사람과 반려동물을 모두 위한 공간입니다. QR이나 링크로 바로 공유하세요. 앱 설치 없이 가족과 친지가 휴대폰으로 사진과 이야기를 남기고, 하트와 댓글로 이어지는 부드러운 타임라인을 만듭니다.",
-    tagline: "발자국, 추모, 그리고 보존이 한곳에.",
+    body: "지나간 날을 정갈하게 모시고, 남은 가족이 함께 이어 가는 곳입니다. QR이나 링크로 친지가 모이고, 앱 없이 사진과 이야기를 남깁니다. 과한 슬픔보다 평온한 안식과 ‘가족의 끈’을 담은 한 타임라인입니다.",
+    tagline: "그리움은 남기고, 온기는 이어집니다.",
     ctaCreate: "지금 기념관 만들기",
     ctaMyMemorial: "내 기념관",
+    heroPortraitAlt:
+      "인자하게 웃고 계신 한국인 할머니의 초상. 따뜻한 니트나 한복 소재를 떠올리는 포근한 분위기입니다.",
+    heroSecondaryAlt:
+      "가족과 함께하는 시간을 담은 장면을 상징합니다. 반려동물과의 일상도 소중한 가족의 기억으로 남깁니다.",
   },
   howItWorks: {
     kicker: "이용 방법",
@@ -216,7 +227,7 @@ const KO: LandingStrings = {
   faq: {
     kicker: "자주 묻는 질문",
     title: "부드럽게 답합니다",
-    subtitle: "미국, 호주 등 전 세계 가족을 위한 정성스러운 돌봄.",
+    subtitle: "정갈하고 따뜻한 마음으로, 가족 중심의 추모를 돕습니다.",
     items: [
       {
         q: "Aeterna란 무엇인가요?",
@@ -254,18 +265,22 @@ const KO: LandingStrings = {
 const JA: LandingStrings = {
   nav: { howItWorks: "使い方", pricing: "料金", faq: "よくある質問" },
   hero: {
-    title1: "大切な記憶のための",
-    title2: "デジタルな祈りの場",
-    body: "人とペットのために、尊厳をもって残す場所。QRやリンクですぐに共有。アプリ不要で、家族がスマホから写真とストーリーを綴り、ハートとコメントでつながる穏やかなタイムラインに。",
-    tagline: "足跡、追想、そして保存が一つに。",
+    title1: "静かに祈る、",
+    title2: "個人の追悼の場所",
+    body: "礼儀と余白を大切にした、極めてシンプルなデジタル空間です。QRやリンクで家族が静かに集まり、アプリ不要で写真と言の葉を綴れます。お盆のように灯りを分かち合うように、思い出はそっと並びます。",
+    tagline: "不完全さのなかにある美しさを、そっと残す。",
     ctaCreate: "いつでも追悼ページを作る",
     ctaMyMemorial: "マイ追悼",
+    heroPortraitAlt:
+      "畳や庭園を思わせる落ち着いた光の中の、品のあるご高齢の方のポートレート。",
+    heroSecondaryAlt:
+      "静かな追悼の空気を連想させる一コマ。家族の記憶を重ねるイメージです。",
   },
   howItWorks: {
     kicker: "使い方",
     title: "作成 · 共有 · 集める",
     subtitle:
-      "三本柱：人とペットのためのデジタルな祈りの場、QRやリンクでアプリ不要の参加、訪問者がハートとコメントで残すコミュニティ追悼。",
+      "ミニマルな三本柱：デジタルな祈りの場、QRやリンクでアプリ不要、訪問者がそっと心を残すコミュニティ追悼。",
     steps: [
       {
         title: "デジタルな祈りの場を作る",
@@ -312,7 +327,7 @@ const JA: LandingStrings = {
   faq: {
     kicker: "よくある質問",
     title: "丁寧にお答えします",
-    subtitle: "米国、オーストラリアなど、世界中の家族向けの丁寧なケア。",
+    subtitle: "米国、オーストラリアなど、世界中のご家族への丁寧なケア。",
     items: [
       {
         q: "Aeternaとは？",
@@ -356,6 +371,9 @@ const FR: LandingStrings = {
     tagline: "Traces, souvenir et préservation en un seul lieu.",
     ctaCreate: "Créer un mémorial",
     ctaMyMemorial: "Mon mémorial",
+    heroPortraitAlt:
+      "Portrait d’un aîné sur une page commémorative — pour évoquer vos propres parents et grands-parents.",
+    heroSecondaryAlt: "Compagnons à quatre pattes et animaux de famille au cœur du récit.",
   },
   howItWorks: {
     kicker: "Fonctionnement",
@@ -453,6 +471,9 @@ const ES: LandingStrings = {
     tagline: "Huellas, recuerdo y preservación en un solo lugar.",
     ctaCreate: "Crear un memorial ahora",
     ctaMyMemorial: "Mi memorial",
+    heroPortraitAlt:
+      "Retrato de una persona mayor en una página conmemorativa — evoca a tus propios familiares.",
+    heroSecondaryAlt: "Mascotas y compañeros como parte de la historia familiar.",
   },
   howItWorks: {
     kicker: "Cómo funciona",
@@ -545,11 +566,15 @@ const AR: LandingStrings = {
   nav: { howItWorks: "كيف يعمل", pricing: "الأسعار", faq: "الأسئلة الشائعة" },
   hero: {
     title1: "ضريح رقمي لـ",
-    title2: "ذاكرة مقدّسة",
-    body: "مساحة دائمة للبشر وللحيوانات الأليفة، محفوظة بكرامة. شارِك فورًا عبر رمز الاستجابة السريعة أو الرابط: دون تطبيق؛ يضيف الأقارب الصور والقصص من أي هاتف. تغذية تذكارية لطيفة حيث يضع الزوار القلب والتعليق على كل ذكرى.",
-    tagline: "آثار أقدام، وتذكّر، وحفظ في مكان واحد مقدّس.",
+    title2: "ذاكرة تليق بالعائلة",
+    body: "مساحة دائمة بوقار للبشر وللحيوانات الأليفة. شارِك فورًا عبر الرمز أو الرابط دون تطبيق؛ تجتمع العائلة الكبيرة — أبناء وبنات وأحفاد — فيرفعون الصور والقصص من أي هاتف. تغذية تذكارية هادئة: إعجاب وتعليق باحترام عميق، لا مبالغة في إظهار الحزن بل اعتراف بالجميل الذي كان.",
+    tagline: "بين سواد الليل والذهب: ذكرى تُجَلّل الماضي وتربط الأجيال.",
     ctaCreate: "أنشئ نصبًا تذكاريًا الآن",
     ctaMyMemorial: "نصبي التذكاري",
+    heroPortraitAlt:
+      "صورة لمسنّ أو مسنّة بابتسامة حانية، يُقصد بها إثارة صورة الجدّ أو الجدّة في العائلة العربية، بلباسٍ تقليدي أو هادئ يليق بالاحترام.",
+    heroSecondaryAlt:
+      "مشهد يجمع الحيوانات الأليفة أو لحظة عائلية دافئة، كرمز للألفة داخل البيت الكبير.",
   },
   howItWorks: {
     kicker: "كيف يعمل",
@@ -602,7 +627,7 @@ const AR: LandingStrings = {
   faq: {
     kicker: "الأسئلة الشائعة",
     title: "إجابات برفق",
-    subtitle: "عناية حرفية للعائلات في الولايات المتحدة وأستراليا وما بعدها.",
+    subtitle: "عناية محترمة للعائلات الكبيرة — في الولايات المتحدة والعالم العربي وما بعدهما.",
     items: [
       {
         q: "ما هو Aeterna؟",

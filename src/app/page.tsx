@@ -7,6 +7,7 @@ import { Navbar } from "@/components/Layout/Navbar"
 import { RevealSection } from "@/components/RevealSection"
 import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
 import { LandingLocaleProvider, useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { getLandingHeroImages } from "@/lib/landingHeroMedia"
 import {
   IPhoneShell,
   StepScreenConnectVote,
@@ -41,7 +42,7 @@ function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_META)[numbe
     "flex h-full min-h-[min(400px,56vw)] w-full items-end justify-center md:min-h-[448px]"
 
   const phone = (inner: ReactNode) => (
-    <div className={slotClass}>
+    <div className={slotClass} dir="ltr">
       <div className="relative w-full max-w-[260px]">
         <div
           className="pointer-events-none absolute -inset-3 rounded-[2.5rem] bg-[var(--aeterna-gold)]/[0.06] blur-3xl md:-inset-4"
@@ -83,6 +84,7 @@ function LandingPageInner() {
   const hasVideo = !!LANDING_BACKGROUND_VIDEO_URL
   const showPlaceholder = !hasVideo || videoError
   const stepFlowLabels = t.howItWorks.steps.map((s) => `${s.title}: ${s.description}`)
+  const heroImages = getLandingHeroImages(locale)
 
   /** After client navigation from other routes (e.g. memorial “upgrade” → /#pricing), scroll to pricing. */
   useEffect(() => {
@@ -126,7 +128,7 @@ function LandingPageInner() {
     return [
       "text-[10px] md:text-[11px] uppercase tracking-[0.2em] md:tracking-[0.22em] pb-1 border-b-[0.5px] transition-colors duration-200",
       active
-        ? "border-[rgba(255,255,255,0.1)] text-[#f5f5f7] bg-[linear-gradient(to_right,transparent,rgba(212,175,55,0.1),transparent)]"
+        ? "border-[rgba(255,255,255,0.1)] text-[#f5f5f7] bg-[linear-gradient(to_right,transparent,rgba(212,175,55,0.1),transparent)] rtl:bg-[linear-gradient(to_left,transparent,rgba(212,175,55,0.1),transparent)]"
         : "border-transparent text-[rgba(245,245,247,0.72)] hover:text-[#f5f5f7]",
     ].join(" ")
   }
@@ -138,7 +140,7 @@ function LandingPageInner() {
       lang={locale}
     >
       {/* once.film–inspired: calm, editorial, lots of air; nav centered, logo / CTA balanced */}
-      <Navbar end={<LandingLanguageSwitcher />}>
+      <Navbar pageDir={locale === "ar" ? "rtl" : "ltr"} end={<LandingLanguageSwitcher />}>
         <button
           type="button"
           onClick={() => scrollTo("how-it-works")}
@@ -158,8 +160,8 @@ function LandingPageInner() {
         </button>
       </Navbar>
 
-      {/* Background */}
-      <div className="absolute inset-0 z-0 min-h-dvh pointer-events-none">
+      {/* Background — decorative video/poster: LTR so playback/scrub semantics stay global; no mirroring of footage */}
+      <div className="absolute inset-0 z-0 min-h-dvh pointer-events-none" dir="ltr">
         <div className={`absolute inset-0 transition-opacity ${showPlaceholder ? "opacity-100" : "opacity-0"}`}>
           <div className="absolute inset-0 bg-landing" />
           <img src={LANDING_BACKGROUND_POSTER_URL} alt="" className="absolute inset-0 w-full h-full object-cover opacity-[0.12]" fetchPriority="high" />
@@ -192,7 +194,7 @@ function LandingPageInner() {
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 gap-y-14 lg:grid-cols-2 lg:gap-12 xl:gap-16 lg:items-center lg:gap-y-0">
               {/* Value proposition: always on top on mobile; left column on desktop */}
-              <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-left px-1 sm:px-2 pb-2 sm:pb-10 lg:pb-0">
+              <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-start px-1 sm:px-2 pb-2 sm:pb-10 lg:pb-0">
                 <RevealSection className="w-full max-w-xl mx-auto lg:mx-0 lg:max-w-xl space-y-0">
                   <h1 className="text-landing-hero font-semibold text-balance md:leading-[1.1] max-md:!text-[clamp(1.875rem,7.5vw,2.75rem)] max-md:!leading-[1.14] max-md:tracking-[-0.035em]">
                     {t.hero.title1}{" "}
@@ -224,9 +226,12 @@ function LandingPageInner() {
                 </RevealSection>
               </div>
 
-              {/* iPhone mockups: own column / region; contained so text never sits underneath */}
+              {/* iPhone mockups — LTR: keep photo/device composition unmirrored (intrinsic likeness + brand) */}
               <RevealSection className="order-2 relative z-10 w-full flex justify-center lg:justify-end max-lg:mt-2 max-lg:pt-4">
-                <div className="relative w-full max-w-[min(100%,400px)] lg:max-w-[440px] h-[min(380px,78vw)] sm:h-[420px] md:h-[440px] lg:h-[min(480px,52vh)] isolate max-md:overflow-x-clip max-md:overflow-y-visible">
+                <div
+                  dir="ltr"
+                  className={`relative w-full max-w-[min(100%,400px)] lg:max-w-[440px] h-[min(380px,78vw)] sm:h-[420px] md:h-[440px] lg:h-[min(480px,52vh)] isolate max-md:overflow-x-clip max-md:overflow-y-visible ${locale === "ar" ? "landing-hero-ar-mood" : ""}`}
+                >
                   {/* Foreground mockup: inclusive elder portrait (faces kept below Dynamic Island) */}
                   <div
                     className="absolute right-0 top-4 z-20 w-[56%] min-w-[180px] sm:top-6 sm:w-[54%]"
@@ -234,8 +239,8 @@ function LandingPageInner() {
                   >
                     <IPhoneShell className="origin-center">
                       <img
-                        src="/landing-hero-blasian-patriarch.png"
-                        alt="Warm portrait of a dignified elder, representing inclusive remembrance"
+                        src={heroImages.portrait}
+                        alt={t.hero.heroPortraitAlt}
                         className="absolute inset-0 z-0 h-full w-full object-cover object-[center_22%]"
                         width={900}
                         height={1950}
@@ -252,8 +257,8 @@ function LandingPageInner() {
                   >
                     <IPhoneShell className="origin-center shadow-[0_28px_72px_rgba(0,0,0,0.48)]">
                       <img
-                        src="/landing-hero-pets.png"
-                        alt=""
+                        src={heroImages.secondary}
+                        alt={t.hero.heroSecondaryAlt}
                         className="absolute inset-0 z-0 h-full w-full object-cover object-[center_top]"
                         width={900}
                         height={1950}
@@ -412,9 +417,9 @@ function LandingPageInner() {
                     <button
                       type="button"
                       onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                      className="w-full px-6 py-5 md:py-[1.375rem] text-left flex items-start justify-between gap-5"
+                      className="w-full px-6 py-5 md:py-[1.375rem] text-start flex items-start justify-between gap-5"
                     >
-                      <span className="font-[var(--font-sans)] text-[15px] md:text-base text-[#e5e5e5] leading-snug pr-2 tracking-[-0.01em]">
+                      <span className="font-[var(--font-sans)] text-[15px] md:text-base text-[#e5e5e5] leading-snug pe-2 tracking-[-0.01em]">
                         {faq.q}
                       </span>
                       <span className="shrink-0 mt-0.5 text-[#737373] text-xl leading-none w-7 text-center tabular-nums font-light">

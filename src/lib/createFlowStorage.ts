@@ -35,6 +35,8 @@ export type CreateDraftV1 = {
   storagePlan: StoragePlan
 }
 
+import type { PricingCurrencyId } from "@/lib/landingPricing"
+
 /** Resume Stripe only when this matches the current form name — tier is per memorial, not per login. */
 export type PendingCheckoutV1 = {
   v: 1
@@ -42,6 +44,8 @@ export type PendingCheckoutV1 = {
   slug: string
   storagePlan: StoragePlan
   name: string
+  /** Which regional Stripe price to use when resuming checkout (defaults to USD server-side). */
+  pricingCurrency?: PricingCurrencyId
 }
 
 export function readPendingCheckout(): PendingCheckoutV1 | null {

@@ -86,6 +86,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
     const ceremony_time = (formData.get("ceremony_time") as string)?.trim() ?? ""
     const flower_link = (formData.get("flower_link") as string)?.trim() || null
     const bank_info = (formData.get("bank_info") as string)?.trim() || null
+    const invitation_bio_raw = (formData.get("invitation_bio") as string)?.trim() ?? ""
+    const invitation_bio = invitation_bio_raw ? invitation_bio_raw.slice(0, 2000) : null
+    const music_url_raw = (formData.get("music_url") as string)?.trim() ?? ""
+    const music_url = music_url_raw ? music_url_raw.slice(0, 2000) : null
     const file = formData.get("profile_image") as File | null
     let profile_image: string | null = event.profile_image ?? null
     if (file && file.size > 0) {
@@ -105,6 +109,8 @@ export default function AdminSettingsPage({ params }: PageProps) {
       flower_link,
       bank_info,
       profile_image,
+      invitation_bio,
+      music_url,
     })
     setSavingProfile(false)
     if (result.ok) {
@@ -120,6 +126,8 @@ export default function AdminSettingsPage({ params }: PageProps) {
               flower_link,
               bank_info,
               profile_image,
+              invitation_bio,
+              music_url,
             }
           : null
       )
@@ -298,6 +306,35 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 defaultValue={event.ceremony_time ?? ""}
                 className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
                 placeholder="e.g. March 15, 2024 at 2pm"
+              />
+            </div>
+            <div>
+              <label htmlFor="invitation_bio" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
+                Remembrance message
+              </label>
+              <textarea
+                id="invitation_bio"
+                name="invitation_bio"
+                rows={5}
+                defaultValue={event.invitation_bio ?? ""}
+                className="w-full px-4 py-3 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-y min-h-[120px]"
+                placeholder="Short message shown on the memorial and invitation (optional)"
+              />
+              <p className="mt-1.5 text-[11px] text-[var(--aeterna-gold-muted)]">
+                Shown on the public memorial page and printable invite. You can edit anytime.
+              </p>
+            </div>
+            <div>
+              <label htmlFor="music_url" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
+                Background music URL
+              </label>
+              <input
+                id="music_url"
+                name="music_url"
+                type="url"
+                defaultValue={event.music_url ?? ""}
+                className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
+                placeholder="YouTube or direct audio link (optional)"
               />
             </div>
             <div>

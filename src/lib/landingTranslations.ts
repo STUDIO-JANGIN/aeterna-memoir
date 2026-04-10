@@ -2,7 +2,7 @@
  * Landing page copy — one memorial product voice, localized.
  */
 
-export type LandingLocale = "en" | "ko" | "ja" | "fr" | "es" | "ar"
+export type LandingLocale = "en" | "ko" | "ja" | "fr" | "es" | "ar" | "zh"
 
 export const LANDING_LOCALE_STORAGE_KEY = "aeterna.landing.locale"
 
@@ -19,6 +19,7 @@ export const LANDING_LOCALES: {
   { code: "fr", label: "French", native: "Français" },
   { code: "es", label: "Spanish", native: "Español" },
   { code: "ar", label: "Arabic", native: "العربية" },
+  { code: "zh", label: "Chinese", native: "中文" },
 ]
 
 export type LandingStrings = {
@@ -45,7 +46,8 @@ export type LandingStrings = {
     kicker: string
     title: string
     subtitle: string
-    usdNote: string
+    /** Localized footnote for which currency the grid uses (matches `getPricingCurrencyId`). */
+    pricingFootnote: string
     comingSoon: string
     plans: [
       { tierName: string; value: string; cta: string },
@@ -103,7 +105,7 @@ const EN: LandingStrings = {
     title: "Sacred preservation. One-time.",
     subtitle:
       "The first 7 days are a free window to gather memories. Upgrade anytime to preserve the shrine forever.",
-    usdNote: "All prices in US dollars (USD).",
+    pricingFootnote: "All prices in US dollars (USD).",
     comingSoon: "Coming Soon",
     plans: [
       {
@@ -203,7 +205,7 @@ const KO: LandingStrings = {
     title: "소중한 보존. 일회성.",
     subtitle:
       "첫 7일은 추모를 모으는 무료 기간입니다. 언제든지 업그레이드해 영구히 보존하세요.",
-    usdNote: "모든 가격은 미국 달러(USD) 기준입니다.",
+    pricingFootnote: "가격은 대한민국 원(KRW) 기준입니다.",
     comingSoon: "곧 출시",
     plans: [
       {
@@ -303,7 +305,7 @@ const JA: LandingStrings = {
     title: "尊い保存。一度きりのお支払い。",
     subtitle:
       "最初の7日間は思い出を集める無料の窓です。いつでもアップグレードして永遠に保存できます。",
-    usdNote: "表示価格は米ドル（USD）です。",
+    pricingFootnote: "表示価格は日本円（JPY）です。",
     comingSoon: "近日公開",
     plans: [
       {
@@ -403,7 +405,7 @@ const FR: LandingStrings = {
     title: "Préservation sacrée. Paiement unique.",
     subtitle:
       "Les 7 premiers jours sont une fenêtre gratuite pour recueillir les souvenirs. Passez à un plan supérieur quand vous voulez pour préserver le sanctuaire pour toujours.",
-    usdNote: "Tous les prix sont en dollars US (USD).",
+    pricingFootnote: "Tous les prix sont en dollars US (USD).",
     comingSoon: "Bientôt",
     plans: [
       {
@@ -503,7 +505,7 @@ const ES: LandingStrings = {
     title: "Preservación sagrada. Pago único.",
     subtitle:
       "Los primeros 7 días son una ventana gratuita para reunir recuerdos. Mejora cuando quieras para conservar el santuario para siempre.",
-    usdNote: "Todos los precios están en dólares estadounidenses (USD).",
+    pricingFootnote: "Todos los precios están en dólares estadounidenses (USD).",
     comingSoon: "Próximamente",
     plans: [
       {
@@ -603,7 +605,7 @@ const AR: LandingStrings = {
     title: "حفظ مقدّس. دفعة واحدة.",
     subtitle:
       "الأيام السبعة الأولى نافذة مجانية لجمع الذكريات. ترقَّ في أي وقت للحفظ للأبد.",
-    usdNote: "جميع الأسعار بالدولار الأمريكي (USD).",
+    pricingFootnote: "الأسعار بالريال السعودي (SAR).",
     comingSoon: "قريبًا",
     plans: [
       {
@@ -662,6 +664,69 @@ const AR: LandingStrings = {
   footer: "للمهنيين في احتفالات الحياة ومقدمي الرعاية · hoon@aya.yale.edu",
 }
 
+/** Simplified Chinese — USD pricing profile (same numeric tier as EN). */
+const ZH: LandingStrings = {
+  nav: { howItWorks: "使用方式", pricing: "定价", faq: "常见问题" },
+  hero: {
+    title1: "承载珍贵记忆的",
+    title2: "数字纪念空间",
+    body: "为人与宠物而设，庄重保存。通过二维码或链接即时分享：无需应用；亲友可在手机上添加照片与故事。温和的纪念动态，访客可为每条回忆点赞与留言，如同一条神圣的时间线。",
+    tagline: "足迹、追思与保存，同在一处圣洁之地。",
+    ctaCreate: "立即创建纪念页",
+    ctaMyMemorial: "我的纪念页",
+    heroPortraitAlt:
+      "纪念页上一位长者的肖像——唤起您对祖辈与家人的记忆。",
+    heroSecondaryAlt: "宠物与伙伴，家庭故事的一部分。",
+  },
+  howItWorks: {
+    kicker: "使用方式",
+    title: "创建 · 分享 · 汇聚",
+    subtitle:
+      "三大支柱：人与宠物的数字纪念空间；二维码或链接零门槛访问；访客点赞与留言的社区纪念墙。",
+    steps: [
+      {
+        title: "创建数字纪念空间",
+        description: "数秒内为挚爱或宠物建立庄重的纪念页。",
+      },
+      {
+        title: "扫描 · 分享",
+        description: "在仪式现场放置二维码或分享链接。访客即时上传照片与故事，无需安装应用。",
+      },
+      {
+        title: "连结 · 重温",
+        description: "亲友为心动的回忆点赞，最受欢迎的故事浮于顶端。",
+      },
+    ],
+  },
+  pricing: {
+    kicker: "定价",
+    title: "神圣保存。一次性付费。",
+    subtitle: "首 7 天为免费收集回忆的窗口。可随时升级，永久保存纪念空间。",
+    pricingFootnote: "价格以美元（USD）计价。",
+    comingSoon: "即将推出",
+    plans: [
+      {
+        tierName: "Sacred Window",
+        value: "7 天收集回忆。温和的开始。",
+        cta: "开始",
+      },
+      {
+        tierName: "Eternal Legacy",
+        value: "永久保存每张照片与故事。无到期。",
+        cta: "选择",
+      },
+      {
+        tierName: "The Eternal Film",
+        value: "包含 Legacy 全部权益，另含 1 分钟 AI 纪念影片优先体验。",
+        cta: "选择",
+        statusTag: "即将推出",
+      },
+    ],
+  },
+  faq: EN.faq,
+  footer: "面向生命庆典从业者与照护者 · hoon@aya.yale.edu",
+}
+
 export const LANDING_COPY: Record<LandingLocale, LandingStrings> = {
   en: EN,
   ko: KO,
@@ -669,10 +734,19 @@ export const LANDING_COPY: Record<LandingLocale, LandingStrings> = {
   fr: FR,
   es: ES,
   ar: AR,
+  zh: ZH,
 }
 
 export function isLandingLocale(x: string | null | undefined): x is LandingLocale {
-  return x === "en" || x === "ko" || x === "ja" || x === "fr" || x === "es" || x === "ar"
+  return (
+    x === "en" ||
+    x === "ko" ||
+    x === "ja" ||
+    x === "fr" ||
+    x === "es" ||
+    x === "ar" ||
+    x === "zh"
+  )
 }
 
 export function getLandingStrings(locale: LandingLocale): LandingStrings {

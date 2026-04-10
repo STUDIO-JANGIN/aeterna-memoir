@@ -267,15 +267,24 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                   {event.name}
                 </h1>
                 <p className="text-landing-body pt-1 max-w-xl leading-relaxed">
-                  Curate submissions, protect this space, and share the memorial with those who loved them.
+                  Curate submissions, protect this space, and share the memorial with those who loved them. Update name,
+                  dates, photo, remembrance text, and music anytime in settings.
                 </p>
               </div>
-              <Link
-                href={`/p/${slug}`}
-                className="btn-landing-outline-gold shrink-0 w-full lg:w-auto lg:min-w-[12.5rem] justify-center"
-              >
-                Back to feed
-              </Link>
+              <div className="flex flex-col gap-3 shrink-0 w-full lg:w-auto lg:min-w-[12.5rem]">
+                <Link
+                  href={`/p/${slug}/admin/settings`}
+                  className="btn-landing-gold w-full justify-center min-h-[48px]"
+                >
+                  Edit memorial details
+                </Link>
+                <Link
+                  href={`/p/${slug}`}
+                  className="btn-landing-outline-gold w-full justify-center"
+                >
+                  Back to feed
+                </Link>
+              </div>
             </div>
           </div>
         </header>

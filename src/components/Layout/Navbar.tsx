@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { createPortal } from "react-dom"
 import {
   type ReactNode,
@@ -46,6 +47,7 @@ function chainNavClick(
  * Desktop: 3-column grid with centered nav.
  */
 export function Navbar({ children, end, pageDir = "ltr" }: NavbarProps) {
+  const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -124,12 +126,24 @@ export function Navbar({ children, end, pageDir = "ltr" }: NavbarProps) {
     >
       {/* Mobile: logo + menu trigger — brand mark stays LTR (no mirroring) */}
       <div className="flex items-center justify-between px-4 py-3 md:contents">
-        <div className="flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:row-start-1 md:justify-self-start" dir="ltr">
-          <img src="/aeterna-logo.png" alt="Aeterna" className="h-7 w-7 shrink-0 object-contain opacity-90 md:h-8 md:w-8" />
+        <Link
+          href="/"
+          prefetch
+          dir="ltr"
+          onClick={(e) => {
+            if (pathname === "/") {
+              e.preventDefault()
+              window.location.reload()
+            }
+          }}
+          className="flex min-w-0 shrink-0 items-center gap-2 rounded-lg outline-none transition-colors hover:bg-white/[0.04] md:col-start-1 md:row-start-1 md:justify-self-start md:-ml-2 md:px-2 md:py-1"
+          aria-label="Aeterna — home"
+        >
+          <img src="/aeterna-logo.png" alt="" className="h-7 w-7 shrink-0 object-contain opacity-90 md:h-8 md:w-8" />
           <span className="min-w-0 truncate font-[var(--font-display)] text-sm uppercase tracking-[0.12em] text-[#e8e4dc] md:text-base">
             Aeterna
           </span>
-        </div>
+        </Link>
 
         <div className="flex shrink-0 items-center gap-2 md:hidden">
           {end}

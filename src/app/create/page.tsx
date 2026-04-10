@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase/browser"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion, type Variants } from "framer-motion"
 import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
-import { playShutterClick } from "@/lib/shutterClick"
+import { playMemorialGentleChime } from "@/lib/memorialChime"
 import { MemorialInvitationCard } from "@/components/MemorialInvitationCard"
 import { MemorialShareActions } from "@/components/MemorialShareActions"
 import { createEventAction } from "@/app/actions/createEvent"
@@ -27,6 +27,13 @@ import {
   type MemorialType,
   type StoragePlan,
 } from "@/lib/createFlowStorage"
+import {
+  formatLandingTierPrice,
+  getCreateFlowPricingFootnote,
+  getPricingCurrencyId,
+  type PricingCurrencyId,
+} from "@/lib/landingPricing"
+import { isLandingLocale, LANDING_LOCALE_STORAGE_KEY, type LandingLocale } from "@/lib/landingTranslations"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
 import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
 
@@ -73,34 +80,40 @@ function storagePlanToUrlPlan(p: StoragePlan): "basic" | "premium" | "free" | "f
   return "free"
 }
 
-const PLAN_SUMMARY: Record<
+function buildCreatePlanSummary(currency: PricingCurrencyId): Record<
   StoragePlan,
   { title: string; price: string; tagline: string; benefits: string[] }
-> = {
-  free: {
-    title: "Sacred Window",
-    price: "$0",
-    tagline: "7 days to gather memories. A gentle, peaceful start.",
-    benefits: [
-      "Seven days for family and friends to add photos and stories",
-      "Upgrade anytime to preserve the shrine forever",
-    ],
-  },
-  plus: {
-    title: "Eternal Legacy",
-    price: "$19.99",
-    tagline: "Keep every photo and story preserved forever. No expiration.",
-    benefits: ["Every photo and story preserved for good", "A permanent, shareable memorial home"],
-  },
-  premium: {
-    title: "The Eternal Film",
-    price: "$39.99",
-    tagline: "Eternal Legacy + AI Film Pre-Order",
-    benefits: [
-      "Everything in Eternal Legacy",
-      "Priority access to your AI tribute film when V2 launches — pre-order today",
-    ],
-  },
+> {
+  const line = (tier: 0 | 1 | 2) => {
+    const { primary, suffix } = formatLandingTierPrice(currency, tier)
+    return `${primary} ${suffix}`
+  }
+  return {
+    free: {
+      title: "Sacred Window",
+      price: line(0),
+      tagline: "7 days to gather memories. A gentle, peaceful start.",
+      benefits: [
+        "Seven days for family and friends to add photos and stories",
+        "Upgrade anytime to preserve the shrine forever",
+      ],
+    },
+    plus: {
+      title: "Eternal Legacy",
+      price: line(1),
+      tagline: "Keep every photo and story preserved forever. No expiration.",
+      benefits: ["Every photo and story preserved for good", "A permanent, shareable memorial home"],
+    },
+    premium: {
+      title: "The Eternal Film",
+      price: line(2),
+      tagline: "Eternal Legacy + AI Film Pre-Order",
+      benefits: [
+        "Everything in Eternal Legacy",
+        "Priority access to your AI tribute film when V2 launches — pre-order today",
+      ],
+    },
+  }
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -289,6 +302,46 @@ function CreateEventForm() {
   const blockPlanAutoAdvanceRef = useRef(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  const [landingLocale, setLandingLocale] = useState<LandingLocale>("en")
+
+  useEffect(() => {
+    const l = searchParams.get("locale")?.trim()
+    if (l && isLandingLocale(l)) {
+      setLandingLocale(l)
+      return
+    }
+    if (typeof window === "undefined") return
+    try {
+      const raw = localStorage.getItem(LANDING_LOCALE_STORAGE_KEY)
+      if (raw && isLandingLocale(raw)) setLandingLocale(raw)
+    } catch {
+      /* ignore */
+    }
+  }, [searchParams])
+
+  const pricingCurrency = useMemo(() => getPricingCurrencyId(landingLocale), [landingLocale])
+  const planSummaryMap = useMemo(() => buildCreatePlanSummary(pricingCurrency), [pricingCurrency])
+
+  const planTierRows = useMemo(
+    () =>
+      (
+        [
+          { id: "free" as const, title: "Sacred Window", sub: "7 days to gather. Gentle start.", tier: 0 as const },
+          { id: "plus" as const, title: "Eternal Legacy", sub: "Preserved forever. No expiration.", tier: 1 as const },
+          {
+            id: "premium" as const,
+            title: "The Eternal Film",
+            sub: "Eternal Legacy + AI Film Pre-Order",
+            tier: 2 as const,
+          },
+        ] as const
+      ).map((row) => {
+        const { primary, suffix } = formatLandingTierPrice(pricingCurrency, row.tier)
+        return { ...row, primary, suffix }
+      }),
+    [pricingCurrency],
+  )
 
   const planParam = searchParams.get("plan")?.trim().toLowerCase() ?? null
   const planLockedFromUrl = parsePlanQueryParam(planParam) !== null
@@ -537,7 +590,11 @@ function CreateEventForm() {
           }
         }, 2000)
       }
-      const path = planQs ? `/create?plan=${encodeURIComponent(planQs)}` : "/create"
+      const params = new URLSearchParams()
+      if (planQs) params.set("plan", planQs)
+      const loc = searchParams.get("locale")?.trim()
+      if (loc && isLandingLocale(loc)) params.set("locale", loc)
+      const path = params.toString() ? `/create?${params.toString()}` : "/create"
       window.history.replaceState({}, "", path)
     })
     return () => {
@@ -640,8 +697,13 @@ function CreateEventForm() {
     oauthStartLockRef.current = true
     setGoogleLoading(true)
     setCreateError(null)
-    const planQs = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("plan") : null
-    const nextPath = planQs ? `/create?plan=${encodeURIComponent(planQs)}` : "/create"
+    const params = new URLSearchParams()
+    if (typeof window !== "undefined") {
+      const planQs = new URLSearchParams(window.location.search).get("plan")
+      if (planQs) params.set("plan", planQs)
+    }
+    params.set("locale", landingLocale)
+    const nextPath = `/create?${params.toString()}`
     /** Must match Supabase Auth → Redirect URLs (`https://aeternamemoir.com/auth/callback`). */
     const redirectTo = buildOAuthCallbackRedirectUrl(nextPath)
     try {
@@ -901,7 +963,7 @@ function CreateEventForm() {
     if (memorialType === null || wizardStep !== WIZARD_STEPS_FULL) return
     if (!canContinue()) return
 
-    playShutterClick()
+    playMemorialGentleChime()
 
     const snapshot = buildCreateDraft(wizardStep)
     if (snapshot) writeCreateDraft(snapshot)
@@ -909,6 +971,7 @@ function CreateEventForm() {
     const checkoutOpts = {
       cancelToCreate: true as const,
       planQueryParam: storagePlanToUrlPlan(storagePlan),
+      pricingCurrency,
     }
 
     const memorialName = name.trim()
@@ -931,10 +994,14 @@ function CreateEventForm() {
     if (pendingResume) {
       setLoading(true)
       setCreateError(null)
+      const resumeOpts = {
+        ...checkoutOpts,
+        pricingCurrency: pendingResume.pricingCurrency ?? pricingCurrency,
+      }
       const checkout =
         storagePlan === "plus"
-          ? await createPlusCheckoutSessionAction(pendingResume.eventId, pendingResume.slug, checkoutOpts)
-          : await createPremiumTierCheckoutSessionAction(pendingResume.eventId, pendingResume.slug, checkoutOpts)
+          ? await createPlusCheckoutSessionAction(pendingResume.eventId, pendingResume.slug, resumeOpts)
+          : await createPremiumTierCheckoutSessionAction(pendingResume.eventId, pendingResume.slug, resumeOpts)
       setLoading(false)
       if (checkout.ok && checkout.url) {
         window.location.href = checkout.url
@@ -1002,6 +1069,7 @@ function CreateEventForm() {
           slug: result.slug,
           storagePlan: "plus",
           name: name.trim(),
+          pricingCurrency,
         })
         setPendingCheckout({
           v: 1,
@@ -1009,6 +1077,7 @@ function CreateEventForm() {
           slug: result.slug,
           storagePlan: "plus",
           name: name.trim(),
+          pricingCurrency,
         })
         const checkout = await createPlusCheckoutSessionAction(result.eventId, result.slug, checkoutOpts)
         setLoading(false)
@@ -1029,6 +1098,7 @@ function CreateEventForm() {
           slug: result.slug,
           storagePlan: "premium",
           name: name.trim(),
+          pricingCurrency,
         })
         setPendingCheckout({
           v: 1,
@@ -1036,6 +1106,7 @@ function CreateEventForm() {
           slug: result.slug,
           storagePlan: "premium",
           name: name.trim(),
+          pricingCurrency,
         })
         const checkout = await createPremiumTierCheckoutSessionAction(result.eventId, result.slug, checkoutOpts)
         setLoading(false)
@@ -1802,10 +1873,10 @@ function CreateEventForm() {
                     <p className="mt-2 text-base text-white/45">
                       When you&apos;re ready, we&apos;ll open their page — or go on to pay if you chose a paid plan.
                     </p>
-                    <p className="mt-2 text-xs text-white/35">All prices in US dollars (USD).</p>
+                    <p className="mt-2 text-xs text-white/35">{getCreateFlowPricingFootnote(pricingCurrency)}</p>
                   </div>
                   {(() => {
-                    const summary = PLAN_SUMMARY[storagePlan]
+                    const summary = planSummaryMap[storagePlan]
                     return (
                       <div className="rounded-[32px] border border-white/10 ring-1 ring-[var(--aeterna-gold)]/22 bg-gradient-to-b from-[#030303]/50 to-[color:var(--landing-bg)] p-6 md:p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_24px_64px_-28px_rgba(0,0,0,0.65)]">
                         <p className="text-[10px] tracking-[0.32em] uppercase text-[var(--aeterna-gold)]/85">Your selected plan</p>
@@ -1821,9 +1892,10 @@ function CreateEventForm() {
                             </div>
                             <p className="mt-1 text-sm text-white/50">{summary.tagline}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-xl font-[var(--font-serif)] text-[var(--aeterna-gold)] tabular-nums">{summary.price}</p>
-                            <p className="text-[10px] tracking-[0.2em] uppercase text-white/35 mt-1">USD</p>
+                          <div className="text-right" dir="ltr">
+                            <p className="text-xl font-[var(--font-serif)] text-[var(--aeterna-gold)] tabular-nums">
+                              {summary.price}
+                            </p>
                           </div>
                         </div>
                         <ul className="mt-6 space-y-3 border-t border-white/[0.08] pt-6">
@@ -1865,21 +1937,10 @@ function CreateEventForm() {
                         ? "Choose the plan that fits — you can always adjust later where your account allows."
                         : "One calm choice. Change later if you need."}
                     </p>
-                    <p className="mt-2 text-xs text-white/35">All prices in US dollars (USD).</p>
+                    <p className="mt-2 text-xs text-white/35">{getCreateFlowPricingFootnote(pricingCurrency)}</p>
                   </div>
                   <div className="flex flex-col gap-3">
-                    {(
-                      [
-                        { id: "free" as const, title: "Sacred Window", sub: "7 days to gather. Gentle start.", price: "$0" },
-                        { id: "plus" as const, title: "Eternal Legacy", sub: "Preserved forever. No expiration.", price: "$19.99" },
-                        {
-                          id: "premium" as const,
-                          title: "The Eternal Film",
-                          sub: "Eternal Legacy + AI Film Pre-Order",
-                          price: "$39.99",
-                        },
-                      ] as const
-                    ).map((p) => (
+                    {planTierRows.map((p) => (
                       <button
                         key={p.id}
                         type="button"
@@ -1895,8 +1956,9 @@ function CreateEventForm() {
                               <span className={planStatusTagClass}>Coming Soon</span>
                             ) : null}
                           </div>
-                          <span className="shrink-0 text-[var(--aeterna-gold)] tabular-nums">
-                            {p.price} <span className="text-[10px] font-normal text-white/35">USD</span>
+                          <span className="shrink-0 text-[var(--aeterna-gold)] tabular-nums" dir="ltr">
+                            {p.primary}{" "}
+                            <span className="text-[10px] font-normal text-white/35">{p.suffix}</span>
                           </span>
                         </div>
                         <p className="mt-2 text-sm text-white/45">{p.sub}</p>

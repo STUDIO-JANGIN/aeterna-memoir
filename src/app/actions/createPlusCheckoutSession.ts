@@ -4,6 +4,12 @@ import Stripe from "stripe"
 import { PAYMENT_METHOD_TYPES } from "@/lib/checkout"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import {
+  type PricingCurrencyId,
+  resolveStripePriceIdPlus,
+  stripeCurrencyCode,
+  TIER_STRIPE_UNITS,
+} from "@/lib/landingPricing"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 const stripe =
@@ -11,10 +17,6 @@ const stripe =
   new Stripe(secretKey, {
     apiVersion: "2026-02-25.clover",
   })
-
-/** Plus tier: $19.99 USD (lifetime storage + high-resolution download) */
-const PLUS_USD_CENTS = 1999
-const STRIPE_PRICE_ID_PLUS = process.env.STRIPE_PRICE_ID_PLUS ?? ""
 
 export type CreatePlusCheckoutResult =
   | { ok: true; url: string }
@@ -25,6 +27,8 @@ export type PlusCheckoutSessionOptions = {
   cancelToCreate?: boolean
   /** Used with cancelToCreate — matches landing `?plan=` (e.g. forever, film, free). */
   planQueryParam?: "basic" | "premium" | "free" | "forever" | "film"
+  /** Regional Stripe Price / `price_data` (KRW, JPY, SAR, USD). Defaults to USD. */
+  pricingCurrency?: PricingCurrencyId
 }
 
 function resolvePlusCancelUrl(
@@ -40,7 +44,7 @@ function resolvePlusCancelUrl(
 }
 
 /**
- * Create Stripe Checkout Session for Plus tier ($19.99).
+ * Create Stripe Checkout Session for Plus tier (regional pricing).
  * metadata.tier: "plus" → webhook sets events.tier = 'plus', is_paid = true.
  */
 export async function createPlusCheckoutSessionAction(
@@ -54,13 +58,18 @@ export async function createPlusCheckoutSessionAction(
   const supabase = getSupabaseAdmin()
   const origin = getAppBaseUrl()
 
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = STRIPE_PRICE_ID_PLUS
-    ? [{ price: STRIPE_PRICE_ID_PLUS, quantity: 1 }]
+  const currency = options?.pricingCurrency ?? "usd"
+  const stripePriceId = resolveStripePriceIdPlus(currency)
+  const unitAmount = TIER_STRIPE_UNITS[currency][1]
+  const curr = stripeCurrencyCode(currency)
+
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = stripePriceId
+    ? [{ price: stripePriceId, quantity: 1 }]
     : [
         {
           price_data: {
-            currency: "usd",
-            unit_amount: PLUS_USD_CENTS,
+            currency: curr,
+            unit_amount: unitAmount,
             product_data: {
               name: "Aeterna Plus — lifetime memory storage",
               description:
@@ -82,6 +91,7 @@ export async function createPlusCheckoutSessionAction(
         slug,
         purpose: "premium_film",
         tier: "plus",
+        pricing_currency: currency,
       },
       success_url: `${origin}/p/${encodeURIComponent(slug)}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: resolvePlusCancelUrl(origin, slug, options),

@@ -4,6 +4,12 @@ import Stripe from "stripe"
 import { PAYMENT_METHOD_TYPES } from "@/lib/checkout"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import {
+  type PricingCurrencyId,
+  resolveStripePriceIdPremium,
+  stripeCurrencyCode,
+  TIER_STRIPE_UNITS,
+} from "@/lib/landingPricing"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 const stripe =
@@ -12,10 +18,6 @@ const stripe =
     apiVersion: "2026-02-25.clover",
   })
 
-/** Premium tier: $39.99 USD (Plus + AI tribute film credits) */
-const PREMIUM_TIER_USD_CENTS = 3999
-const STRIPE_PRICE_ID_PREMIUM = process.env.STRIPE_PRICE_ID_PREMIUM ?? ""
-
 export type CreatePremiumTierCheckoutResult =
   | { ok: true; url: string }
   | { ok: false; error: string }
@@ -23,6 +25,7 @@ export type CreatePremiumTierCheckoutResult =
 export type PremiumTierCheckoutSessionOptions = {
   cancelToCreate?: boolean
   planQueryParam?: "basic" | "premium" | "free" | "forever" | "film"
+  pricingCurrency?: PricingCurrencyId
 }
 
 function resolvePremiumCancelUrl(
@@ -38,7 +41,7 @@ function resolvePremiumCancelUrl(
 }
 
 /**
- * Create Stripe Checkout Session for Premium tier ($39.99).
+ * Create Stripe Checkout Session for Premium tier (regional pricing).
  * metadata.tier: "premium" → webhook sets events.tier = 'premium', is_paid = true.
  */
 export async function createPremiumTierCheckoutSessionAction(
@@ -52,13 +55,18 @@ export async function createPremiumTierCheckoutSessionAction(
   const supabase = getSupabaseAdmin()
   const origin = getAppBaseUrl()
 
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = STRIPE_PRICE_ID_PREMIUM
-    ? [{ price: STRIPE_PRICE_ID_PREMIUM, quantity: 1 }]
+  const currency = options?.pricingCurrency ?? "usd"
+  const stripePriceId = resolveStripePriceIdPremium(currency)
+  const unitAmount = TIER_STRIPE_UNITS[currency][2]
+  const curr = stripeCurrencyCode(currency)
+
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = stripePriceId
+    ? [{ price: stripePriceId, quantity: 1 }]
     : [
         {
           price_data: {
-            currency: "usd",
-            unit_amount: PREMIUM_TIER_USD_CENTS,
+            currency: curr,
+            unit_amount: unitAmount,
             product_data: {
               name: "Aeterna Premium — cinematic tribute album",
               description:
@@ -80,6 +88,7 @@ export async function createPremiumTierCheckoutSessionAction(
         slug,
         purpose: "premium_film",
         tier: "premium",
+        pricing_currency: currency,
       },
       success_url: `${origin}/p/${encodeURIComponent(slug)}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: resolvePremiumCancelUrl(origin, slug, options),

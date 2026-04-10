@@ -53,6 +53,7 @@ export type AdminEvent = {
   profile_image: string | null
   music_url: string | null
   bank_info: string | null
+  invitation_bio: string | null
   preview_film_url: string | null
   full_film_requested_at: string | null
   full_film_url?: string | null
@@ -75,7 +76,7 @@ export async function getEventBySlug(slug: string): Promise<AdminEvent | null> {
   }
 
   const selectCols =
-    "id, name, slug, collection_end_at, expired_at, is_paid, tier, video_credits, created_at, birth_date, death_date, location, ceremony_time, flower_link, profile_image, music_url, bank_info, preview_film_url, full_film_requested_at, full_film_url, video_status, invite_pdf_url"
+    "id, name, slug, collection_end_at, expired_at, is_paid, tier, video_credits, created_at, birth_date, death_date, location, ceremony_time, flower_link, profile_image, music_url, bank_info, invitation_bio, preview_film_url, full_film_requested_at, full_film_url, video_status, invite_pdf_url"
 
   const { data, error } = await supabase
     .from("events")

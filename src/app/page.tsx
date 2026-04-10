@@ -9,6 +9,11 @@ import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwi
 import { LandingLocaleProvider, useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import { getLandingHeroImages } from "@/lib/landingHeroMedia"
 import {
+  formatLandingTierPrice,
+  getPricingCurrencyId,
+  landingPlanHref,
+} from "@/lib/landingPricing"
+import {
   IPhoneShell,
   StepScreenConnectVote,
   StepScreenCreate,
@@ -29,11 +34,7 @@ const HOW_IT_WORKS_META = [
 const LANDING_NAV_IDS = ["how-it-works", "pricing", "faq"] as const
 type LandingNavId = (typeof LANDING_NAV_IDS)[number]
 
-const PLAN_META = [
-  { price: "$0", href: "/create?plan=free", emphasis: "subtle" as const },
-  { price: "$19.99", href: "/create?plan=forever", emphasis: "gold" as const },
-  { price: "$39.99", href: "/create?plan=film", emphasis: "subtle" as const },
-] as const
+const PLAN_TIER_EMPHASIS = ["subtle", "gold", "subtle"] as const
 
 /** Same footprint + shared baseline: phones align on one horizontal line on md+. */
 function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_META)[number]["mockup"] }) {
@@ -85,6 +86,7 @@ function LandingPageInner() {
   const showPlaceholder = !hasVideo || videoError
   const stepFlowLabels = t.howItWorks.steps.map((s) => `${s.title}: ${s.description}`)
   const heroImages = getLandingHeroImages(locale)
+  const pricingCurrency = getPricingCurrencyId(locale)
 
   /** After client navigation from other routes (e.g. memorial “upgrade” → /#pricing), scroll to pricing. */
   useEffect(() => {
@@ -342,17 +344,20 @@ function LandingPageInner() {
               </p>
             </RevealSection>
 
-            <p className="text-center text-xs text-[#737373] mb-8">{t.pricing.usdNote}</p>
+            <p className="text-center text-xs text-[#737373] mb-8">{t.pricing.pricingFootnote}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 md:items-stretch gap-6 md:gap-4">
               {t.pricing.plans.map((plan, i) => {
-                const meta = PLAN_META[i]
+                const tierIndex = i as 0 | 1 | 2
+                const emphasis = PLAN_TIER_EMPHASIS[tierIndex]
+                const href = landingPlanHref(tierIndex, locale)
                 const statusTag = "statusTag" in plan ? plan.statusTag : undefined
+                const { primary, suffix } = formatLandingTierPrice(pricingCurrency, tierIndex)
                 return (
-                  <RevealSection key={meta.href} className="h-full">
+                  <RevealSection key={href} className="h-full">
                     <div className="card-treasure h-full rounded-2xl">
                       <div
                         className={`card-treasure-inner flex h-full min-h-full flex-col rounded-2xl px-6 py-8 text-center ${
-                          meta.emphasis === "gold"
+                          emphasis === "gold"
                             ? "ring-1 ring-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.06]"
                             : ""
                         }`}
@@ -368,18 +373,22 @@ function LandingPageInner() {
                             {plan.tierName}
                           </p>
                         </div>
-                        <p className="font-[var(--font-serif)] text-3xl md:text-4xl text-[color:var(--landing-text-hero)] tabular-nums tracking-[0.02em]">
-                          {meta.price}{" "}
-                          <span className="text-lg font-normal text-white/35 md:text-xl">USD</span>
+                        <p
+                          dir="ltr"
+                          lang={locale === "ja" ? "ja" : "en"}
+                          className="font-[var(--font-serif)] text-3xl md:text-4xl text-[color:var(--landing-text-hero)] tabular-nums tracking-[0.02em]"
+                        >
+                          <span className="inline-block">{primary}</span>{" "}
+                          <span className="text-lg font-normal text-white/35 md:text-xl">{suffix}</span>
                         </p>
                         <p className="mt-4 font-[var(--font-sans)] text-sm text-[#a3a3a3] leading-snug">{plan.value}</p>
                         <div className="flex-1" />
                         <Link
-                          href={meta.href}
+                          href={href}
                           className={`cta-silk btn-tap mt-8 inline-flex min-h-[48px] items-center justify-center rounded-full text-[10px] tracking-[0.16em] uppercase font-medium ${
                             statusTag
                               ? "animate-artisan-pulse border border-[var(--aeterna-gold)]/35 text-[color:var(--landing-text-hero)] hover:bg-white/[0.06]"
-                              : meta.emphasis === "gold"
+                              : emphasis === "gold"
                                 ? "bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] hover:bg-[var(--aeterna-gold-light)]"
                                 : "border border-white/[0.12] text-[color:var(--landing-text-title)] hover:bg-white/[0.04]"
                           }`}

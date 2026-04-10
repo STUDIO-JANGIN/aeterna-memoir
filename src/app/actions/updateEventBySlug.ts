@@ -13,6 +13,7 @@ export type UpdateEventBySlugInput = {
   profile_image?: string | null
   music_url?: string | null
   bank_info?: string | null
+  invitation_bio?: string | null
 }
 
 export type UpdateEventBySlugResult =
@@ -49,6 +50,7 @@ export async function updateEventBySlugAction(
   if (input.profile_image !== undefined) updates.profile_image = input.profile_image
   if (input.music_url !== undefined) updates.music_url = input.music_url
   if (input.bank_info !== undefined) updates.bank_info = input.bank_info
+  if (input.invitation_bio !== undefined) updates.invitation_bio = input.invitation_bio
 
   if (Object.keys(updates).length === 0) {
     return { ok: true }

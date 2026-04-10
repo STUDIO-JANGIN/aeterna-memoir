@@ -45,7 +45,8 @@ export function Navbar({ children, end }: NavbarProps) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
+    // document.body exists only on client; gates createPortal for the mobile sheet.
+    queueMicrotask(() => setMounted(true))
   }, [])
 
   useEffect(() => {
@@ -120,16 +121,19 @@ export function Navbar({ children, end }: NavbarProps) {
           </span>
         </div>
 
-        <button
-          type="button"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#f5f5f7] transition-colors hover:bg-white/[0.06] md:hidden"
-          aria-expanded={mobileOpen}
-          aria-controls="landing-mobile-nav"
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
-          onClick={() => setMobileOpen((o) => !o)}
-        >
-          {mobileOpen ? <X className="h-6 w-6" strokeWidth={1.75} /> : <Menu className="h-6 w-6" strokeWidth={1.75} />}
-        </button>
+        <div className="flex shrink-0 items-center gap-2 md:hidden">
+          {end}
+          <button
+            type="button"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#f5f5f7] transition-colors hover:bg-white/[0.06]"
+            aria-expanded={mobileOpen}
+            aria-controls="landing-mobile-nav"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMobileOpen((o) => !o)}
+          >
+            {mobileOpen ? <X className="h-6 w-6" strokeWidth={1.75} /> : <Menu className="h-6 w-6" strokeWidth={1.75} />}
+          </button>
+        </div>
       </div>
 
       <nav

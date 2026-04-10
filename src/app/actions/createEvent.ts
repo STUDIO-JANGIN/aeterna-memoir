@@ -116,6 +116,9 @@ export async function createEventAction(
    * SECURITY: Never trust client `tier` / `is_premium` for paid plans.
    * Plus / Premium must be granted only after Stripe `checkout.session.completed` (webhook)
    * or verified Checkout Session on the server. New memorials always start as `free`.
+   *
+   * Tier is stored per `events` row: the same user may have multiple memorials, each with its own
+   * tier — payment for one never upgrades another.
    */
   const tier = "free"
   const isPremium = false

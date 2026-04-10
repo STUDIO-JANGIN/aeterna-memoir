@@ -35,6 +35,7 @@ export type CreateDraftV1 = {
   storagePlan: StoragePlan
 }
 
+/** Resume Stripe only when this matches the current form name — tier is per memorial, not per login. */
 export type PendingCheckoutV1 = {
   v: 1
   eventId: string

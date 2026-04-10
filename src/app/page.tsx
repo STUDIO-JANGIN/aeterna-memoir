@@ -5,6 +5,8 @@ import Link from "next/link"
 import { Heart, QrCode, Sparkles } from "lucide-react"
 import { Navbar } from "@/components/Layout/Navbar"
 import { RevealSection } from "@/components/RevealSection"
+import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
+import { LandingLocaleProvider, useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import {
   IPhoneShell,
   StepScreenConnectVote,
@@ -17,112 +19,23 @@ const LANDING_BACKGROUND_VIDEO_URL =
 const LANDING_BACKGROUND_POSTER_URL =
   process.env.NEXT_PUBLIC_LANDING_BACKGROUND_POSTER_URL ?? "/hero-fallback.jpg"
 
-const FAQ_ITEMS = [
-  {
-    q: "What is Aeterna?",
-    a: "Aeterna is a digital treasure box for the memories of those we love: both people and pets. It's a special place where their smiles, voices, and stories live forever, instead of being lost in a phone gallery or a dusty album.",
-  },
-  {
-    q: "Why did you start this?",
-    a: "Our founder started Aeterna after losing his father. He realized there was no beautiful, shared space to celebrate a life with others digitally. He created Aeterna to make sure no one has to feel alone in their remembrance, turning a \"shrine\" into a living celebration of love.",
-  },
-  {
-    q: "How do I start a memorial?",
-    a: "It's as simple as planting a seed. First, you create a profile for your loved one. Second, you share a link or a QR code with family and friends. There's no app to download and no complicated login, just a direct path to sharing love.",
-  },
-  {
-    q: "How do friends and family help?",
-    a: "Once they receive the link, they can instantly upload photos, leave \"likes,\" or share a heartwarming comment. It's like a group hug where everyone brings their favorite memory to help the story grow.",
-  },
-  {
-    q: "Can I use this for a physical service?",
-    a: "Yes. You can create a beautiful PDF invitation with a unique QR code. Print it and place it at a memorial service or send it digitally. Visitors can simply scan it with their phones to contribute their photos and messages in real-time.",
-  },
-  {
-    q: "Is it safe and private?",
-    a: "Absolutely. Like a secret garden, only the people you invite can enter. Your memories aren't products for the public; they are sacred treasures kept safe and private for those who truly knew the deceased.",
-  },
-  {
-    q: "What happens in the long run?",
-    a: "We believe memories should move and speak. In the future, we will help you turn the most-loved photos into a beautiful AI tribute film: a living movie of a life well-lived, so the story stays vibrant for generations to come.",
-  },
-]
-
-/** Screen-reader summaries (match column mockups + copy). */
-const STEP_FLOW_LABELS = [
-  "Create a digital shrine: a dignified memorial for your loved one or pet.",
-  "Scan and share: QR at the service or a link. Guests upload photos and stories; no app required.",
-  "Connect and relive: the community hearts favorite memories; the most-loved stories rise to the top.",
+const HOW_IT_WORKS_META = [
+  { Icon: Sparkles, mockup: "create" as const },
+  { Icon: QrCode, mockup: "qr" as const },
+  { Icon: Heart, mockup: "connect" as const },
 ] as const
-
-const HOW_IT_WORKS_STEPS = [
-  {
-    title: "Create a Digital Shrine",
-    description:
-      "Build a dignified memorial space for your loved one or pet in seconds.",
-    Icon: Sparkles,
-    mockup: "create" as const,
-  },
-  {
-    title: "Scan · Share",
-    description:
-      "Place a QR code at the service or share a link. Guests upload photos and stories instantly. No app required.",
-    Icon: QrCode,
-    mockup: "qr" as const,
-  },
-  {
-    title: "Connect · Relive",
-    description:
-      "The community hearts their favorite memories, and the most-loved stories rise to the top.",
-    Icon: Heart,
-    mockup: "connect" as const,
-  },
-] as const
-
-type PlanRow = {
-  tierName: string
-  price: string
-  value: string
-  cta: string
-  href: string
-  emphasis: "subtle" | "gold"
-  planLabel?: string
-  statusTag?: string
-}
 
 const LANDING_NAV_IDS = ["how-it-works", "pricing", "faq"] as const
 type LandingNavId = (typeof LANDING_NAV_IDS)[number]
 
-const PLANS: PlanRow[] = [
-  {
-    tierName: "Sacred Window",
-    price: "$0",
-    value: "7 days to gather memories. A gentle, peaceful start.",
-    cta: "Start",
-    href: "/create?plan=free",
-    emphasis: "subtle",
-  },
-  {
-    tierName: "Eternal Legacy",
-    price: "$19.99",
-    value: "Keep every photo and story preserved forever. No expiration.",
-    cta: "Select",
-    href: "/create?plan=forever",
-    emphasis: "gold",
-  },
-  {
-    tierName: "The Eternal Film",
-    statusTag: "Coming Soon",
-    price: "$39.99",
-    value: "Everything in Legacy, plus priority access to your 1-minute AI tribute film.",
-    cta: "Select",
-    href: "/create?plan=film",
-    emphasis: "subtle",
-  },
-]
+const PLAN_META = [
+  { price: "$0", href: "/create?plan=free", emphasis: "subtle" as const },
+  { price: "$19.99", href: "/create?plan=forever", emphasis: "gold" as const },
+  { price: "$39.99", href: "/create?plan=film", emphasis: "subtle" as const },
+] as const
 
 /** Same footprint + shared baseline: phones align on one horizontal line on md+. */
-function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_STEPS)[number]["mockup"] }) {
+function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_META)[number]["mockup"] }) {
   const shellClass = "shadow-[0_32px_80px_rgba(0,0,0,0.45)]"
   const slotClass =
     "flex h-full min-h-[min(400px,56vw)] w-full items-end justify-center md:min-h-[448px]"
@@ -162,12 +75,14 @@ function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_STEPS)[numb
   )
 }
 
-export default function LandingPage() {
+function LandingPageInner() {
+  const { locale, strings: t } = useLandingLocale()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [videoError, setVideoError] = useState(false)
   const [activeNavId, setActiveNavId] = useState<LandingNavId | null>(null)
   const hasVideo = !!LANDING_BACKGROUND_VIDEO_URL
   const showPlaceholder = !hasVideo || videoError
+  const stepFlowLabels = t.howItWorks.steps.map((s) => `${s.title}: ${s.description}`)
 
   /** After client navigation from other routes (e.g. memorial “upgrade” → /#pricing), scroll to pricing. */
   useEffect(() => {
@@ -217,25 +132,29 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="relative min-h-dvh w-full bg-landing text-[#f5f5f7] leading-[1.6]">
+    <div
+      className="relative min-h-dvh w-full bg-landing text-[#f5f5f7] leading-[1.6]"
+      dir={locale === "ar" ? "rtl" : "ltr"}
+      lang={locale}
+    >
       {/* once.film–inspired: calm, editorial, lots of air; nav centered, logo / CTA balanced */}
-      <Navbar>
+      <Navbar end={<LandingLanguageSwitcher />}>
         <button
           type="button"
           onClick={() => scrollTo("how-it-works")}
           className={landingNavButtonClass("how-it-works")}
         >
-          How it works
+          {t.nav.howItWorks}
         </button>
         <button
           type="button"
           onClick={() => scrollTo("pricing")}
           className={landingNavButtonClass("pricing")}
         >
-          Pricing
+          {t.nav.pricing}
         </button>
         <button type="button" onClick={() => scrollTo("faq")} className={landingNavButtonClass("faq")}>
-          FAQ
+          {t.nav.faq}
         </button>
       </Navbar>
 
@@ -276,15 +195,15 @@ export default function LandingPage() {
               <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-left px-1 sm:px-2 pb-2 sm:pb-10 lg:pb-0">
                 <RevealSection className="w-full max-w-xl mx-auto lg:mx-0 lg:max-w-xl space-y-0">
                   <h1 className="text-landing-hero font-semibold text-balance md:leading-[1.1] max-md:!text-[clamp(1.875rem,7.5vw,2.75rem)] max-md:!leading-[1.14] max-md:tracking-[-0.035em]">
-                    A Digital Shrine for{" "}
+                    {t.hero.title1}{" "}
                     <br className="md:hidden" aria-hidden />
-                    Sacred Memory
+                    {t.hero.title2}
                   </h1>
                   <p className="mt-4 md:mt-8 text-[13px] md:text-lg leading-[1.72] md:leading-[1.6] text-[#f5f5f7]/90 font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance max-md:px-0.5">
-                    A lasting space for people and pets, preserved with dignity. Share instantly by QR or link: no app, no friction; guests add photos and stories from any phone. A gentle memorial feed where visitors heart and comment on each memory, like a sacred timeline of their legacy.
+                    {t.hero.body}
                   </p>
                   <p className="mt-5 md:mt-4 text-[11px] md:text-sm leading-[1.68] md:leading-relaxed font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance italic text-[#f0ebe3] [text-shadow:0px_2px_10px_rgba(0,0,0,0.8)] max-md:px-0.5">
-                    Footprints, remembrance, and preservation in one hallowed place.
+                    {t.hero.tagline}
                   </p>
                 </RevealSection>
                 <RevealSection className="mt-8 w-full max-w-xl mx-auto lg:mx-0 pt-2 md:mt-10 md:pt-0 border-t border-white/[0.06] md:border-0 max-md:pb-2">
@@ -293,13 +212,13 @@ export default function LandingPage() {
                       href="/create"
                       className="cta-silk inline-flex min-h-[50px] md:min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-8 md:px-12 text-[10px] md:text-[11px] font-semibold tracking-[0.16em] uppercase text-[#0c0c0c] border border-[var(--aeterna-gold)] shadow-[0_16px_50px_-6px_rgba(197,160,89,0.42)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_20px_56px_-4px_rgba(197,160,89,0.5)]"
                     >
-                      Create a Memorial Now
+                      {t.hero.ctaCreate}
                     </Link>
                     <Link
-                      href="/my-memorial"
+                      href="/sign-in?next=%2Fmy-memorial"
                       className="inline-flex min-h-[50px] md:min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full border border-[var(--aeterna-gold)]/55 bg-[#030303]/35 px-8 md:px-10 text-[10px] md:text-[11px] font-semibold tracking-[0.16em] uppercase text-[var(--aeterna-gold)] shadow-[0_8px_28px_-8px_rgba(0,0,0,0.4)] hover:bg-[var(--aeterna-gold)]/10 hover:border-[var(--aeterna-gold)]/80 transition-colors"
                     >
-                      My memorial
+                      {t.hero.ctaMyMemorial}
                     </Link>
                   </div>
                 </RevealSection>
@@ -358,28 +277,27 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto">
             <RevealSection className="text-center mb-12 md:mb-20">
               <p className="text-[9px] md:text-[10px] tracking-[0.32em] md:tracking-[0.35em] uppercase text-[#737373] mb-5 md:mb-4">
-                How it works
+                {t.howItWorks.kicker}
               </p>
               <h2 className="font-[var(--font-serif)] text-[1.35rem] leading-[1.35] sm:text-2xl md:text-[2rem] md:leading-tight text-[color:var(--landing-text-title)] font-normal tracking-[0.05em] text-balance px-1">
-                Create · Share · Gather
+                {t.howItWorks.title}
               </h2>
               <p className="mt-5 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance">
-                Three pillars: a digital shrine for humans and pets; zero-friction access by QR or link with no app; and a community memorial where visitors heart and comment, so the moments that matter stay in view.
+                {t.howItWorks.subtitle}
               </p>
-              <p className="sr-only">
-                Core flow in seconds: create a digital shrine, share by QR or link with no download, guests upload from mobile; community hearts and comments on memories.
-              </p>
+              <p className="sr-only">{stepFlowLabels.join(" ")}</p>
             </RevealSection>
 
             <ol className="m-0 grid list-none grid-cols-1 gap-16 p-0 md:grid-cols-3 md:items-stretch md:gap-8 lg:gap-12">
-              {HOW_IT_WORKS_STEPS.map((step, i) => {
-                const Icon = step.Icon
+              {HOW_IT_WORKS_META.map((meta, i) => {
+                const step = t.howItWorks.steps[i]
+                const Icon = meta.Icon
                 return (
                   <li
                     key={step.title}
                     className="relative flex list-none flex-col items-center text-center md:h-full md:min-h-[560px] lg:min-h-[600px]"
                   >
-                    <span className="sr-only">{STEP_FLOW_LABELS[i]}</span>
+                    <span className="sr-only">{stepFlowLabels[i]}</span>
                     <RevealSection className="flex w-full flex-1 flex-col items-center md:h-full md:min-h-0">
                       <div className="mb-4 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--aeterna-gold)]/30 bg-[var(--aeterna-gold)]/[0.08] text-[var(--aeterna-gold)] shadow-[0_0_40px_rgba(197,160,89,0.12)]">
                         <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
@@ -393,7 +311,7 @@ export default function LandingPage() {
                         </p>
                       </div>
                       <div className="relative mt-6 flex w-full flex-1 flex-col justify-end md:mt-8 md:px-0">
-                        <HowItWorksMockup mockup={step.mockup} />
+                        <HowItWorksMockup mockup={meta.mockup} />
                       </div>
                     </RevealSection>
                   </li>
@@ -410,65 +328,64 @@ export default function LandingPage() {
         >
           <div className="max-w-3xl mx-auto">
             <RevealSection className="text-center mb-14">
-              <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">Pricing</p>
+              <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">{t.pricing.kicker}</p>
               <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[color:var(--landing-text-title)] font-normal tracking-[0.05em]">
-                Sacred preservation. One-time.
+                {t.pricing.title}
               </h2>
               <p className="mt-6 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance">
-                The first 7 days are a free window to gather memories. Upgrade anytime to preserve the shrine forever.
+                {t.pricing.subtitle}
               </p>
             </RevealSection>
 
-            <p className="text-center text-xs text-[#737373] mb-8">All prices in US dollars (USD).</p>
+            <p className="text-center text-xs text-[#737373] mb-8">{t.pricing.usdNote}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 md:items-stretch gap-6 md:gap-4">
-              {PLANS.map((plan) => (
-                <RevealSection key={plan.price} className="h-full">
-                  <div className="card-treasure h-full rounded-2xl">
-                    <div
-                      className={`card-treasure-inner flex h-full min-h-full flex-col rounded-2xl px-6 py-8 text-center ${
-                        plan.emphasis === "gold"
-                          ? "ring-1 ring-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.06]"
-                          : ""
-                      }`}
-                    >
-                      {/* min-h aligns price row across cards */}
-                      <div className="flex min-h-[80px] w-full flex-col items-center justify-end md:min-h-[88px]">
-                        {plan.statusTag ? (
-                          <span className="mb-3 inline-flex max-w-[14rem] items-center justify-center self-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]">
-                            {plan.statusTag}
-                          </span>
-                        ) : null}
-                        <p className="font-[var(--font-display)] text-[10px] tracking-[0.18em] text-[#c4a86a] uppercase mb-1">
-                          {plan.tierName}
-                        </p>
-                        {plan.planLabel ? (
-                          <p className="font-[var(--font-display)] text-[9px] tracking-[0.22em] text-[#9a8a6e] uppercase mb-2">
-                            {plan.planLabel}
-                          </p>
-                        ) : null}
-                      </div>
-                      <p className="font-[var(--font-serif)] text-3xl md:text-4xl text-[color:var(--landing-text-hero)] tabular-nums tracking-[0.02em]">
-                        {plan.price}{" "}
-                        <span className="text-lg font-normal text-white/35 md:text-xl">USD</span>
-                      </p>
-                      <p className="mt-4 font-[var(--font-sans)] text-sm text-[#a3a3a3] leading-snug">{plan.value}</p>
-                      <div className="flex-1" />
-                      <Link
-                        href={plan.href}
-                        className={`cta-silk btn-tap mt-8 inline-flex min-h-[48px] items-center justify-center rounded-full text-[10px] tracking-[0.16em] uppercase font-medium ${
-                          plan.statusTag
-                            ? "animate-artisan-pulse border border-[var(--aeterna-gold)]/35 text-[color:var(--landing-text-hero)] hover:bg-white/[0.06]"
-                            : plan.emphasis === "gold"
-                              ? "bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] hover:bg-[var(--aeterna-gold-light)]"
-                              : "border border-white/[0.12] text-[color:var(--landing-text-title)] hover:bg-white/[0.04]"
+              {t.pricing.plans.map((plan, i) => {
+                const meta = PLAN_META[i]
+                const statusTag = "statusTag" in plan ? plan.statusTag : undefined
+                return (
+                  <RevealSection key={meta.href} className="h-full">
+                    <div className="card-treasure h-full rounded-2xl">
+                      <div
+                        className={`card-treasure-inner flex h-full min-h-full flex-col rounded-2xl px-6 py-8 text-center ${
+                          meta.emphasis === "gold"
+                            ? "ring-1 ring-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.06]"
+                            : ""
                         }`}
                       >
-                        {plan.cta}
-                      </Link>
+                        {/* min-h aligns price row across cards */}
+                        <div className="flex min-h-[80px] w-full flex-col items-center justify-end md:min-h-[88px]">
+                          {statusTag ? (
+                            <span className="mb-3 inline-flex max-w-[14rem] items-center justify-center self-center rounded-md border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/[0.08] px-2.5 py-1 text-[7px] font-semibold uppercase leading-snug tracking-[0.18em] text-[#d8c896]">
+                              {statusTag}
+                            </span>
+                          ) : null}
+                          <p className="font-[var(--font-display)] text-[10px] tracking-[0.18em] text-[#c4a86a] uppercase mb-1">
+                            {plan.tierName}
+                          </p>
+                        </div>
+                        <p className="font-[var(--font-serif)] text-3xl md:text-4xl text-[color:var(--landing-text-hero)] tabular-nums tracking-[0.02em]">
+                          {meta.price}{" "}
+                          <span className="text-lg font-normal text-white/35 md:text-xl">USD</span>
+                        </p>
+                        <p className="mt-4 font-[var(--font-sans)] text-sm text-[#a3a3a3] leading-snug">{plan.value}</p>
+                        <div className="flex-1" />
+                        <Link
+                          href={meta.href}
+                          className={`cta-silk btn-tap mt-8 inline-flex min-h-[48px] items-center justify-center rounded-full text-[10px] tracking-[0.16em] uppercase font-medium ${
+                            statusTag
+                              ? "animate-artisan-pulse border border-[var(--aeterna-gold)]/35 text-[color:var(--landing-text-hero)] hover:bg-white/[0.06]"
+                              : meta.emphasis === "gold"
+                                ? "bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] hover:bg-[var(--aeterna-gold-light)]"
+                                : "border border-white/[0.12] text-[color:var(--landing-text-title)] hover:bg-white/[0.04]"
+                          }`}
+                        >
+                          {plan.cta}
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                </RevealSection>
-              ))}
+                  </RevealSection>
+                )
+              })}
             </div>
           </div>
         </section>
@@ -480,16 +397,16 @@ export default function LandingPage() {
         >
           <div className="max-w-2xl mx-auto">
             <RevealSection className="text-center mb-14 md:mb-16">
-              <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">FAQ</p>
+              <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">{t.faq.kicker}</p>
               <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[color:var(--landing-text-title)] font-normal tracking-[0.05em]">
-                Questions, gently answered
+                {t.faq.title}
               </h2>
               <p className="mt-5 max-w-md mx-auto font-[var(--font-sans)] text-sm md:text-[15px] text-[#8a8a8a] leading-relaxed">
-                Artisan care for families across the US, Australia, and beyond.
+                {t.faq.subtitle}
               </p>
             </RevealSection>
             <div className="space-y-3 md:space-y-4">
-              {FAQ_ITEMS.map((faq, i) => (
+              {t.faq.items.map((faq, i) => (
                 <RevealSection key={i}>
                   <div className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
                     <button
@@ -519,11 +436,17 @@ export default function LandingPage() {
         </section>
 
         <footer className="border-t border-white/[0.03] bg-landing px-5 py-14 text-center">
-          <p className="text-[10px] tracking-[0.22em] uppercase text-[#525252]">
-            For celebration-of-life professionals & care providers · hoon@aya.yale.edu
-          </p>
+          <p className="text-[10px] tracking-[0.22em] uppercase text-[#525252]">{t.footer}</p>
         </footer>
       </div>
     </div>
+  )
+}
+
+export default function LandingPage() {
+  return (
+    <LandingLocaleProvider>
+      <LandingPageInner />
+    </LandingLocaleProvider>
   )
 }

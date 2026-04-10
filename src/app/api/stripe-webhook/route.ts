@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       const currency = session.currency ?? "usd"
       const customerEmail = (session.customer_details?.email || session.customer_email) ?? null
 
+      /** `eventId` in metadata scopes Plus/Premium to a single memorial row — never shared across a user’s events. */
       if (purpose === "premium_film" && eventId && supabase) {
         const tierFromMeta = session.metadata?.tier as string | undefined
         const tier: "plus" | "premium" =

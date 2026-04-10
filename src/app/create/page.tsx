@@ -911,24 +911,39 @@ function CreateEventForm() {
       planQueryParam: storagePlanToUrlPlan(storagePlan),
     }
 
-    if (pendingCheckout && (storagePlan === "plus" || storagePlan === "premium")) {
-      if (pendingCheckout.storagePlan === storagePlan) {
-        setLoading(true)
-        setCreateError(null)
-        const checkout =
-          storagePlan === "plus"
-            ? await createPlusCheckoutSessionAction(pendingCheckout.eventId, pendingCheckout.slug, checkoutOpts)
-            : await createPremiumTierCheckoutSessionAction(pendingCheckout.eventId, pendingCheckout.slug, checkoutOpts)
-        setLoading(false)
-        if (checkout.ok && checkout.url) {
-          window.location.href = checkout.url
-          return
-        }
-        setCreateError(
-          (!checkout.ok && checkout.error) || "Checkout couldn’t start. Please try again."
-        )
+    const memorialName = name.trim()
+    let fromLs = readPendingCheckout()
+    /** Drop pending Stripe resume if it belongs to a different memorial (tier is per event, not per account). */
+    if (fromLs && fromLs.name.trim() !== memorialName) {
+      clearPendingCheckout()
+      setPendingCheckout(null)
+      fromLs = null
+    }
+
+    const pendingResume =
+      fromLs &&
+      (storagePlan === "plus" || storagePlan === "premium") &&
+      fromLs.storagePlan === storagePlan &&
+      fromLs.name.trim() === memorialName
+        ? fromLs
+        : null
+
+    if (pendingResume) {
+      setLoading(true)
+      setCreateError(null)
+      const checkout =
+        storagePlan === "plus"
+          ? await createPlusCheckoutSessionAction(pendingResume.eventId, pendingResume.slug, checkoutOpts)
+          : await createPremiumTierCheckoutSessionAction(pendingResume.eventId, pendingResume.slug, checkoutOpts)
+      setLoading(false)
+      if (checkout.ok && checkout.url) {
+        window.location.href = checkout.url
         return
       }
+      setCreateError(
+        (!checkout.ok && checkout.error) || "Checkout couldn’t start. Please try again."
+      )
+      return
     }
 
     setLoading(true)

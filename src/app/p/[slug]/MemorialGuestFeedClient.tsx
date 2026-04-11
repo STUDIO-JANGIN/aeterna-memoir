@@ -18,7 +18,6 @@ import { getDonationAmountByLocale } from "@/lib/checkout"
 import { formatLongDate } from "@/lib/formatDate"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
-import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
 import { isMemorialOwner } from "@/lib/memorialOwnership"
 import { resolveProfileImageUrl } from "@/lib/profileImageUrl"
 import {
@@ -29,7 +28,7 @@ import {
 import { StoryMemoryDrawer } from "@/components/memorial/StoryMemoryDrawer"
 import {
   MemorialTrialCountdown,
-  formatMemorialCountdownDisplay,
+  type MemorialTrialBannerCopy,
 } from "@/components/memorial/MemorialTrialCountdown"
 import { buildGlobalShareMessage } from "@/components/MemorialShareActions"
 import { openWhatsAppWithPrefilledText } from "@/lib/whatsappInvite"
@@ -163,6 +162,17 @@ export default function GuestFeedPage({ params }: PageProps) {
   const [showDonationThankYou, setShowDonationThankYou] = useState(false)
   const [platformTipChecked, setPlatformTipChecked] = useState(true)
   const { app: tx, locale: appLocale } = useLandingLocale()
+  const memorialTrialBannerCopy = useMemo<MemorialTrialBannerCopy>(
+    () => ({
+      preserveLegacyHeader: tx.memorial.preserveLegacyHeader,
+      trialGatheringTimerLabel: tx.memorial.trialGatheringTimerLabel,
+      trialCountdownFromMs: tx.memorial.trialCountdownFromMs,
+      trialUpgradePart1: tx.memorial.trialUpgradePart1,
+      trialUpgradeLinkLabel: tx.memorial.trialUpgradeLinkLabel,
+      trialUpgradePart2: tx.memorial.trialUpgradePart2,
+    }),
+    [tx.memorial],
+  )
   /** Donation checkout uses KRW only for Korean; other app locales use USD path. */
   const donationLocale: "ko" | "en" = appLocale === "ko" ? "ko" : "en"
   const [showUploadSuccessToast, setShowUploadSuccessToast] = useState(false)
@@ -893,9 +903,6 @@ export default function GuestFeedPage({ params }: PageProps) {
         filmReleased || (isLocked && lockedCount > 0 && !filmReleased) ? "pb-28 md:pb-0" : ""
       }`}
     >
-      <div className="pointer-events-auto fixed end-3 top-3 z-[90] pt-[max(0.15rem,env(safe-area-inset-top))]">
-        <LandingLanguageSwitcher />
-      </div>
       <AnimatePresence>
         {showPremiumBlurPopup && (
           <motion.div
@@ -1143,7 +1150,12 @@ export default function GuestFeedPage({ params }: PageProps) {
         photoDeadlineRemainingMs > 0 &&
         !isPhotoDeadlinePassed && (
           <div className="w-full pt-[max(0.35rem,env(safe-area-inset-top))]">
-            <MemorialTrialCountdown variant="banner" remainingMs={photoDeadlineRemainingMs} upgradeHref="/#pricing" />
+            <MemorialTrialCountdown
+              variant="banner"
+              remainingMs={photoDeadlineRemainingMs}
+              upgradeHref="/#pricing"
+              copy={memorialTrialBannerCopy}
+            />
           </div>
         )}
 
@@ -1218,7 +1230,7 @@ export default function GuestFeedPage({ params }: PageProps) {
             <p className="mt-5 text-[10px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">
               {tx.memorial.photoWindow}{" "}
               <span className="font-mono tabular-nums text-[var(--aeterna-gold)]">
-                {formatMemorialCountdownDisplay(photoDeadlineRemainingMs)}
+                {tx.memorial.trialCountdownFromMs(photoDeadlineRemainingMs)}
               </span>
             </p>
           ) : null}

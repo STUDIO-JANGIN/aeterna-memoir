@@ -1,9 +1,13 @@
 "use client"
 
-import { use, useCallback, useEffect, useRef, useState } from "react"
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { Star } from "lucide-react"
-import { MemorialTrialCountdown } from "@/components/memorial/MemorialTrialCountdown"
+import {
+  MemorialTrialCountdown,
+  type MemorialTrialBannerCopy,
+} from "@/components/memorial/MemorialTrialCountdown"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import {
   getStoriesForAdminAction,
   setStorySelectedAction,
@@ -36,6 +40,18 @@ type PageProps = {
 export default function AdminPhotoSelectPage({ params }: PageProps) {
   const resolvedParams = use(params)
   const slug = typeof resolvedParams?.slug === "string" ? resolvedParams.slug.trim() : ""
+  const { app: tx } = useLandingLocale()
+  const memorialTrialBannerCopy = useMemo<MemorialTrialBannerCopy>(
+    () => ({
+      preserveLegacyHeader: tx.memorial.preserveLegacyHeader,
+      trialGatheringTimerLabel: tx.memorial.trialGatheringTimerLabel,
+      trialCountdownFromMs: tx.memorial.trialCountdownFromMs,
+      trialUpgradePart1: tx.memorial.trialUpgradePart1,
+      trialUpgradeLinkLabel: tx.memorial.trialUpgradeLinkLabel,
+      trialUpgradePart2: tx.memorial.trialUpgradePart2,
+    }),
+    [tx.memorial],
+  )
 
   const [event, setEvent] = useState<AdminEvent | null>(null)
   const [stories, setStories] = useState<AdminStory[]>([])
@@ -272,7 +288,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     <div className="min-h-dvh p-6 md:p-10 md:pb-16">
       {!isPaidMemorial && trialRemainingMs > 0 && (
         <div className="max-w-6xl mx-auto mb-8 md:mb-10 w-full">
-          <MemorialTrialCountdown remainingMs={trialRemainingMs} className="w-full" />
+          <MemorialTrialCountdown remainingMs={trialRemainingMs} className="w-full" copy={memorialTrialBannerCopy} />
         </div>
       )}
 

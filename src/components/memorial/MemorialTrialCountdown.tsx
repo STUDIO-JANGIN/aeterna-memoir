@@ -4,18 +4,19 @@ import { useMemo } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ARTISAN_SPRING } from "@/lib/artisanMotion"
+import type { AppStrings } from "@/lib/appTranslations"
 
 const TWENTY_FOUR_H_MS = 24 * 60 * 60 * 1000
 
-/** Swiss-watch style: fixed-width segments so digits do not jump. */
-export function formatMemorialCountdownDisplay(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000))
-  const s = totalSeconds % 60
-  const m = Math.floor(totalSeconds / 60) % 60
-  const h = Math.floor(totalSeconds / 3600) % 24
-  const d = Math.floor(totalSeconds / 86400)
-  return `${String(d).padStart(2, "0")}d : ${String(h).padStart(2, "0")}h : ${String(m).padStart(2, "0")}m : ${String(s).padStart(2, "0")}s`
-}
+export type MemorialTrialBannerCopy = Pick<
+  AppStrings["memorial"],
+  | "preserveLegacyHeader"
+  | "trialGatheringTimerLabel"
+  | "trialCountdownFromMs"
+  | "trialUpgradePart1"
+  | "trialUpgradeLinkLabel"
+  | "trialUpgradePart2"
+>
 
 type MemorialTrialCountdownProps = {
   /** Milliseconds remaining until the free trial / collection window ends. */
@@ -28,6 +29,7 @@ type MemorialTrialCountdownProps = {
   variant?: "banner" | "card"
   /** Destination for the “upgrade” link (landing pricing: Eternal Legacy + Eternal Film). */
   upgradeHref?: string
+  copy: MemorialTrialBannerCopy
 }
 
 /**
@@ -38,9 +40,10 @@ export function MemorialTrialCountdown({
   className = "",
   variant = "card",
   upgradeHref = "/#pricing",
+  copy,
 }: MemorialTrialCountdownProps) {
   const urgent = remainingMs > 0 && remainingMs < TWENTY_FOUR_H_MS
-  const line = useMemo(() => formatMemorialCountdownDisplay(remainingMs), [remainingMs])
+  const line = useMemo(() => copy.trialCountdownFromMs(remainingMs), [copy, remainingMs])
 
   const shell =
     variant === "banner"
@@ -65,9 +68,9 @@ export function MemorialTrialCountdown({
       />
       <div className="relative text-center">
         <p className="font-[var(--font-serif)] text-base sm:text-lg font-normal tracking-[-0.02em] text-[var(--landing-text-title)] mb-2">
-          Preserve this legacy
+          {copy.preserveLegacyHeader}
         </p>
-        <p className="text-landing-label mb-2">Time remaining in this gathering window</p>
+        <p className="text-landing-label mb-2">{copy.trialGatheringTimerLabel}</p>
         <p
           className="font-mono tabular-nums tracking-tight text-[clamp(0.7rem,2.8vw,1rem)] leading-none text-[var(--aeterna-gold)] whitespace-nowrap mx-auto max-w-[100vw] px-1"
           style={{ fontFeatureSettings: '"tnum" 1' }}
@@ -75,14 +78,14 @@ export function MemorialTrialCountdown({
           {line}
         </p>
         <p className="mt-4 text-sm leading-relaxed text-[var(--landing-text-body)] max-w-2xl mx-auto px-1">
-          To keep these memories alive forever, please{" "}
+          {copy.trialUpgradePart1}
           <Link
             href={upgradeHref}
             className="font-medium text-[var(--aeterna-gold)] underline underline-offset-[0.2em] decoration-[var(--aeterna-gold)]/50 hover:text-[var(--aeterna-gold-light)] hover:decoration-[var(--aeterna-gold)] transition-colors"
           >
-            upgrade
-          </Link>{" "}
-          within 7 days. After this window, the shrine will gently close to protect the privacy of the data.
+            {copy.trialUpgradeLinkLabel}
+          </Link>
+          {copy.trialUpgradePart2}
         </p>
       </div>
     </motion.div>

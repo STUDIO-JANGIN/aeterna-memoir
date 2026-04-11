@@ -20,6 +20,7 @@ import { requestFullFilmAction } from "@/app/actions/requestFullFilm"
 import { updateEventBySlugAction } from "@/app/actions/updateEventBySlug"
 import { generatePreviewVideo } from "@/lib/generatePreviewVideo"
 import { getMemorialFundTotalBySlugAction } from "@/app/actions/getMemorialFundTotal"
+import { generateInvitePdfAction } from "@/app/actions/generateInvitePdf"
 import { supabase } from "@/lib/supabase/browser"
 
 const MAX_SELECTED = 15
@@ -87,6 +88,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   const [showFilmArrivedLayer, setShowFilmArrivedLayer] = useState(false)
   const hasShownFilmArrived = useRef(false)
   const [adminToast, setAdminToast] = useState<string | null>(null)
+  const [invitePdfLoading, setInvitePdfLoading] = useState(false)
 
   const pending = stories.filter((s) => !s.is_approved)
   const approvedRaw = stories.filter((s) => s.is_approved)
@@ -166,6 +168,23 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
       window.location.href = result.url
     } else {
       setPlusCheckoutError(result.error || "Unable to start checkout.")
+    }
+  }
+
+  const handleSharePdfInvitation = async () => {
+    if (!slug || invitePdfLoading) return
+    setInvitePdfLoading(true)
+    try {
+      const result = await generateInvitePdfAction(slug)
+      if (result.ok) {
+        if (typeof window !== "undefined") window.open(result.url, "_blank", "noopener,noreferrer")
+      } else {
+        setAdminToast(result.error)
+      }
+    } catch (err) {
+      setAdminToast(err instanceof Error ? err.message : "Failed to generate invitation PDF.")
+    } finally {
+      setInvitePdfLoading(false)
     }
   }
 
@@ -267,8 +286,8 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                   {event.name}
                 </h1>
                 <p className="text-landing-body pt-1 max-w-xl leading-relaxed">
-                  Curate submissions, protect this space, and share the memorial with those who loved them. Update name,
-                  dates, photo, remembrance text, and music anytime in settings.
+                  Curate memories, protect the legacy, and share this sanctuary. Manage profile and media anytime in
+                  Settings.
                 </p>
               </div>
               <div className="flex flex-col gap-3 shrink-0 w-full lg:w-auto lg:min-w-[12.5rem]">
@@ -276,8 +295,16 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                   href={`/p/${slug}/admin/settings`}
                   className="btn-landing-gold w-full justify-center min-h-[48px]"
                 >
-                  Edit memorial details
+                  Edit
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => void handleSharePdfInvitation()}
+                  disabled={invitePdfLoading}
+                  className="btn-landing-outline-gold w-full justify-center min-h-[48px] disabled:opacity-50 disabled:cursor-wait"
+                >
+                  {invitePdfLoading ? "Generating…" : "Share PDF invitation"}
+                </button>
                 <Link
                   href={`/p/${slug}`}
                   className="btn-landing-outline-gold w-full justify-center"

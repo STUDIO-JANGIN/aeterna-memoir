@@ -11,23 +11,38 @@ const PAPER = "#faf8f5"
 const INK = "#333333"
 const INK_SOFT = "#4a4a6a"
 const INK_MUTED = "#6b6b6b"
+/** Subtle monument dividers */
+const DIVIDER_GOLD = "rgba(212, 175, 55, 0.1)"
+/** Outer deckle frame */
 const CHAMPAGNE_STROKE = "rgba(197, 160, 89, 0.42)"
 const BORDER_INNER = "#d9d4cc"
+/** Profile ring — champagne gold */
+const GOLD_RING = "#D4AF37"
 
 const FONT_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif"
 const FONT_SANS = "Inter, system-ui, -apple-system, sans-serif"
+
+/** Typography scale (rem → px at 16px root) */
+const NAME_REM = 2.5
+const NAME_SIZE_PX = Math.round(16 * NAME_REM) // 40
+const DATE_QUOTE_REM = 0.9
+const DATE_QUOTE_SIZE_PX = Math.round(16 * DATE_QUOTE_REM) // ~14
+const SECTION_HEADER_REM = 0.75
+const SECTION_HEADER_SIZE_PX = Math.round(16 * SECTION_HEADER_REM) // 12
+const SECTION_HEADER_TRACKING_EM = 0.2
 
 async function ensureInvitationFonts(): Promise<void> {
   if (typeof document === "undefined" || !document.fonts) return
   try {
     await Promise.all([
-      document.fonts.load("600 52px 'Playfair Display'"),
-      document.fonts.load("400 28px 'Playfair Display'"),
-      document.fonts.load("italic 400 24px 'Playfair Display'"),
-      document.fonts.load("400 22px Inter"),
-      document.fonts.load("400 17px Inter"),
-      document.fonts.load("500 21px Inter"),
-      document.fonts.load("600 19px Inter"),
+      document.fonts.load(`600 ${NAME_SIZE_PX}px 'Playfair Display'`),
+      document.fonts.load(`400 20px 'Playfair Display'`),
+      document.fonts.load(`italic 300 ${DATE_QUOTE_SIZE_PX}px 'Playfair Display'`),
+      document.fonts.load(`300 ${DATE_QUOTE_SIZE_PX}px Inter`),
+      document.fonts.load(`400 22px Inter`),
+      document.fonts.load(`500 ${SECTION_HEADER_SIZE_PX}px Inter`),
+      document.fonts.load(`300 ${DATE_QUOTE_SIZE_PX}px Inter`),
+      document.fonts.load(`400 17px Inter`),
     ])
   } catch {
     /* fall back to system fonts */
@@ -179,17 +194,18 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.fillStyle = INK_MUTED
   ctx.font = `400 20px ${FONT_SANS}`
   ctx.fillText("In Loving Memory of", centerX, y)
-  y += 40
+  y += 44
 
   ctx.fillStyle = INK
-  ctx.font = `600 48px ${FONT_SERIF}`
+  ctx.font = `600 ${NAME_SIZE_PX}px ${FONT_SERIF}`
   const displayName = name.trim() || "Beloved"
   const nameLines = wrapTitle(ctx, displayName, contentW)
+  const nameLineHeight = Math.round(NAME_SIZE_PX * 1.25)
   nameLines.forEach((line) => {
     ctx.fillText(line, centerX, y)
-    y += 58
+    y += nameLineHeight
   })
-  y += 32
+  y += 40
 
   /** Circular portrait — slightly smaller than legacy rectangular frame */
   const photoD = Math.floor(contentW * 0.28)
@@ -243,27 +259,27 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   }
   ctx.restore()
 
+  /** 1px gold ring — high-end monument frame */
   ctx.save()
   ctx.beginPath()
   ctx.arc(photoCx, photoCy, photoRadius, 0, Math.PI * 2)
-  ctx.strokeStyle = CHAMPAGNE_STROKE
-  ctx.lineWidth = 1.25
+  ctx.strokeStyle = GOLD_RING
+  ctx.lineWidth = 1
   ctx.stroke()
   ctx.restore()
 
   const birth = formatDisplayDate(birthDate)
   const death = formatDisplayDate(deathDate)
-  y = photoY + photoD + 28
+  y = photoY + photoD + 36
   ctx.textAlign = "center"
-  /** Same as guest URL line under QR: muted sans, slightly larger + semibold */
   ctx.fillStyle = INK_MUTED
-  ctx.font = `600 19px ${FONT_SANS}`
+  ctx.font = `300 ${DATE_QUOTE_SIZE_PX}px ${FONT_SANS}`
   ctx.fillText(`${birth}  —  ${death}`, centerX, y)
-  y += 44
+  y += 52
 
   const drawGoldDivider = (dividerY: number) => {
     ctx.beginPath()
-    ctx.strokeStyle = "rgba(197, 160, 89, 0.35)"
+    ctx.strokeStyle = DIVIDER_GOLD
     ctx.lineWidth = 1
     ctx.moveTo(innerM + 56, dividerY)
     ctx.lineTo(W - innerM - 56, dividerY)
@@ -272,65 +288,78 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
 
   const bioRaw = remembranceBio?.trim()
   if (bioRaw) {
-    const dividerY = y + 12
+    const dividerY = y + 16
     drawGoldDivider(dividerY)
-    y = dividerY + 32
+    y = dividerY + 36
 
     ctx.fillStyle = INK
-    ctx.font = `italic 400 24px ${FONT_SERIF}`
-    const bioLines = wrapLines(ctx, bioRaw, contentW, 12)
+    ctx.font = `italic 300 ${DATE_QUOTE_SIZE_PX}px ${FONT_SERIF}`
+    const bioLines = wrapLines(ctx, bioRaw, contentW, 14)
+    const quoteLineGap = Math.round(DATE_QUOTE_SIZE_PX * 1.45)
     bioLines.forEach((ln) => {
       ctx.fillText(ln, centerX, y)
-      y += 38
+      y += quoteLineGap
     })
-    y += 28
+    y += 36
   } else {
-    y += 20
+    y += 28
   }
 
   if (bioRaw) {
-    const sepY = y + 8
+    const sepY = y + 12
     drawGoldDivider(sepY)
-    y = sepY + 36
+    y = sepY + 48
+  } else {
+    y += 32
   }
 
-  /** Section labels: match “Scan to share a memory” (weight + size + sans) */
+  /** Extra air between hero block and service / QR */
+  y += 28
+
+  const fontDetailLine = `300 ${DATE_QUOTE_SIZE_PX}px ${FONT_SANS}`
   const fontScanCta = `500 21px ${FONT_SANS}`
-  /** Body lines under QR URL — location, times, fund link */
   const fontUrlLine = `400 17px ${FONT_SANS}`
 
   ctx.textAlign = "center"
+  ctx.save()
   ctx.fillStyle = INK
-  ctx.font = fontScanCta
+  ctx.font = `500 ${SECTION_HEADER_SIZE_PX}px ${FONT_SANS}`
+  ctx.letterSpacing = `${SECTION_HEADER_TRACKING_EM}em`
   ctx.fillText("SERVICE", centerX, y)
-  y += 34
-  ctx.fillStyle = INK_MUTED
-  ctx.font = fontUrlLine
-  ctx.fillText(`Location: ${displayLocation(location)}`, centerX, y)
-  y += 36
-  ctx.fillText(`Service time: ${displayService(ceremonyTime)}`, centerX, y)
+  ctx.letterSpacing = "0"
+  ctx.restore()
   y += 40
+  ctx.fillStyle = INK_MUTED
+  ctx.font = fontDetailLine
+  ctx.fillText(`Location: ${displayLocation(location)}`, centerX, y)
+  y += 32
+  ctx.fillText(`Service time: ${displayService(ceremonyTime)}`, centerX, y)
+  y += 44
 
   const fund = fundLink?.trim()
   if (fund) {
+    ctx.save()
     ctx.fillStyle = INK
-    ctx.font = fontScanCta
+    ctx.font = `500 ${SECTION_HEADER_SIZE_PX}px ${FONT_SANS}`
+    ctx.letterSpacing = `${SECTION_HEADER_TRACKING_EM}em`
     ctx.fillText("MEMORIAL FUND", centerX, y)
-    y += 28
+    ctx.letterSpacing = "0"
+    ctx.restore()
+    y += 36
     ctx.fillStyle = INK_MUTED
-    ctx.font = fontUrlLine
+    ctx.font = fontDetailLine
     const supLines = wrapLines(ctx, fund, contentW, 4)
     supLines.forEach((ln) => {
       ctx.fillText(ln, centerX, y)
-      y += 30
+      y += Math.round(DATE_QUOTE_SIZE_PX * 1.5)
     })
-    y += 20
+    y += 28
   }
 
-  /** QR — compact for print */
-  const qrMax = 176
+  /** QR — ~15% smaller, placed lower for text breathing room */
+  const qrMax = Math.round(176 * 0.85)
   const reserveBottom = 200
-  y = Math.min(y + 20, H - reserveBottom - qrMax - 48)
+  y = Math.min(y + 52, H - reserveBottom - qrMax - 56)
   const qrSize = Math.min(qrMax, H - y - reserveBottom)
 
   const qrCanvas = document.createElement("canvas")

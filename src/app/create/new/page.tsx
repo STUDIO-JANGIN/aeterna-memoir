@@ -3,6 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/browser"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
 
 const CEREMONY_MONTHS = [
   "",
@@ -57,6 +59,7 @@ const MOCK_LOCATIONS = [
 ]
 
 export default function NewMemorialPage() {
+  const { app: t } = useLandingLocale()
   const router = useRouter()
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -103,13 +106,13 @@ export default function NewMemorialPage() {
       const rawContribution = (formData.get("contribution_link") as string | null) || ""
 
       if (!name.trim()) {
-        setFormError("Please enter your loved one’s name.")
+        setFormError(t.createNew.errName)
         setSaving(false)
         return
       }
 
       if (!ceremony_month || !ceremony_date || !ceremony_time_slot) {
-        setFormError("Please choose the service month, date, and time.")
+        setFormError(t.createNew.errCeremony)
         setSaving(false)
         return
       }
@@ -152,7 +155,7 @@ export default function NewMemorialPage() {
         .single()
 
       if (insertError || !inserted) {
-        setFormError("There was a problem creating this memorial. Please try again.")
+        setFormError(t.createNew.errCreate)
         return
       }
 
@@ -179,7 +182,7 @@ export default function NewMemorialPage() {
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Error creating memorial with details", error)
-      setFormError("There was a problem creating this memorial. Please try again.")
+      setFormError(t.createNew.errCreate)
     } finally {
       setSaving(false)
     }
@@ -187,23 +190,24 @@ export default function NewMemorialPage() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh bg-landing flex items-center justify-center px-6">
-        <p className="text-landing-label">Preparing your memorial…</p>
+      <div className="relative min-h-dvh bg-landing flex items-center justify-center px-6">
+        <div className="absolute end-4 top-4 z-10">
+          <LandingLanguageSwitcher />
+        </div>
+        <p className="text-landing-label">{t.createNew.preparing}</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-dvh bg-landing flex flex-col items-center justify-center px-6 py-12 md:py-16 text-[var(--landing-text-hero)]">
+    <div className="relative min-h-dvh bg-landing flex flex-col items-center justify-center px-6 py-12 md:py-16 text-[var(--landing-text-hero)]">
+      <div className="absolute end-4 top-4 z-10">
+        <LandingLanguageSwitcher />
+      </div>
       <div className="w-full max-w-3xl card-landing-airy px-6 py-8 md:px-10 md:py-12">
-        <p className="text-landing-label mb-3">Create new memorial</p>
-        <h1 className="text-landing-section-title mb-4">
-          Tell us a few details about your loved one
-        </h1>
-        <p className="text-landing-body mb-8">
-          This helps us set up the memorial and service information. You can always change these details later
-          from the family dashboard.
-        </p>
+        <p className="text-landing-label mb-3">{t.createNew.kicker}</p>
+        <h1 className="text-landing-section-title mb-4">{t.createNew.title}</h1>
+        <p className="text-landing-body mb-8">{t.createNew.body}</p>
 
         {formError && (
           <p className="mb-4 text-sm text-[var(--landing-text-hero)] bg-[var(--aeterna-gold-pale)] border border-white/[0.12] rounded-xl px-4 py-3">
@@ -215,12 +219,12 @@ export default function NewMemorialPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-[11px] uppercase tracking-[0.25em] text-[var(--landing-text-muted)] mb-1">
-                Name
+                {t.createNew.labelName}
               </label>
               <input
                 name="name"
                 required
-                placeholder="Full name of your loved one"
+                placeholder={t.createNew.phName}
                 className="w-full border-b border-white/[0.08] bg-transparent py-2 focus:outline-none focus:border-[var(--aeterna-gold)] transition-colors text-[var(--landing-text-body)]"
               />
             </div>
@@ -228,7 +232,7 @@ export default function NewMemorialPage() {
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-[11px] uppercase tracking-[0.25em] text-[var(--landing-text-muted)] mb-1">
-                  Date of birth
+                  {t.createNew.labelBirth}
                 </label>
                 <input
                   type="date"
@@ -236,12 +240,12 @@ export default function NewMemorialPage() {
                   className="w-full border-b border-white/[0.08] bg-transparent py-2 text-[var(--landing-text-body)] focus:outline-none focus:border-[var(--aeterna-gold)]"
                 />
                 <p className="mt-1 text-[10px] font-sans text-[var(--landing-text-muted)]">
-                  Format: mm/dd/yyyy
+                  {t.createNew.dateFormatHint}
                 </p>
               </div>
               <div className="flex-1">
                 <label className="block text-[11px] uppercase tracking-[0.25em] text-[var(--landing-text-muted)] mb-1">
-                  Date of passing
+                  {t.createNew.labelDeath}
                 </label>
                 <input
                   type="date"
@@ -249,17 +253,17 @@ export default function NewMemorialPage() {
                   className="w-full border-b border-white/[0.08] bg-transparent py-2 text-[var(--landing-text-body)] focus:outline-none focus:border-[var(--aeterna-gold)]"
                 />
                 <p className="mt-1 text-[10px] font-sans text-[var(--landing-text-muted)]">
-                  Format: mm/dd/yyyy
+                  {t.createNew.dateFormatHint}
                 </p>
               </div>
             </div>
 
             <div>
               <label className="block text-[11px] uppercase tracking-[0.25em] text-[var(--landing-text-muted)] mb-1">
-                Portrait photograph
+                {t.createNew.labelPortrait}
               </label>
               <label className="inline-flex items-center gap-2 mt-1 px-4 py-2 rounded-full border border-[var(--aeterna-gold)]/60 text-[var(--aeterna-gold)] text-[10px] uppercase tracking-[0.2em] cursor-pointer hover:bg-[var(--aeterna-gold-pale)] hover:text-[var(--aeterna-charcoal)] transition-colors">
-                <span>Add a Spark of Memory</span>
+                <span>{t.createNew.addSpark}</span>
                 <input
                   type="file"
                   name="profile_image"
@@ -273,11 +277,11 @@ export default function NewMemorialPage() {
                 />
               </label>
               <p className="mt-1 text-[11px] text-[var(--landing-text-muted)] leading-relaxed">
-                Shown on the memorial and in presentation — a clear portrait helps everyone recognize them.
+                {t.createNew.portraitHint}
               </p>
               {profileImageSelected && (
                 <p className="mt-1 text-[11px] text-[var(--aeterna-gold)]">
-                  Selected: <span className="font-semibold">{profileImageSelected}</span>
+                  {t.createNew.selectedFile} <span className="font-semibold">{profileImageSelected}</span>
                 </p>
               )}
             </div>
@@ -286,7 +290,7 @@ export default function NewMemorialPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-[11px] uppercase tracking-[0.25em] text-[var(--landing-text-muted)] mb-1">
-                Service location
+                {t.createNew.labelLocation}
               </label>
               <input
                 name="location"
@@ -311,17 +315,17 @@ export default function NewMemorialPage() {
                     .map((m, idx) => ({ description: m, place_id: `mock-${idx}` }))
                   if (matches.length === 0) {
                     setLocationSuggestions([])
-                    setLocationError("Suggestions unavailable - please enter manually")
+                    setLocationError(t.createNew.locationMockError)
                   } else {
                     setLocationSuggestions(matches)
                   }
                 }}
-                placeholder="Venue, chapel or service location"
+                placeholder={t.createNew.phLocation}
                 className="w-full border-b border-white/[0.08] bg-transparent py-2 focus:outline-none focus:border-[var(--aeterna-gold)] transition-colors mb-2 text-[var(--landing-text-body)]"
               />
               {locationLoading && (
                 <p className="mt-1 text-[10px] font-sans text-[var(--landing-text-muted)]">
-                  Searching nearby places…
+                  {t.createNew.searchingPlaces}
                 </p>
               )}
               {locationSuggestions.length > 0 && (
@@ -358,7 +362,7 @@ export default function NewMemorialPage() {
                   className="flex-1 border-b border-white/[0.08] bg-transparent py-2 focus:outline-none focus:border-[var(--aeterna-gold)] text-xs transition-colors text-[var(--landing-text-body)]"
                   defaultValue=""
                 >
-                  <option value="">Month</option>
+                  <option value="">{t.createNew.month}</option>
                   {CEREMONY_MONTHS.map((month) =>
                     month ? (
                       <option key={month} value={month}>
@@ -372,7 +376,7 @@ export default function NewMemorialPage() {
                   className="flex-1 border-b border-white/[0.08] bg-transparent py-2 focus:outline-none focus:border-[var(--aeterna-gold)] text-xs transition-colors text-[var(--landing-text-body)]"
                   defaultValue=""
                 >
-                  <option value="">Date</option>
+                  <option value="">{t.createNew.date}</option>
                   {CEREMONY_DATES.map((date) =>
                     date ? (
                       <option key={date} value={date}>
@@ -386,7 +390,7 @@ export default function NewMemorialPage() {
                   className="flex-1 border-b border-white/[0.08] bg-transparent py-2 focus:outline-none focus:border-[var(--aeterna-gold)] text-xs transition-colors text-[var(--landing-text-body)]"
                   defaultValue=""
                 >
-                  <option value="">Select time</option>
+                  <option value="">{t.createNew.selectTime}</option>
                   {CEREMONY_TIMES.map((time) =>
                     time ? (
                       <option key={time} value={time}>
@@ -397,50 +401,50 @@ export default function NewMemorialPage() {
                 </select>
               </div>
               <p className="mt-2 text-[11px] text-[var(--landing-text-muted)] font-sans">
-                Guests will see this exactly as written on the memorial page.
+                {t.createNew.serviceTimeNote}
               </p>
             </div>
 
             <div>
               <label className="block text-[11px] uppercase tracking-[0.25em] text-[var(--landing-text-muted)] mb-1">
-                Contribution link (optional)
+                {t.createNew.labelContribution}
               </label>
               <input
                 type="url"
                 name="contribution_link"
-                placeholder="e.g. GoFundMe, PayPal, or bank transfer page"
+                placeholder={t.createNew.phContribution}
                 className="w-full border-b border-white/[0.08] bg-transparent py-2 focus:outline-none focus:border-[var(--aeterna-gold)] transition-colors text-[var(--landing-text-body)]"
               />
               <p className="mt-2 text-[11px] text-[var(--landing-text-muted)] font-sans">
-                Optional. Paste any fundraising page; it will appear as &quot;Support the Family&quot; on the memorial.
+                {t.createNew.contributionHint}
               </p>
             </div>
 
             <div>
               <label className="block text-[11px] uppercase tracking-[0.25em] text-[var(--landing-text-muted)] mb-1">
-                Background music (optional)
+                {t.createNew.labelMusic}
               </label>
               <input
                 name="music_url"
-                placeholder="Paste a YouTube link or audio URL"
+                placeholder={t.createNew.phMusic}
                 className="w-full border-b border-white/[0.08] bg-transparent py-2 focus:outline-none focus:border-[var(--aeterna-gold)] transition-colors text-[var(--landing-text-body)]"
               />
               <p className="mt-2 text-[11px] text-[var(--landing-text-muted)] font-sans">
-                Optional. Many families simply paste a single YouTube link to a favourite song or recording.
+                {t.createNew.musicHint}
               </p>
             </div>
           </div>
 
           <div className="md:col-span-2 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <p className="text-[11px] text-[var(--landing-text-muted)] font-sans max-w-md">
-              After you create this memorial, we&apos;ll open the family dashboard where you can review tributes and share the link with guests.
+              {t.createNew.footerNote}
             </p>
             <button
               type="submit"
               disabled={saving}
               className="btn-landing-gold min-h-[48px] px-8 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {saving ? "Creating…" : "Continue the Story"}
+              {saving ? t.createNew.submitting : t.createNew.submit}
             </button>
           </div>
         </form>

@@ -9,7 +9,9 @@ export type SubscribeVisitorResult =
 export async function subscribeVisitorAction(
   eventId: string,
   email: string,
-  provider: string
+  provider: string,
+  /** When set, ties this signup to a specific story so we can email when that memory is approved. */
+  storyId?: string | null
 ): Promise<SubscribeVisitorResult> {
   const supabase = getSupabaseAdmin()
   const trimmed = email.trim().toLowerCase()
@@ -18,12 +20,18 @@ export async function subscribeVisitorAction(
   }
 
   try {
+    const row: Record<string, unknown> = {
+      event_id: eventId,
+      email: trimmed,
+      provider,
+    }
+    if (storyId?.trim()) {
+      row.story_id = storyId.trim()
+    }
+
     const { error } = await supabase
       .from("visitors")
-      .upsert(
-        { event_id: eventId, email: trimmed, provider },
-        { onConflict: "event_id,email", ignoreDuplicates: true }
-      )
+      .upsert(row, { onConflict: "event_id,email", ignoreDuplicates: false })
 
     if (error) {
       if (error.code === "23503") {

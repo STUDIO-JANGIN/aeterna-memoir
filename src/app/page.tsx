@@ -6,13 +6,20 @@ import { Heart, QrCode, Sparkles } from "lucide-react"
 import { Navbar } from "@/components/Layout/Navbar"
 import { RevealSection } from "@/components/RevealSection"
 import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
-import { LandingLocaleProvider, useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import {
+  LandingPricingCurrencyProvider,
+  useLandingPricingCurrency,
+} from "@/components/landing/LandingPricingCurrencyContext"
 import { getLandingHeroImages } from "@/lib/landingHeroMedia"
 import {
   formatLandingTierPrice,
-  getPricingCurrencyId,
+  getLandingGridFootnote,
+  isPricingCurrencyId,
   landingPlanHref,
+  PRICING_CURRENCY_IDS,
 } from "@/lib/landingPricing"
+import type { LandingLocale } from "@/lib/landingTranslations"
 import {
   IPhoneShell,
   StepScreenConnectVote,
@@ -20,10 +27,26 @@ import {
   StepScreenMemorialShare,
 } from "@/components/landing/IPhoneMockup"
 
-const LANDING_BACKGROUND_VIDEO_URL =
+const DEFAULT_LANDING_BACKGROUND_VIDEO_URL =
   process.env.NEXT_PUBLIC_LANDING_BACKGROUND_VIDEO_URL ?? "/hero-bg.mp4"
+/** Korean, Japanese, Chinese landing locales use this asset (override via env for CDN). */
+const ASIA_LANDING_BACKGROUND_VIDEO_URL =
+  process.env.NEXT_PUBLIC_LANDING_BACKGROUND_VIDEO_URL_ASIA ?? "/hero-bg-asia.mp4"
+/** Arabic landing locale uses this asset (override via env for CDN). */
+const GULF_LANDING_BACKGROUND_VIDEO_URL =
+  process.env.NEXT_PUBLIC_LANDING_BACKGROUND_VIDEO_URL_GULF ?? "/hero-bg-gulf.mp4"
 const LANDING_BACKGROUND_POSTER_URL =
   process.env.NEXT_PUBLIC_LANDING_BACKGROUND_POSTER_URL ?? "/hero-fallback.jpg"
+
+function landingHeroVideoUrlForLocale(locale: LandingLocale): string {
+  if (locale === "ko" || locale === "ja" || locale === "zh") {
+    return ASIA_LANDING_BACKGROUND_VIDEO_URL
+  }
+  if (locale === "ar") {
+    return GULF_LANDING_BACKGROUND_VIDEO_URL
+  }
+  return DEFAULT_LANDING_BACKGROUND_VIDEO_URL
+}
 
 const HOW_IT_WORKS_META = [
   { Icon: Sparkles, mockup: "create" as const },
@@ -77,16 +100,48 @@ function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_META)[numbe
   )
 }
 
+function LandingPricingCurrencyRow() {
+  const { strings: t } = useLandingLocale()
+  const { pricingCurrency, setPricingCurrencyManual } = useLandingPricingCurrency()
+
+  return (
+    <div className="mt-10 flex flex-col items-center gap-2.5 px-2" dir="ltr">
+      <p className="max-w-md text-center text-[9px] leading-relaxed text-[#5c5c5c] md:text-[10px]">
+        {t.pricing.currencyDisclaimer}
+      </p>
+      <label htmlFor="landing-pricing-currency" className="sr-only">
+        Checkout currency
+      </label>
+      <select
+        id="landing-pricing-currency"
+        value={pricingCurrency}
+        onChange={(e) => {
+          const v = e.target.value
+          if (isPricingCurrencyId(v)) setPricingCurrencyManual(v)
+        }}
+        className="appearance-none cursor-pointer rounded-lg border border-white/[0.12] bg-[#0a0a0a]/90 py-1.5 pl-2.5 pr-8 text-[9px] font-medium uppercase tracking-[0.12em] text-[#e8e4dc] shadow-sm hover:border-white/[0.2] hover:bg-white/[0.06] focus:border-[var(--aeterna-gold)]/40 focus:outline-none focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 md:py-2 md:pl-3 md:pr-9 md:text-[10px] md:tracking-[0.14em]"
+      >
+        {PRICING_CURRENCY_IDS.map((id) => (
+          <option key={id} value={id}>
+            {id.toUpperCase()}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 function LandingPageInner() {
   const { locale, strings: t } = useLandingLocale()
+  const { pricingCurrency } = useLandingPricingCurrency()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [videoError, setVideoError] = useState(false)
   const [activeNavId, setActiveNavId] = useState<LandingNavId | null>(null)
-  const hasVideo = !!LANDING_BACKGROUND_VIDEO_URL
+  const heroBackgroundVideoUrl = landingHeroVideoUrlForLocale(locale)
+  const hasVideo = !!heroBackgroundVideoUrl
   const showPlaceholder = !hasVideo || videoError
   const stepFlowLabels = t.howItWorks.steps.map((s) => `${s.title}: ${s.description}`)
   const heroImages = getLandingHeroImages(locale)
-  const pricingCurrency = getPricingCurrencyId(locale)
 
   /** After client navigation from other routes (e.g. memorial “upgrade” → /#pricing), scroll to pricing. */
   useEffect(() => {
@@ -98,6 +153,10 @@ function LandingPageInner() {
     }, 0)
     return () => window.clearTimeout(t)
   }, [])
+
+  useEffect(() => {
+    setVideoError(false)
+  }, [locale])
 
   useEffect(() => {
     const elements = LANDING_NAV_IDS.map((id) => document.getElementById(id)).filter(
@@ -171,6 +230,7 @@ function LandingPageInner() {
         {hasVideo && !videoError && (
           <>
             <video
+              key={heroBackgroundVideoUrl}
               className="absolute inset-0 z-0 h-full w-full max-h-[100dvh] object-cover object-[center_10%] max-md:object-[center_6%]"
               autoPlay
               loop
@@ -180,7 +240,7 @@ function LandingPageInner() {
               poster="/hero-fallback.jpg"
               onError={() => setVideoError(true)}
             >
-              <source src={LANDING_BACKGROUND_VIDEO_URL} type="video/mp4" />
+              <source src={heroBackgroundVideoUrl} type="video/mp4" />
             </video>
             {/* Tonal overlay: same hue as --landing-bg so video grade matches the scroll canvas */}
             <div className="absolute inset-0 z-[1] bg-[color:var(--landing-bg)]/50 pointer-events-none" />
@@ -190,11 +250,11 @@ function LandingPageInner() {
         <div aria-hidden className="landing-hero-vignette" />
       </div>
 
-      <div className="relative z-0 pt-20 md:pt-[76px]">
+      <div className="relative z-0 pt-24 md:pt-[76px]">
         {/* Hero: copy + mockups */}
-        <main className="px-5 md:px-10 pt-6 pb-24 md:pt-20 md:pb-32">
+        <main className="px-5 md:px-10 pt-10 pb-24 md:pt-20 md:pb-32">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 gap-y-14 lg:grid-cols-2 lg:gap-12 xl:gap-16 lg:items-center lg:gap-y-0">
+            <div className="grid grid-cols-1 gap-y-24 lg:grid-cols-2 lg:gap-12 xl:gap-16 lg:items-center lg:gap-y-0">
               {/* Value proposition: always on top on mobile; left column on desktop */}
               <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-start px-1 sm:px-2 pb-2 sm:pb-10 lg:pb-0">
                 <RevealSection className="w-full max-w-xl mx-auto lg:mx-0 lg:max-w-xl space-y-0">
@@ -229,7 +289,7 @@ function LandingPageInner() {
               </div>
 
               {/* iPhone mockups — LTR: keep photo/device composition unmirrored (intrinsic likeness + brand) */}
-              <RevealSection className="order-2 relative z-10 w-full flex justify-center lg:justify-end max-lg:mt-2 max-lg:pt-4">
+              <RevealSection className="order-2 relative z-10 w-full flex justify-center lg:justify-end max-lg:mt-2 max-lg:pt-6">
                 <div
                   dir="ltr"
                   className={`relative w-full max-w-[min(100%,400px)] lg:max-w-[440px] h-[min(380px,78vw)] sm:h-[420px] md:h-[440px] lg:h-[min(480px,52vh)] isolate max-md:overflow-x-clip max-md:overflow-y-visible ${locale === "ar" ? "landing-hero-ar-mood" : ""}`}
@@ -344,12 +404,12 @@ function LandingPageInner() {
               </p>
             </RevealSection>
 
-            <p className="text-center text-xs text-[#737373] mb-8">{t.pricing.pricingFootnote}</p>
+            <p className="text-center text-xs text-[#737373] mb-8">{getLandingGridFootnote(locale, pricingCurrency)}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 md:items-stretch gap-6 md:gap-4">
               {t.pricing.plans.map((plan, i) => {
                 const tierIndex = i as 0 | 1 | 2
                 const emphasis = PLAN_TIER_EMPHASIS[tierIndex]
-                const href = landingPlanHref(tierIndex, locale)
+                const href = landingPlanHref(tierIndex, locale, pricingCurrency)
                 const statusTag = "statusTag" in plan ? plan.statusTag : undefined
                 const { primary, suffix } = formatLandingTierPrice(pricingCurrency, tierIndex)
                 return (
@@ -401,6 +461,7 @@ function LandingPageInner() {
                 )
               })}
             </div>
+            <LandingPricingCurrencyRow />
           </div>
         </section>
 
@@ -459,8 +520,8 @@ function LandingPageInner() {
 
 export default function LandingPage() {
   return (
-    <LandingLocaleProvider>
+    <LandingPricingCurrencyProvider>
       <LandingPageInner />
-    </LandingLocaleProvider>
+    </LandingPricingCurrencyProvider>
   )
 }

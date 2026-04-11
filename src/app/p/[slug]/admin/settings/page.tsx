@@ -6,32 +6,12 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/browser"
 import { getEventBySlugAction, type AdminEvent } from "@/app/actions/setStorySelected"
 import { updateEventBySlugAction } from "@/app/actions/updateEventBySlug"
-import { startAiFilmAction } from "@/app/actions/startAiFilm"
 import { generateInvitePdfAction } from "@/app/actions/generateInvitePdf"
-
-function buildTributeSuggestionsForEvent(event: AdminEvent): string[] {
-  const name = event.name?.trim() || "your loved one"
-  const location = event.location?.trim() || ""
-  const birthYear = event.birth_date && event.birth_date.length >= 4 ? event.birth_date.slice(0, 4) : null
-  const deathYear = event.death_date && event.death_date.length >= 4 ? event.death_date.slice(0, 4) : null
-
-  const lifeRange =
-    birthYear && deathYear
-      ? `${birthYear}–${deathYear}`
-      : birthYear
-        ? `born in ${birthYear}`
-        : null
-
-  const line1 = `${name} shared quiet but lasting warmth with everyone around them.`
-
-  const line2 = lifeRange
-    ? `Across ${lifeRange}, the smiles and kindness left throughout ${location || "the world"} continue to live on in this album.`
-    : `The everyday moments shared in ${location || "this place"} now shine gently in our memories.`
-
-  const line3 = `When we remember ${name}, there is still ache, but even more gratitude and love. We place that feeling here in this album with care.`
-
-  return [line1, line2, line3]
-}
+import {
+  getMemorialVisitorsAction,
+  type VisitorRow,
+} from "@/app/actions/getMemorialVisitors"
+import { EnhanceRemembranceWithAi } from "@/components/remembrance/EnhanceRemembranceWithAi"
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -47,13 +27,11 @@ export default function AdminSettingsPage({ params }: PageProps) {
   const [error, setError] = useState<string | null>(null)
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
-  const [aiFilmLoading, setAiFilmLoading] = useState(false)
-  const [aiFilmMessage, setAiFilmMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null)
-  const [tributeLoading, setTributeLoading] = useState(false)
-  const [tributeError, setTributeError] = useState<string | null>(null)
-  const [tributeSuggestions, setTributeSuggestions] = useState<string[]>([])
+  const [invitationBio, setInvitationBio] = useState("")
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
+  const [visitors, setVisitors] = useState<VisitorRow[]>([])
+  const [visitorsError, setVisitorsError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!slug) {
@@ -72,6 +50,28 @@ export default function AdminSettingsPage({ params }: PageProps) {
     return () => { cancelled = true }
   }, [slug])
 
+  useEffect(() => {
+    if (!slug) return
+    let cancelled = false
+    getMemorialVisitorsAction(slug).then((res) => {
+      if (cancelled) return
+      if (res.ok) {
+        setVisitors(res.visitors)
+        setVisitorsError(null)
+      } else {
+        setVisitors([])
+        setVisitorsError(res.error)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
+
+  useEffect(() => {
+    if (event) setInvitationBio(event.invitation_bio ?? "")
+  }, [event])
+
   const handleProfileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!event || !slug) return
@@ -86,7 +86,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
     const ceremony_time = (formData.get("ceremony_time") as string)?.trim() ?? ""
     const flower_link = (formData.get("flower_link") as string)?.trim() || null
     const bank_info = (formData.get("bank_info") as string)?.trim() || null
-    const invitation_bio_raw = (formData.get("invitation_bio") as string)?.trim() ?? ""
+    const invitation_bio_raw = invitationBio.trim()
     const invitation_bio = invitation_bio_raw ? invitation_bio_raw.slice(0, 2000) : null
     const music_url_raw = (formData.get("music_url") as string)?.trim() ?? ""
     const music_url = music_url_raw ? music_url_raw.slice(0, 2000) : null
@@ -134,19 +134,6 @@ export default function AdminSettingsPage({ params }: PageProps) {
       router.refresh()
     } else {
       setProfileError(result.error ?? "Failed to save.")
-    }
-  }
-
-  const handleStartAiFilm = async () => {
-    if (!slug) return
-    setAiFilmMessage(null)
-    setAiFilmLoading(true)
-    const result = await startAiFilmAction(slug)
-    setAiFilmLoading(false)
-    if (result.ok) {
-      setAiFilmMessage({ type: "ok", text: result.message })
-    } else {
-      setAiFilmMessage({ type: "err", text: result.error })
     }
   }
 
@@ -308,22 +295,35 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 placeholder="e.g. March 15, 2024 at 2pm"
               />
             </div>
-            <div>
-              <label htmlFor="invitation_bio" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
-                Remembrance message
-              </label>
-              <textarea
-                id="invitation_bio"
-                name="invitation_bio"
-                rows={5}
-                defaultValue={event.invitation_bio ?? ""}
-                className="w-full px-4 py-3 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-y min-h-[120px]"
-                placeholder="Short message shown on the memorial and invitation (optional)"
-              />
-              <p className="mt-1.5 text-[11px] text-[var(--aeterna-gold-muted)]">
-                Shown on the public memorial page and printable invite. You can edit anytime.
-              </p>
-            </div>
+            <EnhanceRemembranceWithAi
+              label={
+                <label
+                  htmlFor="invitation_bio"
+                  className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider"
+                >
+                  Remembrance message
+                </label>
+              }
+              text={invitationBio}
+              onApply={setInvitationBio}
+              deceasedName={event.name}
+              variant="settings"
+            >
+              <>
+                <textarea
+                  id="invitation_bio"
+                  name="invitation_bio"
+                  rows={5}
+                  value={invitationBio}
+                  onChange={(e) => setInvitationBio(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-y min-h-[120px]"
+                  placeholder="Short message shown on the memorial and invitation (optional)"
+                />
+                <p className="mt-1.5 text-[11px] text-[var(--aeterna-gold-muted)]">
+                  Shown on the public memorial page and printable invite. You can edit anytime.
+                </p>
+              </>
+            </EnhanceRemembranceWithAi>
             <div>
               <label htmlFor="music_url" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
                 Background music URL
@@ -378,65 +378,6 @@ export default function AdminSettingsPage({ params }: PageProps) {
           </form>
         </section>
 
-        {/* AI tribute writing assistant */}
-        <section
-          aria-labelledby="tribute-ai-heading"
-          className="card-landing-airy p-6 md:p-8"
-        >
-          <h2
-            id="tribute-ai-heading"
-            className="text-sm font-medium text-[var(--aeterna-gold)] uppercase tracking-widest mb-3"
-          >
-            AI tribute writing assistant
-          </h2>
-          <p className="text-sm text-[var(--aeterna-body)] mb-4">
-            Based on name, dates, and location, AI suggests three short and heartfelt tribute lines.
-            You can copy and use any line for cards, messages, or album introductions.
-          </p>
-          <button
-            type="button"
-            disabled={tributeLoading || !event}
-            onClick={() => {
-              if (!event) return
-              setTributeLoading(true)
-              setTributeError(null)
-              try {
-                const lines = buildTributeSuggestionsForEvent(event)
-                setTributeSuggestions(lines)
-              } catch (err) {
-                setTributeError(
-                  err instanceof Error ? err.message : "Something went wrong while generating tribute suggestions."
-                )
-              } finally {
-                setTributeLoading(false)
-              }
-            }}
-            className="min-h-[40px] px-5 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] text-sm font-medium hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60 transition-colors"
-          >
-            {tributeLoading ? "Generating…" : "Show AI-written tribute suggestions"}
-          </button>
-          {tributeError && (
-            <p className="mt-2 text-sm text-red-400" role="alert">
-              {tributeError}
-            </p>
-          )}
-          {tributeSuggestions.length > 0 && (
-            <ol className="mt-4 space-y-3 text-sm text-[var(--aeterna-body)]">
-              {tributeSuggestions.map((line, idx) => (
-                <li
-                  key={idx}
-                  className="rounded-xl bg-[#030303]/25 border border-white/[0.08] px-4 py-3 leading-relaxed text-[var(--landing-text-body)]"
-                >
-                  <span className="block text-[10px] uppercase tracking-[0.22em] text-[var(--aeterna-gold-muted)] mb-1">
-                    Suggestion {idx + 1}
-                  </span>
-                  <p>{line}</p>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-
         {/* Celebration of life invitation PDF */}
         <section
           aria-labelledby="invite-pdf-heading"
@@ -482,29 +423,41 @@ export default function AdminSettingsPage({ params }: PageProps) {
           )}
         </section>
 
-        {/* AI film */}
-        <section aria-labelledby="ai-film-heading" className="card-landing-airy p-6 md:p-8">
-          <h2 id="ai-film-heading" className="text-sm font-medium text-[var(--aeterna-gold)] uppercase tracking-widest mb-3">
-            AI film
+        {/* Guest notification emails (post-upload opt-in) */}
+        <section aria-labelledby="visitor-emails-heading" className="card-landing-airy p-6 md:p-8">
+          <h2
+            id="visitor-emails-heading"
+            className="text-sm font-medium text-[var(--aeterna-gold)] uppercase tracking-widest mb-3"
+          >
+            Guest notification emails
           </h2>
           <p className="text-sm text-[var(--aeterna-body)] mb-4">
-            On the main admin page, open the <strong>Approved</strong> tab and select exactly 20 photos for the film. Then return here and click the button below to start the AI film.
+            Visitors who asked to be emailed when their submitted memory goes live. Approve their story on the main
+            admin page to send the notification (Resend: set <code className="text-xs opacity-80">RESEND_API_KEY</code>{" "}
+            in production).
           </p>
-          <button
-            type="button"
-            onClick={handleStartAiFilm}
-            disabled={aiFilmLoading}
-            className="min-h-[44px] px-6 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60 transition-colors"
-          >
-            {aiFilmLoading ? "Starting…" : "Start AI film (20 selected)"}
-          </button>
-          {aiFilmMessage && (
-            <p
-              className={`mt-3 text-sm ${aiFilmMessage.type === "ok" ? "text-[var(--aeterna-gold)]" : "text-red-400"}`}
-              role="alert"
-            >
-              {aiFilmMessage.text}
+          {visitorsError ? (
+            <p className="text-sm text-red-400" role="alert">
+              {visitorsError}
             </p>
+          ) : visitors.length === 0 ? (
+            <p className="text-sm text-[var(--aeterna-gold-muted)]">No notification signups yet.</p>
+          ) : (
+            <ul className="space-y-2 text-sm text-[var(--landing-text-body)]">
+              {visitors.map((v, i) => (
+                <li
+                  key={`${v.email ?? "e"}-${v.created_at ?? i}`}
+                  className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-white/[0.08] bg-[#030303]/30 px-4 py-3"
+                >
+                  <span className="font-medium text-[var(--aeterna-headline)]">{v.email ?? "—"}</span>
+                  <span className="text-xs text-[var(--aeterna-gold-muted)] tabular-nums">
+                    {v.created_at ? new Date(v.created_at).toLocaleString() : ""}
+                    {v.provider ? ` · ${v.provider}` : ""}
+                    {v.story_id ? " · linked to a story" : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
       </main>

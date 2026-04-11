@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Syne, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import { SmoothScrollProvider } from '@/components/SmoothScrollProvider'
+import { AppLocaleRoot } from '@/components/AppLocaleRoot'
 import { CursorGlow } from '@/components/CursorGlow'
 import { GrainOverlay } from '@/components/GrainOverlay'
 import { getAppBaseUrl } from '@/lib/appUrl'
@@ -69,11 +70,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable} ${syne.variable}`}>
       <body className="relative antialiased bg-[color:var(--landing-bg)] text-[color:var(--text-primary)]">
-        <CursorGlow />
-        <GrainOverlay />
-        <SmoothScrollProvider>
-          <div className="relative z-10 min-h-dvh">{children}</div>
-        </SmoothScrollProvider>
+        <AppLocaleRoot>
+          <CursorGlow />
+          <GrainOverlay />
+          <SmoothScrollProvider>
+            <div className="relative z-10 min-h-dvh">{children}</div>
+          </SmoothScrollProvider>
+        </AppLocaleRoot>
       </body>
     </html>
   )

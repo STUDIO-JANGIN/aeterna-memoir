@@ -5,12 +5,12 @@ import { isLandingLocale, LANDING_LOCALES } from "@/lib/landingTranslations"
 import { useLandingLocale } from "./LandingLocaleContext"
 
 export function LandingLanguageSwitcher() {
-  const { locale, setLocale } = useLandingLocale()
+  const { locale, setLocale, app } = useLandingLocale()
 
   return (
     <div className="relative inline-flex items-center" dir="ltr">
       <label htmlFor="landing-locale" className="sr-only">
-        Language
+        {app.common.language}
       </label>
       <select
         id="landing-locale"

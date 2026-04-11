@@ -3,6 +3,105 @@ import type { LandingLocale } from "@/lib/landingTranslations"
 /** Four Stripe currency profiles for landing + checkout. */
 export type PricingCurrencyId = "usd" | "krw" | "jpy" | "sar"
 
+export const PRICING_CURRENCY_IDS: PricingCurrencyId[] = ["usd", "krw", "jpy", "sar"]
+
+export const LANDING_PRICING_CURRENCY_KEY = "aeterna.landing.pricingCurrency"
+/** When `"1"`, the user picked a currency manually; changing language resets it. */
+export const LANDING_PRICING_MANUAL_KEY = "aeterna.landing.pricingManual"
+
+export function isPricingCurrencyId(value: string | null | undefined): value is PricingCurrencyId {
+  return value === "usd" || value === "krw" || value === "jpy" || value === "sar"
+}
+
+/** ISO 3166-1 alpha-2 from geo IP → checkout profile (Step 1: first load). */
+export function countryCodeToPricingCurrency(country: string | null | undefined): PricingCurrencyId {
+  if (!country) return "usd"
+  const c = country.trim().toUpperCase()
+  if (c === "KR") return "krw"
+  if (c === "JP") return "jpy"
+  if (c === "SA" || c === "AE") return "sar"
+  return "usd"
+}
+
+const GRID_FOOTNOTE_EN: Record<PricingCurrencyId, string> = {
+  usd: "All prices in US dollars (USD).",
+  krw: "All prices in Korean won (KRW).",
+  jpy: "All prices in Japanese yen (JPY).",
+  sar: "All prices in Saudi riyals (SAR).",
+}
+
+const GRID_FOOTNOTE_KO: Record<PricingCurrencyId, string> = {
+  usd: "가격은 미국 달러(USD) 기준입니다.",
+  krw: "가격은 대한민국 원(KRW) 기준입니다.",
+  jpy: "가격은 일본 엔(JPY) 기준입니다.",
+  sar: "가격은 사우디 리얄(SAR) 기준입니다.",
+}
+
+const GRID_FOOTNOTE_JA: Record<PricingCurrencyId, string> = {
+  usd: "表示は米ドル（USD）です。",
+  krw: "表示は韓国ウォン（KRW）です。",
+  jpy: "表示は日本円（JPY）です。",
+  sar: "表示はサウジアラビア リヤル（SAR）です。",
+}
+
+const GRID_FOOTNOTE_AR: Record<PricingCurrencyId, string> = {
+  usd: "جميع الأسعار بالدولار الأمريكي (USD).",
+  krw: "جميع الأسعار بالوون الكوري (KRW).",
+  jpy: "جميع الأسعار بالين الياباني (JPY).",
+  sar: "جميع الأسعار بالريال السعودي (SAR).",
+}
+
+/** Landing pricing grid footnote line (dynamic by selected currency + UI language). */
+export function getLandingGridFootnote(locale: LandingLocale, currency: PricingCurrencyId): string {
+  switch (locale) {
+    case "ko":
+      return GRID_FOOTNOTE_KO[currency]
+    case "ja":
+      return GRID_FOOTNOTE_JA[currency]
+    case "ar":
+      return GRID_FOOTNOTE_AR[currency]
+    case "en":
+    case "es":
+    case "fr":
+    case "zh":
+    default:
+      return GRID_FOOTNOTE_EN[currency]
+  }
+}
+
+export function dispatchPricingCurrencyUpdated(): void {
+  if (typeof window === "undefined") return
+  window.dispatchEvent(new CustomEvent("aeterna-pricing-currency"))
+}
+
+export function readPersistedLandingPricingCurrency(): PricingCurrencyId | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = localStorage.getItem(LANDING_PRICING_CURRENCY_KEY)
+    return isPricingCurrencyId(raw) ? raw : null
+  } catch {
+    return null
+  }
+}
+
+export function writePersistedLandingPricingCurrency(
+  currency: PricingCurrencyId,
+  options: { manual: boolean },
+): void {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(LANDING_PRICING_CURRENCY_KEY, currency)
+    if (options.manual) {
+      localStorage.setItem(LANDING_PRICING_MANUAL_KEY, "1")
+    } else {
+      localStorage.removeItem(LANDING_PRICING_MANUAL_KEY)
+    }
+    dispatchPricingCurrencyUpdated()
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Amounts per tier [free, legacy/plus, film/premium] in Stripe’s smallest unit:
  * USD/SAR: cents/halalas; KRW/JPY: zero-decimal (whole won/yen).
@@ -57,11 +156,16 @@ export function formatLandingTierPrice(
   return { primary: `${(u / 100).toFixed(0)}`, suffix: "SAR" }
 }
 
-export function landingPlanHref(tierIndex: 0 | 1 | 2, locale: LandingLocale): string {
+export function landingPlanHref(
+  tierIndex: 0 | 1 | 2,
+  locale: LandingLocale,
+  pricingCurrency?: PricingCurrencyId,
+): string {
   const plan = tierIndex === 0 ? "free" : tierIndex === 1 ? "forever" : "film"
   const params = new URLSearchParams()
   params.set("plan", plan)
   params.set("locale", locale)
+  if (pricingCurrency) params.set("currency", pricingCurrency)
   return `/create?${params.toString()}`
 }
 

@@ -14,11 +14,14 @@ import {
   getLandingStrings,
   isLandingLocale,
 } from "@/lib/landingTranslations"
+import { getAppStrings } from "@/lib/appTranslations"
 
 type LandingLocaleContextValue = {
   locale: LandingLocale
   setLocale: (locale: LandingLocale) => void
   strings: ReturnType<typeof getLandingStrings>
+  /** App routes: create, memorial, admin, sign-in, etc. */
+  app: ReturnType<typeof getAppStrings>
 }
 
 const LandingLocaleContext = createContext<LandingLocaleContextValue | null>(null)
@@ -75,10 +78,11 @@ export function LandingLocaleProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const strings = useMemo(() => getLandingStrings(locale), [locale])
+  const app = useMemo(() => getAppStrings(locale), [locale])
 
   const value = useMemo(
-    (): LandingLocaleContextValue => ({ locale, setLocale, strings }),
-    [locale, setLocale, strings],
+    (): LandingLocaleContextValue => ({ locale, setLocale, strings, app }),
+    [locale, setLocale, strings, app],
   )
 
   return <LandingLocaleContext.Provider value={value}>{children}</LandingLocaleContext.Provider>
@@ -87,7 +91,7 @@ export function LandingLocaleProvider({ children }: { children: ReactNode }) {
 export function useLandingLocale() {
   const ctx = useContext(LandingLocaleContext)
   if (!ctx) {
-    throw new Error("useLandingLocale must be used within LandingLocaleProvider")
+    throw new Error("useLandingLocale must be used within LandingLocaleProvider (app root)")
   }
   return ctx
 }

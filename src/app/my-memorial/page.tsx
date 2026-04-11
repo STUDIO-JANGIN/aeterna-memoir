@@ -8,10 +8,13 @@ import { Trash2 } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
 import { deleteMemorialAction } from "@/app/actions/deleteMemorial"
 import { listMyMemorialsAction, type MyMemorialSummary } from "@/app/actions/listMyMemorials"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
 
 type Phase = "loading" | "empty" | "choose" | "error"
 
 export default function MyMemorialPage() {
+  const { app: t } = useLandingLocale()
   const router = useRouter()
   const [phase, setPhase] = useState<Phase>("loading")
   const [memorials, setMemorials] = useState<MyMemorialSummary[]>([])
@@ -69,7 +72,7 @@ export default function MyMemorialPage() {
         await loadMemorials()
       } catch (e) {
         if (!cancelled) {
-          setMessage(e instanceof Error ? e.message : "Something went wrong.")
+          setMessage(e instanceof Error ? e.message : t.myMemorial.somethingWrong)
           setPhase("error")
         }
       }
@@ -82,7 +85,7 @@ export default function MyMemorialPage() {
   const showSignOut =
     signedIn && (phase === "empty" || phase === "choose" || phase === "error")
 
-  const canSubmitDelete = deleteConfirm.trim().toLowerCase() === "delete"
+  const canSubmitDelete = deleteConfirm.trim().toLowerCase() === t.myMemorial.deletePlaceholder
 
   useEffect(() => {
     if (!deleteTarget || typeof document === "undefined") return
@@ -130,7 +133,7 @@ export default function MyMemorialPage() {
       setMemorials(next)
       if (next.length === 0) setPhase("empty")
     } catch (e) {
-      setDeleteError(e instanceof Error ? e.message : "Could not delete.")
+      setDeleteError(e instanceof Error ? e.message : t.myMemorial.errorFallback)
     } finally {
       setDeleteBusy(false)
     }
@@ -143,51 +146,48 @@ export default function MyMemorialPage() {
       }`}
     >
       {showSignOut ? (
-        <div className="fixed top-0 right-0 z-[100] flex justify-end p-4 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))]">
+        <div className="fixed top-0 right-0 z-[100] flex justify-end gap-2 p-4 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))]">
+          <LandingLanguageSwitcher />
           <button
             type="button"
             onClick={() => void handleSignOut()}
             disabled={signingOut}
             className="min-h-[40px] rounded-full border border-white/15 bg-[#030303]/60 px-4 text-[11px] font-medium tracking-[0.14em] uppercase text-[var(--landing-text-body)] backdrop-blur-sm hover:bg-white/[0.08] hover:text-[var(--aeterna-gold)] transition-colors disabled:opacity-50"
           >
-            {signingOut ? "Signing out…" : "Sign out"}
+            {signingOut ? t.common.signingOut : t.common.signOut}
           </button>
         </div>
       ) : null}
 
-      <p className="text-landing-label text-[var(--aeterna-gold)] mb-6">My memorial</p>
+      <p className="text-landing-label text-[var(--aeterna-gold)] mb-6">{t.myMemorial.kicker}</p>
 
       {phase === "loading" && (
         <>
-          <h1 className="text-landing-section-title max-w-xl mb-4">Loading</h1>
-          <p className="text-landing-body max-w-md">Checking your account…</p>
+          <h1 className="text-landing-section-title max-w-xl mb-4">{t.myMemorial.loadingTitle}</h1>
+          <p className="text-landing-body max-w-md">{t.myMemorial.loadingBody}</p>
         </>
       )}
 
       {phase === "empty" && (
         <>
-          <h1 className="text-landing-section-title max-w-xl mb-6">No memorial yet</h1>
-          <p className="text-landing-body max-w-lg mb-10">
-            We couldn&apos;t find a memorial linked to this account. Create one to get started.
-          </p>
+          <h1 className="text-landing-section-title max-w-xl mb-6">{t.myMemorial.emptyTitle}</h1>
+          <p className="text-landing-body max-w-lg mb-10">{t.myMemorial.emptyBody}</p>
           <Link href="/create" className="btn-landing-primary min-h-[52px] justify-center">
-            Create a memorial
+            {t.myMemorial.createCta}
           </Link>
           <Link
             href="/"
             className="mt-8 block text-sm text-[var(--landing-text-body)] hover:text-[var(--aeterna-gold)] transition-colors"
           >
-            Back to home
+            {t.common.backToHome}
           </Link>
         </>
       )}
 
       {phase === "choose" && (
         <>
-          <h1 className="text-landing-section-title max-w-xl mb-4">Your memorials</h1>
-          <p className="text-landing-body max-w-lg mb-10">
-            Open a dashboard to manage stories and settings, or delete a memorial permanently.
-          </p>
+          <h1 className="text-landing-section-title max-w-xl mb-4">{t.myMemorial.listTitle}</h1>
+          <p className="text-landing-body max-w-lg mb-10">{t.myMemorial.listBody}</p>
           <ul className="card-landing-airy w-full max-w-md text-left">
             {memorials.map((m) => (
               <li
@@ -214,7 +214,7 @@ export default function MyMemorialPage() {
                       setDeleteTarget(m)
                     }}
                     className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/12 text-[var(--landing-text-muted)] hover:border-red-400/50 hover:bg-red-950/40 hover:text-red-200/90 transition-colors"
-                    aria-label={`Delete memorial ${m.name?.trim() || m.slug}`}
+                    aria-label={t.myMemorial.deleteMemorialAria(m.name?.trim() || m.slug)}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden />
                   </button>
@@ -226,7 +226,7 @@ export default function MyMemorialPage() {
             href="/"
             className="mt-10 text-sm text-[var(--landing-text-body)] hover:text-[var(--aeterna-gold)] transition-colors"
           >
-            Back to home
+            {t.common.backToHome}
           </Link>
         </>
       )}
@@ -251,18 +251,17 @@ export default function MyMemorialPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <h2 id="delete-memorial-title" className="font-[var(--font-serif)] text-lg text-[var(--landing-text-hero)]">
-                Delete this memorial?
+                {t.myMemorial.deleteTitle}
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-[var(--landing-text-body)]">
-                This permanently removes{" "}
-                <span className="text-[var(--landing-text-hero)] font-medium">
-                  {deleteTarget.name?.trim() || "this memorial"}
-                </span>{" "}
-                and its stories. This cannot be undone.
+                {t.myMemorial.deleteBody(deleteTarget.name?.trim() || t.common.memorialFallbackName)}
               </p>
               <p className="mt-4 text-xs uppercase tracking-[0.16em] text-[var(--aeterna-gold-muted)]">
-                Type <span className="text-[var(--aeterna-gold)] font-mono normal-case tracking-normal">delete</span>{" "}
-                to confirm
+                <span className="normal-case tracking-normal">
+                  {t.myMemorial.typeDelete}{" "}
+                  <span className="text-[var(--aeterna-gold)] font-mono">{t.myMemorial.deletePlaceholder}</span>
+                  {t.myMemorial.afterTypeWord ? ` ${t.myMemorial.afterTypeWord}` : ""}
+                </span>
               </p>
               <input
                 ref={deleteInputRef}
@@ -275,7 +274,7 @@ export default function MyMemorialPage() {
                 autoComplete="off"
                 autoCapitalize="off"
                 spellCheck={false}
-                placeholder="delete"
+                placeholder={t.myMemorial.deletePlaceholder}
                 className="mt-2 w-full rounded-xl border border-white/[0.12] bg-[#030303]/80 px-4 py-3 text-sm text-[var(--landing-text-hero)] placeholder:text-white/25 outline-none focus:border-[var(--aeterna-gold)]/40 focus:ring-1 focus:ring-[var(--aeterna-gold)]/25"
               />
               {deleteError ? (
@@ -294,7 +293,7 @@ export default function MyMemorialPage() {
                   }}
                   className="min-h-[44px] rounded-full border border-white/15 px-5 text-sm font-medium text-[var(--landing-text-body)] hover:bg-white/[0.06] transition-colors disabled:opacity-50"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
                 <button
                   type="button"
@@ -302,7 +301,7 @@ export default function MyMemorialPage() {
                   onClick={() => void handleConfirmDelete()}
                   className="min-h-[44px] rounded-full border border-red-500/50 bg-red-950/50 px-5 text-sm font-medium text-red-100 hover:bg-red-900/60 transition-colors disabled:opacity-40 disabled:hover:bg-red-950/50"
                 >
-                  {deleteBusy ? "Deleting…" : "Delete memorial"}
+                  {deleteBusy ? t.common.deleting : t.myMemorial.deleteCta}
                 </button>
               </div>
             </div>
@@ -312,8 +311,8 @@ export default function MyMemorialPage() {
 
       {phase === "error" && (
         <>
-          <h1 className="text-landing-section-title max-w-xl mb-6">Something went wrong</h1>
-          <p className="text-landing-body max-w-lg mb-10">{message ?? "Please try again."}</p>
+          <h1 className="text-landing-section-title max-w-xl mb-6">{t.myMemorial.errorTitle}</h1>
+          <p className="text-landing-body max-w-lg mb-10">{message ?? t.myMemorial.errorFallback}</p>
           <button
             type="button"
             onClick={() => {
@@ -322,13 +321,13 @@ export default function MyMemorialPage() {
             }}
             className="btn-landing-outline-gold"
           >
-            Try again
+            {t.common.tryAgain}
           </button>
           <Link
             href="/"
             className="mt-8 block text-sm text-[var(--landing-text-body)] hover:text-[var(--aeterna-gold)] transition-colors"
           >
-            Back to home
+            {t.common.backToHome}
           </Link>
         </>
       )}

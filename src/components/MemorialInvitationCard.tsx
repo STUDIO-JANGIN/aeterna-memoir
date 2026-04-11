@@ -9,6 +9,7 @@ import {
   renderMemorialInvitationCanvas,
   type MemorialInvitationCanvasInput,
 } from "@/lib/memorialInvitationCanvas"
+import { shareOrDownloadPng } from "@/lib/shareImage"
 import { MemorialCard } from "@/components/MemorialCard"
 
 export type MemorialInvitationCardProps = {
@@ -99,12 +100,7 @@ export function MemorialInvitationCard({
     try {
       const canvas = await renderCanvas()
       const blob = await canvasToPngBlob(canvas)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `memorial-invitation-${slug}.png`
-      a.click()
-      URL.revokeObjectURL(url)
+      await shareOrDownloadPng(blob, `memorial-invitation-${slug}.png`, "Memorial invitation")
     } finally {
       setBusy(false)
     }

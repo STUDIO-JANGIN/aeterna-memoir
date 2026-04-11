@@ -46,8 +46,8 @@ export type LandingStrings = {
     kicker: string
     title: string
     subtitle: string
-    /** Localized footnote for which currency the grid uses (matches `getPricingCurrencyId`). */
-    pricingFootnote: string
+    /** Small note above optional currency selector (region / language + manual override). */
+    currencyDisclaimer: string
     comingSoon: string
     plans: [
       { tierName: string; value: string; cta: string },
@@ -105,7 +105,8 @@ const EN: LandingStrings = {
     title: "Sacred preservation. One-time.",
     subtitle:
       "The first 7 days are a free window to gather memories. Upgrade anytime to preserve the shrine forever.",
-    pricingFootnote: "All prices in US dollars (USD).",
+    currencyDisclaimer:
+      "Currency is based on your region (first visit) or your selected language. Change it here before checkout.",
     comingSoon: "Coming Soon",
     plans: [
       {
@@ -205,7 +206,8 @@ const KO: LandingStrings = {
     title: "소중한 보존. 일회성.",
     subtitle:
       "첫 7일은 추모를 모으는 무료 기간입니다. 언제든지 업그레이드해 영구히 보존하세요.",
-    pricingFootnote: "가격은 대한민국 원(KRW) 기준입니다.",
+    currencyDisclaimer:
+      "첫 방문 시 지역, 이후에는 선택한 언어에 맞춰 통화가 표시됩니다. 결제 전에 아래에서 변경할 수 있어요.",
     comingSoon: "곧 출시",
     plans: [
       {
@@ -305,7 +307,8 @@ const JA: LandingStrings = {
     title: "尊い保存。一度きりのお支払い。",
     subtitle:
       "最初の7日間は思い出を集める無料の窓です。いつでもアップグレードして永遠に保存できます。",
-    pricingFootnote: "表示価格は日本円（JPY）です。",
+    currencyDisclaimer:
+      "初回は地域、以降は選択した言語に合わせて表示通貨が決まります。お支払い前に下記で変更できます。",
     comingSoon: "近日公開",
     plans: [
       {
@@ -405,7 +408,8 @@ const FR: LandingStrings = {
     title: "Préservation sacrée. Paiement unique.",
     subtitle:
       "Les 7 premiers jours sont une fenêtre gratuite pour recueillir les souvenirs. Passez à un plan supérieur quand vous voulez pour préserver le sanctuaire pour toujours.",
-    pricingFootnote: "Tous les prix sont en dollars US (USD).",
+    currencyDisclaimer:
+      "La devise suit votre région (première visite) ou la langue choisie. Vous pouvez la modifier ci-dessous avant le paiement.",
     comingSoon: "Bientôt",
     plans: [
       {
@@ -505,7 +509,8 @@ const ES: LandingStrings = {
     title: "Preservación sagrada. Pago único.",
     subtitle:
       "Los primeros 7 días son una ventana gratuita para reunir recuerdos. Mejora cuando quieras para conservar el santuario para siempre.",
-    pricingFootnote: "Todos los precios están en dólares estadounidenses (USD).",
+    currencyDisclaimer:
+      "La moneda sigue tu región (primera visita) o el idioma elegido. Puedes cambiarla antes de pagar.",
     comingSoon: "Próximamente",
     plans: [
       {
@@ -605,7 +610,8 @@ const AR: LandingStrings = {
     title: "حفظ مقدّس. دفعة واحدة.",
     subtitle:
       "الأيام السبعة الأولى نافذة مجانية لجمع الذكريات. ترقَّ في أي وقت للحفظ للأبد.",
-    pricingFootnote: "الأسعار بالريال السعودي (SAR).",
+    currencyDisclaimer:
+      "العملة تستند إلى منطقتك (أول زيارة) أو لغتك المختارة. يمكنك تغييرها قبل الدفع.",
     comingSoon: "قريبًا",
     plans: [
       {
@@ -702,7 +708,7 @@ const ZH: LandingStrings = {
     kicker: "定价",
     title: "神圣保存。一次性付费。",
     subtitle: "首 7 天为免费收集回忆的窗口。可随时升级，永久保存纪念空间。",
-    pricingFootnote: "价格以美元（USD）计价。",
+    currencyDisclaimer: "货币依据您的地区（首次访问）或所选语言显示。可在付款前于下方更改。",
     comingSoon: "即将推出",
     plans: [
       {

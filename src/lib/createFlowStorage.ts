@@ -21,11 +21,13 @@ export type CreateDraftV1 = {
   deathM: string
   deathD: string
   location: string
-  /** YYYY-MM-DD for service / gathering */
+  /** YYYY-MM-DD for service / gathering (empty until month, day, and year are all chosen). */
   ceremonyDate: string
-  ceremonyHour12: number
+  /** `null` when the user has not selected an hour yet. */
+  ceremonyHour12: number | null
   ceremonyM: string
-  ceremonyPeriod: "AM" | "PM"
+  /** `null` when the user has not selected AM/PM yet. */
+  ceremonyPeriod: "AM" | "PM" | null
   fundLink: string
   /** Words of remembrance for printable invitation */
   invitationBio: string

@@ -29,13 +29,16 @@ import {
 } from "@/lib/createFlowStorage"
 import {
   formatLandingTierPrice,
-  getCreateFlowPricingFootnote,
-  getPricingCurrencyId,
   type PricingCurrencyId,
 } from "@/lib/landingPricing"
-import { isLandingLocale, LANDING_LOCALE_STORAGE_KEY, type LandingLocale } from "@/lib/landingTranslations"
+import { getAppPricingFootnote, interpolate, type AppStrings } from "@/lib/appTranslations"
+import { isLandingLocale } from "@/lib/landingTranslations"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
+import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
 import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
+import { EnhanceRemembranceWithAi } from "@/components/remembrance/EnhanceRemembranceWithAi"
 
 /** URL `plan=` → internal tier. Legacy: `basic` = Plus; marketing: `forever` = Plus, `film` = Premium. */
 function parsePlanQueryParam(param: string | null): StoragePlan | null {
@@ -80,38 +83,32 @@ function storagePlanToUrlPlan(p: StoragePlan): "basic" | "premium" | "free" | "f
   return "free"
 }
 
-function buildCreatePlanSummary(currency: PricingCurrencyId): Record<
-  StoragePlan,
-  { title: string; price: string; tagline: string; benefits: string[] }
-> {
+function buildCreatePlanSummary(
+  currency: PricingCurrencyId,
+  plans: AppStrings["createWizard"]["plans"],
+): Record<StoragePlan, { title: string; price: string; tagline: string; benefits: string[] }> {
   const line = (tier: 0 | 1 | 2) => {
     const { primary, suffix } = formatLandingTierPrice(currency, tier)
     return `${primary} ${suffix}`
   }
   return {
     free: {
-      title: "Sacred Window",
+      title: plans.free.title,
       price: line(0),
-      tagline: "7 days to gather memories. A gentle, peaceful start.",
-      benefits: [
-        "Seven days for family and friends to add photos and stories",
-        "Upgrade anytime to preserve the shrine forever",
-      ],
+      tagline: plans.free.tagline,
+      benefits: [plans.free.b1, plans.free.b2],
     },
     plus: {
-      title: "Eternal Legacy",
+      title: plans.plus.title,
       price: line(1),
-      tagline: "Keep every photo and story preserved forever. No expiration.",
-      benefits: ["Every photo and story preserved for good", "A permanent, shareable memorial home"],
+      tagline: plans.plus.tagline,
+      benefits: [plans.plus.b1, plans.plus.b2],
     },
     premium: {
-      title: "The Eternal Film",
+      title: plans.premium.title,
       price: line(2),
-      tagline: "Eternal Legacy + AI Film Pre-Order",
-      benefits: [
-        "Everything in Eternal Legacy",
-        "Priority access to your AI tribute film when V2 launches — pre-order today",
-      ],
+      tagline: plans.premium.tagline,
+      benefits: [plans.premium.b1, plans.premium.b2],
     },
   }
 }
@@ -170,6 +167,15 @@ function from24hTo12(h: number): { hour12: number; period: "AM" | "PM" } {
 }
 
 /** Human-readable line for `events.ceremony_time` (date + 12h time). */
+/** True when service time fields are all explicitly set (no placeholder defaults). */
+function isCeremonyTimeComplete(
+  hour12: number | "",
+  minute: string,
+  period: "AM" | "PM" | "",
+): boolean {
+  return hour12 !== "" && minute !== "" && period !== ""
+}
+
 function buildCeremonyDisplay(
   dateIso: string,
   hour12: number,
@@ -218,6 +224,7 @@ function scrollNeighborIntoView(el: HTMLElement | null) {
 const stepPresence = artisanPresence
 
 function CreateEventForm() {
+  const { app: a, locale, setLocale } = useLandingLocale()
   const { user, ready: authReady, refresh: refreshAuthUser } = useSupabaseUser()
   const signedIn = Boolean(user?.id)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -254,10 +261,13 @@ function CreateEventForm() {
   const atRestRevealRef = useRef(false)
 
   const [location, setLocation] = useState("")
-  const [ceremonyDate, setCeremonyDate] = useState("")
-  const [ceremonyHour12, setCeremonyHour12] = useState(2)
-  const [ceremonyM, setCeremonyM] = useState("00")
-  const [ceremonyPeriod, setCeremonyPeriod] = useState<"AM" | "PM">("PM")
+  /** Service date — picked as three fields so we never inject a default year/day on partial input. */
+  const [ceremonyPickY, setCeremonyPickY] = useState("")
+  const [ceremonyPickM, setCeremonyPickM] = useState("")
+  const [ceremonyPickD, setCeremonyPickD] = useState("")
+  const [ceremonyHour12, setCeremonyHour12] = useState<number | "">("")
+  const [ceremonyM, setCeremonyM] = useState("")
+  const [ceremonyPeriod, setCeremonyPeriod] = useState<"AM" | "PM" | "">("")
 
   const [fundLink, setFundLink] = useState("")
   /** Printable invitation — words of remembrance */
@@ -302,37 +312,29 @@ function CreateEventForm() {
   const blockPlanAutoAdvanceRef = useRef(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-
-  const [landingLocale, setLandingLocale] = useState<LandingLocale>("en")
+  const currencyQuery = searchParams.get("currency")
 
   useEffect(() => {
     const l = searchParams.get("locale")?.trim()
-    if (l && isLandingLocale(l)) {
-      setLandingLocale(l)
-      return
-    }
-    if (typeof window === "undefined") return
-    try {
-      const raw = localStorage.getItem(LANDING_LOCALE_STORAGE_KEY)
-      if (raw && isLandingLocale(raw)) setLandingLocale(raw)
-    } catch {
-      /* ignore */
-    }
-  }, [searchParams])
+    if (l && isLandingLocale(l)) setLocale(l)
+  }, [searchParams, setLocale])
 
-  const pricingCurrency = useMemo(() => getPricingCurrencyId(landingLocale), [landingLocale])
-  const planSummaryMap = useMemo(() => buildCreatePlanSummary(pricingCurrency), [pricingCurrency])
+  const pricingCurrency = usePersistedPricingCurrencyForCreate(locale, currencyQuery)
+  const planSummaryMap = useMemo(
+    () => buildCreatePlanSummary(pricingCurrency, a.createWizard.plans),
+    [pricingCurrency, a.createWizard.plans],
+  )
 
   const planTierRows = useMemo(
     () =>
       (
         [
-          { id: "free" as const, title: "Sacred Window", sub: "7 days to gather. Gentle start.", tier: 0 as const },
-          { id: "plus" as const, title: "Eternal Legacy", sub: "Preserved forever. No expiration.", tier: 1 as const },
+          { id: "free" as const, title: a.createWizard.plans.free.title, sub: a.createWizard.plans.free.tierSub, tier: 0 as const },
+          { id: "plus" as const, title: a.createWizard.plans.plus.title, sub: a.createWizard.plans.plus.tierSub, tier: 1 as const },
           {
             id: "premium" as const,
-            title: "The Eternal Film",
-            sub: "Eternal Legacy + AI Film Pre-Order",
+            title: a.createWizard.plans.premium.title,
+            sub: a.createWizard.plans.premium.tierSub,
             tier: 2 as const,
           },
         ] as const
@@ -340,7 +342,7 @@ function CreateEventForm() {
         const { primary, suffix } = formatLandingTierPrice(pricingCurrency, row.tier)
         return { ...row, primary, suffix }
       }),
-    [pricingCurrency],
+    [pricingCurrency, a.createWizard.plans],
   )
 
   const planParam = searchParams.get("plan")?.trim().toLowerCase() ?? null
@@ -354,17 +356,21 @@ function CreateEventForm() {
     return wizardStep
   }, [wizardStep, serviceStepsSkipped])
 
-  /** Step 6 service date — parse ISO yyyy-mm-dd for MM / DD / YYYY selects */
-  const ceremonyServiceParts = useMemo(() => {
-    const s = ceremonyDate.trim()
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return { y: "", m: "", d: "" }
-    const [y, mo, da] = s.split("-")
-    return { y, m: String(Number(mo)), d: String(Number(da)) }
-  }, [ceremonyDate])
+  const ceremonyDate = useMemo(() => {
+    if (!ceremonyPickY || !ceremonyPickM || !ceremonyPickD) return ""
+    const iso = buildDateString(ceremonyPickY, ceremonyPickM, ceremonyPickD)
+    return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : ""
+  }, [ceremonyPickY, ceremonyPickM, ceremonyPickD])
 
   useEffect(() => {
     wizardStepRef.current = wizardStep
   }, [wizardStep])
+
+  /** Keep step titles visible on mobile: scroll to top whenever the wizard step changes. */
+  useEffect(() => {
+    if (memorialType === null) return
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [wizardStep, memorialType])
 
   useEffect(() => {
     if (!memorialType) return
@@ -452,27 +458,35 @@ function CreateEventForm() {
       setDeathM(draft.deathM)
       setDeathD(draft.deathD)
       setLocation(draft.location)
-      if (
-        "ceremonyHour12" in draft &&
-        typeof (draft as CreateDraftV1).ceremonyHour12 === "number"
-      ) {
+      {
         const d = draft as CreateDraftV1
-        setCeremonyDate(d.ceremonyDate ?? "")
-        setCeremonyHour12(d.ceremonyHour12)
-        setCeremonyM(d.ceremonyM ?? "00")
-        setCeremonyPeriod(d.ceremonyPeriod ?? "PM")
-      } else {
-        const legacyH = (draft as { ceremonyH?: number }).ceremonyH
-        if (typeof legacyH === "number") {
-          const c = from24hTo12(legacyH)
-          setCeremonyHour12(c.hour12)
-          setCeremonyPeriod(c.period)
+        const rawCd = d.ceremonyDate ?? ""
+        if (rawCd && /^\d{4}-\d{2}-\d{2}$/.test(rawCd.trim())) {
+          const [y, mo, da] = rawCd.trim().split("-")
+          setCeremonyPickY(y)
+          setCeremonyPickM(String(Number(mo)))
+          setCeremonyPickD(String(Number(da)))
         } else {
-          setCeremonyHour12(2)
-          setCeremonyPeriod("PM")
+          setCeremonyPickY("")
+          setCeremonyPickM("")
+          setCeremonyPickD("")
         }
-        setCeremonyDate("")
-        setCeremonyM(draft.ceremonyM ?? "00")
+        if (d.ceremonyHour12 !== null && d.ceremonyHour12 !== undefined && typeof d.ceremonyHour12 === "number") {
+          setCeremonyHour12(d.ceremonyHour12)
+          setCeremonyM(d.ceremonyM ?? "")
+          setCeremonyPeriod(d.ceremonyPeriod ?? "")
+        } else {
+          const legacyH = (draft as { ceremonyH?: number }).ceremonyH
+          if (typeof legacyH === "number") {
+            const c = from24hTo12(legacyH)
+            setCeremonyHour12(c.hour12)
+            setCeremonyPeriod(c.period)
+          } else {
+            setCeremonyHour12("")
+            setCeremonyPeriod("")
+          }
+          setCeremonyM(d.ceremonyM ?? "")
+        }
       }
       setFundLink(draft.fundLink)
       setInvitationBio(draft.invitationBio ?? "")
@@ -530,9 +544,9 @@ function CreateEventForm() {
       deathD,
       location,
       ceremonyDate,
-      ceremonyHour12,
+      ceremonyHour12: typeof ceremonyHour12 === "number" ? ceremonyHour12 : null,
       ceremonyM,
-      ceremonyPeriod,
+      ceremonyPeriod: ceremonyPeriod === "" ? null : ceremonyPeriod,
       fundLink,
       invitationBio,
       storagePlan,
@@ -549,15 +563,17 @@ function CreateEventForm() {
     deathY,
     deathM,
     deathD,
-    location,
-    ceremonyDate,
-    ceremonyHour12,
-    ceremonyM,
-    ceremonyPeriod,
-    fundLink,
-    invitationBio,
-    storagePlan,
-    willHostMemorialService,
+      location,
+      ceremonyPickY,
+      ceremonyPickM,
+      ceremonyPickD,
+      ceremonyHour12,
+      ceremonyM,
+      ceremonyPeriod,
+      fundLink,
+      invitationBio,
+      storagePlan,
+      willHostMemorialService,
   ])
 
   useEffect(() => {
@@ -702,7 +718,7 @@ function CreateEventForm() {
       const planQs = new URLSearchParams(window.location.search).get("plan")
       if (planQs) params.set("plan", planQs)
     }
-    params.set("locale", landingLocale)
+    params.set("locale", locale)
     const nextPath = `/create?${params.toString()}`
     /** Must match Supabase Auth → Redirect URLs (`https://aeternamemoir.com/auth/callback`). */
     const redirectTo = buildOAuthCallbackRedirectUrl(nextPath)
@@ -769,10 +785,12 @@ function CreateEventForm() {
     setDeathM("")
     setDeathD("")
     setLocation("")
-    setCeremonyDate("")
-    setCeremonyHour12(2)
-    setCeremonyM("00")
-    setCeremonyPeriod("PM")
+    setCeremonyPickY("")
+    setCeremonyPickM("")
+    setCeremonyPickD("")
+    setCeremonyHour12("")
+    setCeremonyM("")
+    setCeremonyPeriod("")
     setFundLink("")
     setInvitationBio("")
     setWillHostMemorialService(null)
@@ -844,9 +862,9 @@ function CreateEventForm() {
       deathD,
       location,
       ceremonyDate,
-      ceremonyHour12,
+      ceremonyHour12: typeof ceremonyHour12 === "number" ? ceremonyHour12 : null,
       ceremonyM,
-      ceremonyPeriod,
+      ceremonyPeriod: ceremonyPeriod === "" ? null : ceremonyPeriod,
       fundLink,
       invitationBio,
       storagePlan,
@@ -904,7 +922,6 @@ function CreateEventForm() {
       const d = buildCreateDraft(nextStep)
       if (d) writeCreateDraft(d)
       setWizardStep(nextStep)
-      window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
 
@@ -921,10 +938,12 @@ function CreateEventForm() {
       setStepSlideDir(1)
       if (willHostMemorialService === false) {
         setLocation("")
-        setCeremonyDate("")
-        setCeremonyHour12(2)
-        setCeremonyM("00")
-        setCeremonyPeriod("PM")
+        setCeremonyPickY("")
+        setCeremonyPickM("")
+        setCeremonyPickD("")
+        setCeremonyHour12("")
+        setCeremonyM("")
+        setCeremonyPeriod("")
         setFundLink("")
         const next = 8
         const d = buildCreateDraft(next)
@@ -936,7 +955,6 @@ function CreateEventForm() {
         if (d) writeCreateDraft(d)
         setWizardStep(next)
       }
-      window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
 
@@ -1019,8 +1037,13 @@ function CreateEventForm() {
     const birth_date = buildDateString(birthY, birthM, birthD) || "—"
     const death_date = buildDateString(deathY, deathM, deathD) || "—"
     const ceremony_time =
-      ceremonyDate.trim().length > 0
-        ? buildCeremonyDisplay(ceremonyDate, ceremonyHour12, ceremonyM, ceremonyPeriod)
+      ceremonyDate.trim().length > 0 && isCeremonyTimeComplete(ceremonyHour12, ceremonyM, ceremonyPeriod)
+        ? buildCeremonyDisplay(
+            ceremonyDate,
+            ceremonyHour12 as number,
+            ceremonyM,
+            ceremonyPeriod as "AM" | "PM",
+          )
         : undefined
     if (!user?.email?.trim()) {
       setLoading(false)
@@ -1158,8 +1181,13 @@ function CreateEventForm() {
   const invitationBirth = buildDateString(birthY, birthM, birthD) || ""
   const invitationDeath = buildDateString(deathY, deathM, deathD) || ""
   const invitationCeremony =
-    ceremonyDate.trim().length > 0
-      ? buildCeremonyDisplay(ceremonyDate, ceremonyHour12, ceremonyM, ceremonyPeriod)
+    ceremonyDate.trim().length > 0 && isCeremonyTimeComplete(ceremonyHour12, ceremonyM, ceremonyPeriod)
+      ? buildCeremonyDisplay(
+          ceremonyDate,
+          ceremonyHour12 as number,
+          ceremonyM,
+          ceremonyPeriod as "AM" | "PM",
+        )
       : ""
 
   const showFooterCreateError =
@@ -1170,7 +1198,10 @@ function CreateEventForm() {
     )
 
   return (
-    <div className="min-h-dvh bg-landing text-[var(--landing-text-hero)]">
+    <div className="relative min-h-dvh bg-landing text-[var(--landing-text-hero)]">
+      <div className="pointer-events-auto fixed end-4 top-4 z-[80] pt-[max(0.25rem,env(safe-area-inset-top))]">
+        <LandingLanguageSwitcher />
+      </div>
       <AnimatePresence>
         {showResumeToast && (
           <motion.div
@@ -1185,7 +1216,7 @@ function CreateEventForm() {
             }}
           >
             <p className="rounded-[32px] border border-white/[0.1] bg-landing/95 px-4 py-3 text-center text-sm text-white/85 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.5)] backdrop-blur-md">
-              We saved your place — you can pick up here.
+              {a.createWizard.resumeToast}
             </p>
           </motion.div>
         )}
@@ -1209,7 +1240,7 @@ function CreateEventForm() {
               transition={ARTISAN_SPRING}
               className="max-w-md text-center font-[var(--font-serif)] text-2xl font-normal tracking-[0.04em] text-[#f4f1ea] md:text-[1.65rem]"
             >
-              Welcome to your sacred space.
+              {a.createWizard.welcomeSacred}
             </motion.p>
           </motion.div>
         )}
@@ -1228,7 +1259,7 @@ function CreateEventForm() {
           </div>
           <div className="flex items-center justify-between gap-3 border-b-[0.5px] border-[rgba(255,255,255,0.1)] bg-[rgba(3,3,3,0.92)] px-4 py-2.5 backdrop-blur-[20px] md:px-8">
             <p className="text-[10px] tracking-[0.28em] uppercase text-white/45 tabular-nums">
-              Step {progressStep} of {stepsForProgress}
+              {interpolate(a.createWizard.stepOf, { current: progressStep, total: stepsForProgress })}
             </p>
             {signedIn ? (
               <button
@@ -1238,7 +1269,7 @@ function CreateEventForm() {
                 aria-busy={signingOut}
                 className="shrink-0 min-h-[36px] rounded-full border border-white/20 bg-white/[0.07] px-3 py-1.5 text-[10px] font-medium tracking-[0.18em] text-white/80 uppercase shadow-[0_1px_0_rgba(255,255,255,0.06)] transition-[color,background-color,border-color,box-shadow] duration-300 ease-in-out hover:border-white/30 hover:bg-white/[0.12] hover:text-[#f4f1ea] hover:shadow-[0_0_0_1px_rgba(212,175,55,0.15)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
               >
-                {signingOut ? "Signing out…" : "Sign out"}
+                {signingOut ? a.common.signingOut : a.common.signOut}
               </button>
             ) : !authReady ? (
               <span className="shrink-0 min-h-[36px] px-1 text-[10px] tracking-[0.2em] text-white/25 uppercase tabular-nums" aria-live="polite">
@@ -1260,8 +1291,8 @@ function CreateEventForm() {
       >
         {memorialType === null ? (
           <div className="w-full text-center">
-            <h1 className="text-landing-hero mb-3 px-2">Who are we honoring?</h1>
-            <p className="mb-12 text-base leading-relaxed text-white/45">A calm place to remember someone you love.</p>
+            <h1 className="text-landing-hero mb-3 px-2">{a.createWizard.whoHonoringTitle}</h1>
+            <p className="mb-12 text-base leading-relaxed text-white/45">{a.createWizard.whoHonoringSubtitle}</p>
             <div className="mx-auto grid max-w-md grid-cols-2 gap-4">
               <button
                 type="button"
@@ -1269,7 +1300,7 @@ function CreateEventForm() {
                 className="cta-silk flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-[32px] border border-white/10 bg-white/[0.04] py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.98] md:min-h-[180px]"
               >
                 <Sparkles className="h-10 w-10 text-[var(--aeterna-gold)]" strokeWidth={1} aria-hidden />
-                <span className="text-sm text-white/80">Someone dear</span>
+                <span className="text-sm text-white/80">{a.createWizard.honorPerson}</span>
               </button>
               <button
                 type="button"
@@ -1279,7 +1310,7 @@ function CreateEventForm() {
                 <span className="text-4xl" aria-hidden>
                   🐾
                 </span>
-                <span className="text-sm text-white/80">A companion</span>
+                <span className="text-sm text-white/80">{a.createWizard.honorPet}</span>
               </button>
             </div>
           </div>
@@ -1288,9 +1319,11 @@ function CreateEventForm() {
             {pendingCheckout && (
               <div className="mb-5 rounded-[32px] border border-white/[0.1] bg-white/[0.04] px-4 py-3 text-sm text-white/75">
                 <p>
-                  Payment didn&apos;t finish.{" "}
-                  <span className="font-medium text-[#f4f1ea]">{pendingCheckout.name}</span> is safe — on the last step, tap{" "}
-                  <span className="text-[var(--aeterna-gold)]">Continue the Story</span> to pay, or change anything above first.
+                  {a.createWizard.paymentPending}{" "}
+                  <span className="font-medium text-[#f4f1ea]">{pendingCheckout.name}</span>{" "}
+                  — on the last step, tap{" "}
+                  <span className="text-[var(--aeterna-gold)]">{a.createWizard.paymentPendingBold}</span> to pay, or change
+                  anything above first.
                 </p>
                 <button
                   type="button"
@@ -1300,7 +1333,7 @@ function CreateEventForm() {
                   }}
                   className="mt-2 text-xs text-white/40 underline hover:text-white/60"
                 >
-                  Dismiss
+                  {a.createWizard.dismiss}
                 </button>
               </div>
             )}
@@ -1316,9 +1349,11 @@ function CreateEventForm() {
               className="flex w-full flex-1 flex-col"
             >
               {wizardStep === 1 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-3 pt-4">
-                  <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">Their name</h2>
-                  <p className="text-base text-white/45">What name should we use?</p>
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-3 pt-4">
+                  <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
+                    {a.createWizard.step1Title}
+                  </h2>
+                  <p className="text-base text-white/45">{a.createWizard.step1Subtitle}</p>
                   <input
                     ref={nameInputRef}
                     autoFocus
@@ -1330,7 +1365,7 @@ function CreateEventForm() {
                         goNext()
                       }
                     }}
-                    placeholder="Their name"
+                    placeholder={a.createWizard.step1Ph}
                     className={`${inputBase} mt-8 text-2xl md:text-3xl`}
                     autoComplete="off"
                   />
@@ -1338,12 +1373,12 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 2 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-4 pt-4 text-center">
-                  <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">A face to remember</h2>
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-4 pt-4 text-center">
+                  <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
+                    {a.createWizard.step2Title}
+                  </h2>
                   <p className="text-base text-white/50 max-w-md mx-auto leading-relaxed">
-                    {profilePreview
-                      ? "Drag on the photo to adjust how it sits in the circle."
-                      : "A photo helps people recognize them. Tap the circle to add one."}
+                    {profilePreview ? a.createWizard.step2HintPhoto : a.createWizard.step2HintNoPhoto}
                   </p>
                   {profilePreview ? (
                     <div className="mx-auto mt-10 flex flex-col items-center gap-4">
@@ -1371,14 +1406,14 @@ function CreateEventForm() {
                         onClick={() => profileInputRef.current?.click()}
                         className="text-sm text-white/45 underline decoration-white/20 underline-offset-4 transition-colors hover:text-white/70"
                       >
-                        Choose a different photo
+                        {a.createWizard.chooseDifferentPhoto}
                       </button>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => profileInputRef.current?.click()}
-                      aria-label="Add a Spark of Memory"
+                      aria-label={a.createWizard.addSparkAria}
                       className="group mx-auto mt-10 flex h-48 w-48 items-center justify-center overflow-hidden rounded-full bg-white/[0.04] ring-1 ring-[var(--aeterna-gold)]/28 transition-all duration-300 ease-in-out active:scale-[0.98] md:h-56 md:w-56 hover:ring-[var(--aeterna-gold)]/45"
                     >
                       <div className="relative flex h-full w-full flex-col items-center justify-center gap-3">
@@ -1396,7 +1431,7 @@ function CreateEventForm() {
                           aria-hidden
                         />
                         <span className="relative z-10 text-[10px] tracking-[0.22em] uppercase text-white/40">
-                          Add a Spark of Memory
+                          {a.createWizard.addSparkLabel}
                         </span>
                       </div>
                     </button>
@@ -1422,19 +1457,17 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 3 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
-                      Honoring Their Journey
+                      {a.createWizard.step3Title}
                     </h2>
-                    <p className="text-base text-white/45 leading-relaxed">
-                      Exact dates are lovely; a year alone is fine if that&apos;s what you have.
-                    </p>
+                    <p className="text-base text-white/45 leading-relaxed">{a.createWizard.step3Subtitle}</p>
                   </div>
 
                   <div className="space-y-10">
                     <div className="space-y-6">
-                      <h3 className={stepSectionTitleClass}>Born</h3>
+                      <h3 className={stepSectionTitleClass}>{a.createWizard.born}</h3>
                       <div className="grid grid-cols-3 gap-4 md:gap-5">
                         <select
                           ref={birthMRef}
@@ -1498,7 +1531,7 @@ function CreateEventForm() {
                         transition={ARTISAN_SPRING}
                         className="w-full space-y-6"
                       >
-                        <h3 className={stepSectionTitleClass}>At Rest</h3>
+                        <h3 className={stepSectionTitleClass}>{a.createWizard.atRest}</h3>
                         <div className="grid grid-cols-3 gap-4 md:gap-5">
                           <select
                             ref={deathMRef}
@@ -1556,44 +1589,58 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 4 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
-                      A few words about them
+                      {a.createWizard.step4Title}
                     </h2>
-                    <p className="text-base text-white/45 leading-relaxed">
-                      Share a short tribute, a memory, or what made them special. This can appear on the printed invitation below their dates — you can edit it later from settings.
-                    </p>
+                    <p className="text-base text-white/45 leading-relaxed">{a.createWizard.step4Body}</p>
                   </div>
-                  <div className="space-y-3">
-                    <label htmlFor="create-invitation-bio" className={fieldLabelClass}>
-                      Remembrance
-                    </label>
-                    <textarea
-                      ref={invitationBioRef}
-                      id="create-invitation-bio"
-                      value={invitationBio}
-                      onChange={(e) => setInvitationBio(e.target.value)}
-                      placeholder="Optional — a sentence or two, or a longer remembrance."
-                      rows={6}
-                      maxLength={2000}
-                      className={textareaMemorial}
-                      aria-label="Words of remembrance for the invitation"
-                    />
-                    <p className="text-xs text-white/30 tabular-nums">{invitationBio.length} / 2000</p>
-                  </div>
+                  <EnhanceRemembranceWithAi
+                    label={
+                      <label htmlFor="create-invitation-bio" className={fieldLabelClass}>
+                        {a.createWizard.remembranceLabel}
+                      </label>
+                    }
+                    text={invitationBio}
+                    onApply={setInvitationBio}
+                    deceasedName={name.trim() || null}
+                    variant="create"
+                    labels={{
+                      enhanceWithAi: a.createWizard.enhanceWithAi,
+                      enhanceGenerating: a.createWizard.enhanceGenerating,
+                      enhanceChooseVersion: a.createWizard.enhanceChooseVersion,
+                      enhanceUseThis: a.createWizard.enhanceUseThis,
+                      enhanceWriteFirst: a.createWizard.enhanceWriteFirst,
+                      enhanceTooLong: a.createWizard.enhanceTooLong,
+                      enhanceErrorGeneric: a.createWizard.enhanceErrorGeneric,
+                    }}
+                  >
+                    <>
+                      <textarea
+                        ref={invitationBioRef}
+                        id="create-invitation-bio"
+                        value={invitationBio}
+                        onChange={(e) => setInvitationBio(e.target.value)}
+                        placeholder={a.createWizard.remembrancePh}
+                        rows={6}
+                        maxLength={2000}
+                        className={textareaMemorial}
+                        aria-label="Words of remembrance for the invitation"
+                      />
+                      <p className="text-xs text-white/30 tabular-nums">{invitationBio.length} / 2000</p>
+                    </>
+                  </EnhanceRemembranceWithAi>
                 </div>
               )}
 
               {wizardStep === 5 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4 text-center">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4 text-center">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
-                      Will you host a memorial service?
+                      {a.createWizard.step5Title}
                     </h2>
-                    <p className="text-base text-white/45 leading-relaxed max-w-md mx-auto">
-                      If yes, you can add location, date, and time next. If not, we&apos;ll move on — you can always add details later from the memorial page.
-                    </p>
+                    <p className="text-base text-white/45 leading-relaxed max-w-md mx-auto">{a.createWizard.step5Body}</p>
                   </div>
                   <div className="mx-auto flex w-full max-w-sm flex-col gap-3 sm:flex-row sm:justify-center">
                     <button
@@ -1608,7 +1655,7 @@ function CreateEventForm() {
                           : "border-white/[0.14] bg-transparent text-white/75 hover:bg-white/[0.06]"
                       }`}
                     >
-                      Yes
+                      {a.createWizard.yes}
                     </button>
                     <button
                       type="button"
@@ -1622,26 +1669,24 @@ function CreateEventForm() {
                           : "border-white/[0.14] bg-transparent text-white/75 hover:bg-white/[0.06]"
                       }`}
                     >
-                      No
+                      {a.createWizard.no}
                     </button>
                   </div>
                 </div>
               )}
 
               {wizardStep === 6 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
-                      Memorial Service
+                      {a.createWizard.step6Title}
                     </h2>
-                    <p className="text-base text-white/45 leading-relaxed">
-                      Please input service details. You can skip and add later.
-                    </p>
+                    <p className="text-base text-white/45 leading-relaxed">{a.createWizard.step6Body}</p>
                   </div>
 
                   <div className="space-y-10">
                     <div className="space-y-6">
-                      <h3 className={stepSectionTitleClass}>Location</h3>
+                      <h3 className={stepSectionTitleClass}>{a.createWizard.location}</h3>
                       <input
                         ref={locationInputRef}
                         id="memorial-location-opt"
@@ -1653,7 +1698,7 @@ function CreateEventForm() {
                             goNext()
                           }
                         }}
-                        placeholder="Venue, address, or city"
+                        placeholder={a.createWizard.phLocation}
                         autoComplete="off"
                         className={ghostLineInputClass}
                         aria-label="Location"
@@ -1661,16 +1706,14 @@ function CreateEventForm() {
                     </div>
 
                     <div className="space-y-6">
-                      <h3 className={stepSectionTitleClass}>Date</h3>
+                      <h3 className={stepSectionTitleClass}>{a.createWizard.date}</h3>
                       <div className="grid grid-cols-3 gap-4 md:gap-5">
                         <select
                           ref={ceremonyServiceMRef}
-                          value={ceremonyServiceParts.m}
+                          value={ceremonyPickM}
                           onChange={(e) => {
                             const m = e.target.value
-                            const y = ceremonyServiceParts.y || String(CURRENT_YEAR)
-                            const d = ceremonyServiceParts.d || "1"
-                            setCeremonyDate(buildDateString(y, m, d))
+                            setCeremonyPickM(m)
                             if (m) scrollNeighborIntoView(ceremonyServiceDRef.current)
                           }}
                           className={ghostDateSelectClass}
@@ -1685,12 +1728,10 @@ function CreateEventForm() {
                         </select>
                         <select
                           ref={ceremonyServiceDRef}
-                          value={ceremonyServiceParts.d}
+                          value={ceremonyPickD}
                           onChange={(e) => {
                             const d = e.target.value
-                            const y = ceremonyServiceParts.y || String(CURRENT_YEAR)
-                            const m = ceremonyServiceParts.m || "1"
-                            setCeremonyDate(buildDateString(y, m, d))
+                            setCeremonyPickD(d)
                             if (d) scrollNeighborIntoView(ceremonyServiceYRef.current)
                           }}
                           className={ghostDateSelectClass}
@@ -1705,12 +1746,10 @@ function CreateEventForm() {
                         </select>
                         <select
                           ref={ceremonyServiceYRef}
-                          value={ceremonyServiceParts.y}
+                          value={ceremonyPickY}
                           onChange={(e) => {
                             const y = e.target.value
-                            const m = ceremonyServiceParts.m || "1"
-                            const d = ceremonyServiceParts.d || "1"
-                            setCeremonyDate(buildDateString(y, m, d))
+                            setCeremonyPickY(y)
                             if (y) scrollNeighborIntoView(ceremonyHour12Ref.current)
                           }}
                           className={ghostDateSelectClass}
@@ -1727,19 +1766,20 @@ function CreateEventForm() {
                     </div>
 
                     <div className="space-y-6">
-                      <h3 className={stepSectionTitleClass}>Time</h3>
+                      <h3 className={stepSectionTitleClass}>{a.createWizard.time}</h3>
                       <div className="grid grid-cols-3 gap-4 md:gap-5">
                         <select
                           ref={ceremonyHour12Ref}
-                          value={ceremonyHour12}
+                          value={ceremonyHour12 === "" ? "" : String(ceremonyHour12)}
                           onChange={(e) => {
-                            const v = Number(e.target.value)
-                            setCeremonyHour12(Number.isFinite(v) ? v : 2)
+                            const raw = e.target.value
+                            setCeremonyHour12(raw === "" ? "" : Number(raw))
                             scrollNeighborIntoView(ceremonyMinuteRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Service hour"
                         >
+                          <option value="">{a.createWizard.hour}</option>
                           {HOURS_12.map((h) => (
                             <option key={h} value={h}>
                               {h}
@@ -1756,6 +1796,7 @@ function CreateEventForm() {
                           className={ghostDateSelectClass}
                           aria-label="Service minute"
                         >
+                          <option value="">{a.createWizard.min}</option>
                           {MINUTES.map((m) => (
                             <option key={m} value={m}>
                               {m}
@@ -1765,10 +1806,11 @@ function CreateEventForm() {
                         <select
                           ref={ceremonyPeriodRef}
                           value={ceremonyPeriod}
-                          onChange={(e) => setCeremonyPeriod(e.target.value as "AM" | "PM")}
+                          onChange={(e) => setCeremonyPeriod(e.target.value as "AM" | "PM" | "")}
                           className={ghostDateSelectClass}
                           aria-label="AM or PM"
                         >
+                          <option value="">{a.createWizard.amPm}</option>
                           <option value="AM">AM</option>
                           <option value="PM">PM</option>
                         </select>
@@ -1779,17 +1821,15 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 7 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
-                      Support Family
+                      {a.createWizard.step7Title}
                     </h2>
-                    <p className="text-base text-white/45 leading-relaxed">
-                      Please add a support link. You can skip and add later.
-                    </p>
+                    <p className="text-base text-white/45 leading-relaxed">{a.createWizard.step7Body}</p>
                   </div>
                   <div className="space-y-6">
-                    <h3 className={stepSectionTitleClass}>Support</h3>
+                    <h3 className={stepSectionTitleClass}>{a.createWizard.support}</h3>
                     <input
                       ref={fundInputRef}
                       id="memorial-support-opt"
@@ -1803,7 +1843,7 @@ function CreateEventForm() {
                           goNext()
                         }
                       }}
-                      placeholder="Fund or charity link"
+                      placeholder={a.createWizard.phFund}
                       autoComplete="off"
                       className={ghostLineInputClass}
                       aria-label="Support"
@@ -1813,25 +1853,23 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 8 && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-10 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
-                      Claim your memorial
+                      {a.createWizard.step8Title}
                     </h2>
-                    <p className="text-base text-white/45 leading-relaxed">
-                      Sign in so you can keep this memorial safe and change it anytime.
-                    </p>
+                    <p className="text-base text-white/45 leading-relaxed">{a.createWizard.step8Body}</p>
                   </div>
                   {signedIn ? (
                     <div className="rounded-[32px] border border-white/[0.1] bg-white/[0.04] px-5 py-4">
-                      <p className="text-[10px] tracking-[0.2em] uppercase text-white/35 mb-1">Signed in</p>
+                      <p className="text-[10px] tracking-[0.2em] uppercase text-white/35 mb-1">{a.createWizard.signedIn}</p>
                       <p className="text-sm text-[#f4f1ea] font-medium truncate">{user?.email ?? user?.id ?? ""}</p>
-                      <p className="mt-2 text-xs text-white/40">Next, choose how you&apos;d like to keep their page.</p>
+                      <p className="mt-2 text-xs text-white/40">{a.createWizard.nextChoosePlan}</p>
                     </div>
                   ) : !authReady ? (
                     <div className="flex flex-col items-center justify-center gap-3 py-10" aria-live="polite">
                       <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-[var(--aeterna-gold)]" />
-                      <p className="text-sm text-white/45">Checking your account…</p>
+                      <p className="text-sm text-white/45">{a.createWizard.checkingAccount}</p>
                     </div>
                   ) : (
                     <button
@@ -1858,28 +1896,28 @@ function CreateEventForm() {
                           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                         />
                       </svg>
-                      {googleLoading ? "Redirecting…" : "Continue the story"}
+                      {googleLoading ? a.common.redirecting : a.createWizard.continueWithGoogle}
                     </button>
                   )}
                 </div>
               )}
 
               {isPlanSummaryView && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-6 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-6 pt-4">
                   <div>
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
-                      You&apos;re almost there
+                      {a.createWizard.almostThereTitle}
                     </h2>
-                    <p className="mt-2 text-base text-white/45">
-                      When you&apos;re ready, we&apos;ll open their page — or go on to pay if you chose a paid plan.
-                    </p>
-                    <p className="mt-2 text-xs text-white/35">{getCreateFlowPricingFootnote(pricingCurrency)}</p>
+                    <p className="mt-2 text-base text-white/45">{a.createWizard.almostThereBody}</p>
+                    <p className="mt-2 text-xs text-white/35">{getAppPricingFootnote(a, pricingCurrency)}</p>
                   </div>
                   {(() => {
                     const summary = planSummaryMap[storagePlan]
                     return (
                       <div className="rounded-[32px] border border-white/10 ring-1 ring-[var(--aeterna-gold)]/22 bg-gradient-to-b from-[#030303]/50 to-[color:var(--landing-bg)] p-6 md:p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_24px_64px_-28px_rgba(0,0,0,0.65)]">
-                        <p className="text-[10px] tracking-[0.32em] uppercase text-[var(--aeterna-gold)]/85">Your selected plan</p>
+                        <p className="text-[10px] tracking-[0.32em] uppercase text-[var(--aeterna-gold)]/85">
+                          {a.createWizard.yourSelectedPlan}
+                        </p>
                         <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
@@ -1887,7 +1925,7 @@ function CreateEventForm() {
                                 {summary.title}
                               </p>
                               {storagePlan === "premium" && (
-                                <span className={planStatusTagClass}>Coming Soon</span>
+                                <span className={planStatusTagClass}>{a.createWizard.comingSoonTag}</span>
                               )}
                             </div>
                             <p className="mt-1 text-sm text-white/50">{summary.tagline}</p>
@@ -1911,7 +1949,7 @@ function CreateEventForm() {
                           onClick={() => setShowPlanChangeOptions(true)}
                           className="mt-8 w-full text-center text-sm text-white/45 underline-offset-4 hover:text-[var(--aeterna-gold)] hover:underline transition-colors"
                         >
-                          Want to change your plan?
+                          {a.createWizard.changePlanPrompt}
                         </button>
                       </div>
                     )
@@ -1920,24 +1958,26 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 9 && (!isPlanSummaryView || showPlanChangeOptions) && (
-                <div className="flex min-h-[min(68vh,640px)] flex-col justify-center space-y-6 pt-4">
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-6 pt-4">
                   {planLockedFromUrl && showPlanChangeOptions && (
                     <button
                       type="button"
                       onClick={() => setShowPlanChangeOptions(false)}
                       className="text-sm text-white/45 hover:text-[var(--aeterna-gold)] transition-colors"
                     >
-                      ← Back to plan summary
+                      {a.createWizard.backToSummary}
                     </button>
                   )}
                   <div>
-                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">Keep their light</h2>
+                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
+                      {a.createWizard.keepTheirLightTitle}
+                    </h2>
                     <p className="mt-2 text-base text-white/45">
                       {planLockedFromUrl && showPlanChangeOptions
-                        ? "Choose the plan that fits — you can always adjust later where your account allows."
-                        : "One calm choice. Change later if you need."}
+                        ? a.createWizard.keepTheirLightBodyLocked
+                        : a.createWizard.keepTheirLightBodyOpen}
                     </p>
-                    <p className="mt-2 text-xs text-white/35">{getCreateFlowPricingFootnote(pricingCurrency)}</p>
+                    <p className="mt-2 text-xs text-white/35">{getAppPricingFootnote(a, pricingCurrency)}</p>
                   </div>
                   <div className="flex flex-col gap-3">
                     {planTierRows.map((p) => (
@@ -1953,7 +1993,7 @@ function CreateEventForm() {
                           <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <span className="text-lg text-[#f4f1ea]">{p.title}</span>
                             {p.id === "premium" ? (
-                              <span className={planStatusTagClass}>Coming Soon</span>
+                              <span className={planStatusTagClass}>{a.createWizard.comingSoonTag}</span>
                             ) : null}
                           </div>
                           <span className="shrink-0 text-[var(--aeterna-gold)] tabular-nums" dir="ltr">
@@ -1988,7 +2028,7 @@ function CreateEventForm() {
                 onClick={handleBack}
                 className="cta-silk !pointer-events-auto relative !z-[9999] shrink-0 min-h-[52px] min-w-[5.5rem] rounded-[32px] border border-white/[0.14] bg-transparent px-4 text-sm font-medium tracking-wide text-white/65 hover:bg-white/[0.05] hover:text-white sm:min-h-[56px]"
               >
-                Back
+                {a.common.back}
               </button>
               <motion.button
                 type="button"
@@ -1999,20 +2039,16 @@ function CreateEventForm() {
                 className="cta-silk btn-tap min-h-[56px] flex-1 rounded-[32px] bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] text-sm font-semibold tracking-wide shadow-[0_8px_32px_-8px_rgba(197,160,89,0.45)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_12px_40px_-8px_rgba(197,160,89,0.5)] disabled:opacity-35 active:shadow-[0_4px_20px_-6px_rgba(197,160,89,0.35)] sm:min-h-[60px]"
               >
                 {loading
-                  ? "Creating…"
+                  ? a.createWizard.creating
                   : wizardStep === 8 && !authReady
-                    ? "Checking account…"
+                    ? a.createWizard.checkingAccountBtn
                     : wizardStep === 8 && !signedIn
-                      ? "Continue the story"
+                      ? a.createWizard.continueWithGoogle
                       : wizardStep < WIZARD_STEPS_FULL
-                    ? "Continue the Story"
-                    : isPlanSummaryView
-                      ? storagePlan === "free"
-                        ? "Continue the Story"
-                        : "Continue the Story"
-                      : storagePlan === "free"
-                        ? "Continue the Story"
-                        : "Continue the Story"}
+                        ? a.common.continueStory
+                        : isPlanSummaryView
+                          ? a.common.continueStory
+                          : a.common.continueStory}
               </motion.button>
             </div>
           </div>
@@ -2038,13 +2074,13 @@ function CreateEventForm() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="shrink-0">
-                  <p className="text-[10px] tracking-[0.35em] uppercase text-white/40 mb-3">Invitation ready</p>
-                  <h2 id="invitation-ready-title" className="text-landing-section-title mb-3">
-                    Memorial for {name} is ready
-                  </h2>
-                  <p className="text-landing-body mb-8">
-                    Share a thoughtful invitation — family and friends can add photos and stories from any device.
+                  <p className="text-[10px] tracking-[0.35em] uppercase text-white/40 mb-3">
+                    {a.createWizard.invitationReadyKicker}
                   </p>
+                  <h2 id="invitation-ready-title" className="text-landing-section-title mb-3">
+                    {a.createWizard.invitationTitle(name.trim() || "—")}
+                  </h2>
+                  <p className="text-landing-body mb-8">{a.createWizard.invitationBody}</p>
                   {profileUploadError ? (
                     <p className="mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-100/95">
                       {profileUploadError}
@@ -2076,7 +2112,7 @@ function CreateEventForm() {
                     onClick={() => router.push(`/p/${createdSlug}`)}
                     className="btn-landing-gold flex min-h-[52px] w-full items-center justify-center px-6 text-base font-semibold"
                   >
-                    View memorial
+                    {a.createWizard.viewMemorial}
                   </button>
                 </div>
               </div>

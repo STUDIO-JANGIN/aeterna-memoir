@@ -17,7 +17,8 @@ import { getDonationStatsAction } from "@/app/actions/getDonationStats"
 import { getDonationAmountByLocale } from "@/lib/checkout"
 import { formatLongDate } from "@/lib/formatDate"
 import { getAppBaseUrl } from "@/lib/appUrl"
-import { getLocaleFromBrowser } from "@/lib/i18n"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
 import { isMemorialOwner } from "@/lib/memorialOwnership"
 import { resolveProfileImageUrl } from "@/lib/profileImageUrl"
 import {
@@ -161,7 +162,9 @@ export default function GuestFeedPage({ params }: PageProps) {
   const [donationCheckoutLoading, setDonationCheckoutLoading] = useState(false)
   const [showDonationThankYou, setShowDonationThankYou] = useState(false)
   const [platformTipChecked, setPlatformTipChecked] = useState(true)
-  const [locale, setLocale] = useState<"ko" | "en">("en")
+  const { app: tx, locale: appLocale } = useLandingLocale()
+  /** Donation checkout uses KRW only for Korean; other app locales use USD path. */
+  const donationLocale: "ko" | "en" = appLocale === "ko" ? "ko" : "en"
   const [showUploadSuccessToast, setShowUploadSuccessToast] = useState(false)
   const [showAfterUploadEmailField, setShowAfterUploadEmailField] = useState(false)
   const uploadSuccessAutoCloseRef = useRef<number | null>(null)
@@ -170,13 +173,15 @@ export default function GuestFeedPage({ params }: PageProps) {
   const [afterUploadLoading, setAfterUploadLoading] = useState(false)
   const [afterUploadError, setAfterUploadError] = useState<string | null>(null)
   const [afterUploadDone, setAfterUploadDone] = useState(false)
+  /** Story id from the upload just completed — passed to visitor email signup so we can notify when approved. */
+  const [pendingVisitorStoryId, setPendingVisitorStoryId] = useState<string | null>(null)
   const [donationStats, setDonationStats] = useState<{ count: number; list: { displayLabel: string }[]; recentCount1h: number } | null>(null)
   const donationAmountLabel = useMemo(() => {
-    const { currency, unit_amount } = getDonationAmountByLocale(locale)
+    const { currency, unit_amount } = getDonationAmountByLocale(donationLocale)
     return currency === "krw"
       ? `₩${unit_amount.toLocaleString("en-US")}`
       : `US$${(unit_amount / 100).toFixed(2)}`
-  }, [locale])
+  }, [donationLocale])
 
   const dualRouteShareText = useMemo(() => {
     if (!event) return ""
@@ -236,11 +241,11 @@ export default function GuestFeedPage({ params }: PageProps) {
       e.stopPropagation()
       const url = typeof window !== "undefined" ? window.location.href : ""
       void navigator.clipboard.writeText(url).then(() => {
-        if (typeof window !== "undefined") window.alert("Link copied.")
+        if (typeof window !== "undefined") window.alert(tx.memorial.linkCopied)
         closeShareModal()
       })
     },
-    [closeShareModal],
+    [closeShareModal, tx.memorial.linkCopied],
   )
 
   /** WhatsApp / Message / Copy in the share modal. */
@@ -304,10 +309,6 @@ export default function GuestFeedPage({ params }: PageProps) {
       // ignore
     }
   }, [slug])
-
-  useEffect(() => {
-    if (typeof navigator !== "undefined") setLocale(getLocaleFromBrowser())
-  }, [])
 
   useEffect(() => {
     adminForbiddenHandledRef.current = false
@@ -477,7 +478,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         }
 
         if (cancelled) return
-        setError("Memorial not found.")
+        setError(tx.memorial.errors.memorialNotFound)
         setEvent(null)
         setStories([])
         setLoading(false)
@@ -485,7 +486,7 @@ export default function GuestFeedPage({ params }: PageProps) {
       } catch (e) {
         console.error("CRITICAL DB ERROR (fetchData outer):", e)
         if (cancelled) return
-        setError("Something went wrong while loading.")
+        setError(tx.memorial.errors.loadFailed)
         setEvent(null)
         setStories([])
         setLoading(false)
@@ -497,7 +498,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [slug, tx.memorial.errors])
 
   // When collection is closed, fetch Final Selection for teaser (3–5 images)
   useEffect(() => {
@@ -574,7 +575,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     setSubmitError(null)
     if (shareStep === 1) {
       if (!memoryAuthorName.trim()) {
-        setSubmitError("Please share your name.")
+        setSubmitError(tx.memorial.errors.nameRequired)
         return
       }
       setShareStep(2)
@@ -582,7 +583,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     }
     if (shareStep === 2) {
       if (!memoryPhotoFile) {
-        setSubmitError("Please choose a photo.")
+        setSubmitError(tx.memorial.errors.photoRequired)
         return
       }
       setShareStep(3)
@@ -604,25 +605,31 @@ export default function GuestFeedPage({ params }: PageProps) {
     setAfterUploadEmail("")
     setAfterUploadError(null)
     setAfterUploadDone(false)
+    setPendingVisitorStoryId(null)
   }, [])
 
+  /** Auto-close the success toast, but never while the guest is entering an email (mobile keyboard / slow typists). */
   useEffect(() => {
     if (!showUploadSuccessToast) return
     if (uploadSuccessAutoCloseRef.current) {
       clearTimeout(uploadSuccessAutoCloseRef.current)
       uploadSuccessAutoCloseRef.current = null
     }
+    if (showAfterUploadEmailField && !afterUploadDone) {
+      return
+    }
+    const delayMs = afterUploadDone ? 12_000 : 14_000
     uploadSuccessAutoCloseRef.current = window.setTimeout(() => {
       uploadSuccessAutoCloseRef.current = null
       dismissUploadSuccessToast()
-    }, 10000)
+    }, delayMs)
     return () => {
       if (uploadSuccessAutoCloseRef.current) {
         clearTimeout(uploadSuccessAutoCloseRef.current)
         uploadSuccessAutoCloseRef.current = null
       }
     }
-  }, [showUploadSuccessToast, dismissUploadSuccessToast])
+  }, [showUploadSuccessToast, showAfterUploadEmailField, afterUploadDone, dismissUploadSuccessToast])
 
   const handleAfterUploadSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -630,7 +637,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     setAfterUploadLoading(true)
     setAfterUploadError(null)
     try {
-      const result = await subscribeVisitorAction(event.id, afterUploadEmail, "email")
+      const result = await subscribeVisitorAction(event.id, afterUploadEmail, "email", pendingVisitorStoryId)
       setAfterUploadLoading(false)
       if (result.ok) {
         setAfterUploadDone(true)
@@ -639,20 +646,18 @@ export default function GuestFeedPage({ params }: PageProps) {
       }
     } catch (err) {
       setAfterUploadLoading(false)
-      setAfterUploadError(
-        err instanceof Error ? err.message : "We couldn’t subscribe you just now. Please try again in a moment."
-      )
+      setAfterUploadError(err instanceof Error ? err.message : tx.memorial.errors.subscribeFailed)
     }
   }
 
   const handleSubmitStory = async () => {
     if (!event) return
     if (!memoryPhotoFile) {
-      setSubmitError("Please add a memory (a photo).")
+      setSubmitError(tx.memorial.errors.photoRequired)
       return
     }
     if (!memoryAuthorName.trim() || !memoryStoryText.trim()) {
-      setSubmitError("Please add your name and the story behind your photo.")
+      setSubmitError(tx.memorial.errors.storyRequired)
       return
     }
 
@@ -708,6 +713,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         setAfterUploadError(null)
         setAfterUploadDone(false)
         setShowAfterUploadEmailField(false)
+        setPendingVisitorStoryId(result.storyId ?? null)
         setShowUploadSuccessToast(true)
       }
       handleCloseForm()
@@ -720,7 +726,7 @@ export default function GuestFeedPage({ params }: PageProps) {
       })
       setLikesMap((prev) => ({ ...prev, ...map }))
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to submit.")
+      setSubmitError(err instanceof Error ? err.message : tx.memorial.errors.submitFailed)
     } finally {
       setSubmitLoading(false)
     }
@@ -734,7 +740,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     const form = e.currentTarget
     const email = (form.querySelector('input[name="notify_email"]') as HTMLInputElement)?.value?.trim()
     if (!email) {
-      setNotificationError("Please enter your email.")
+      setNotificationError(tx.memorial.errors.emailRequired)
       setNotificationLoading(false)
       return
     }
@@ -743,7 +749,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     if (result.ok) {
       setNotificationSubmitted(true)
     } else {
-      setNotificationError(result.error ?? "Something went wrong.")
+      setNotificationError(result.error ?? tx.memorial.errors.subscribeFailed)
     }
   }
 
@@ -760,7 +766,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     if (result.ok && result.url) {
       window.location.href = result.url
     } else {
-      setCheckoutError(result.error ?? "Unable to start checkout.")
+      setCheckoutError(result.error ?? tx.memorial.errors.checkoutFailed)
     }
   }
 
@@ -782,7 +788,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     if (result.ok && result.url) {
       window.location.href = result.url
     } else {
-      setCheckoutError(result.error ?? "Unable to start checkout.")
+      setCheckoutError(result.error ?? tx.memorial.errors.checkoutFailed)
     }
   }
 
@@ -798,12 +804,12 @@ export default function GuestFeedPage({ params }: PageProps) {
     }
     setDonationCheckoutLoading(true)
     setCheckoutError(null)
-    const result = (await createDonationCheckoutSessionAction(event.id, slug, locale)) as any
+    const result = (await createDonationCheckoutSessionAction(event.id, slug, donationLocale)) as any
     setDonationCheckoutLoading(false)
     if (result.ok && result.url) {
       window.location.href = result.url
     } else {
-      setCheckoutError(result.error ?? "We couldn’t start checkout. Please try again.")
+      setCheckoutError(result.error ?? tx.memorial.errors.donationCheckoutFailed)
     }
   }
 
@@ -836,10 +842,10 @@ export default function GuestFeedPage({ params }: PageProps) {
   if (loading) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-3 font-sans text-[var(--landing-text-muted)] text-sm label-uppercase tracking-widest uppercase px-6 text-center">
-        <span>{loadSyncing ? "Syncing memorial…" : "Loading memorial…"}</span>
+        <span>{loadSyncing ? tx.memorial.loadSyncing : tx.memorial.loadLoading}</span>
         {loadSyncing ? (
           <span className="text-[11px] normal-case tracking-wide text-[var(--landing-text-body)] max-w-sm">
-            Confirming your memorial on our servers. This usually takes a moment after checkout.
+            {tx.memorial.syncHint}
           </span>
         ) : null}
       </div>
@@ -850,7 +856,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center font-serif px-6 text-center text-[var(--landing-text-hero)]">
         <p className="text-sm label-uppercase tracking-widest uppercase text-[var(--landing-text-body)] mb-4">
-          {error ?? "Page not found."}
+          {error ?? tx.memorial.notFound}
         </p>
         <motion.a
           href="/"
@@ -859,7 +865,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           whileTap={{ scale: 0.98 }}
           transition={ARTISAN_SPRING}
         >
-          Return home
+          {tx.memorial.returnHome}
         </motion.a>
       </div>
     )
@@ -878,15 +884,18 @@ export default function GuestFeedPage({ params }: PageProps) {
   const showAddStoryCta =
     !filmReleased && !isClosed && photoDeadlineRemainingMs !== null && photoDeadlineRemainingMs > 0
 
-  const addStoryLabel = "Add a memory"
+  const addStoryLabel = tx.memorial.addMemory
 
   return (
     <LayoutGroup>
     <div
-      className={`min-h-dvh text-[var(--landing-text-hero)] font-sans ${
+      className={`relative min-h-dvh text-[var(--landing-text-hero)] font-sans ${
         filmReleased || (isLocked && lockedCount > 0 && !filmReleased) ? "pb-28 md:pb-0" : ""
       }`}
     >
+      <div className="pointer-events-auto fixed end-3 top-3 z-[90] pt-[max(0.15rem,env(safe-area-inset-top))]">
+        <LandingLanguageSwitcher />
+      </div>
       <AnimatePresence>
         {showPremiumBlurPopup && (
           <motion.div
@@ -906,10 +915,10 @@ export default function GuestFeedPage({ params }: PageProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <p className="text-[var(--aeterna-headline)] font-serif text-lg mb-4">
-                Restore with Premium
+                {tx.memorial.premiumRestoreTitle}
               </p>
               <p className="text-[var(--aeterna-body)] text-sm mb-6">
-                The photo collection window has closed, so memories are now protected. Upgrade to Premium to restore access.
+                {tx.memorial.premiumRestoreBody}
               </p>
               <motion.button
                 type="button"
@@ -919,7 +928,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                 whileTap={{ scale: 0.98 }}
                 transition={ARTISAN_SPRING}
               >
-                OK
+                {tx.common.ok}
               </motion.button>
             </motion.div>
           </motion.div>
@@ -944,10 +953,10 @@ export default function GuestFeedPage({ params }: PageProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <p className="text-[var(--aeterna-headline)] font-serif text-lg mb-4">
-                Payments are almost ready
+                {tx.memorial.paymentsSoonTitle}
               </p>
               <p className="text-[var(--aeterna-body)] text-sm mb-6">
-                Secure checkout will be available soon to unlock all memories.
+                {tx.memorial.paymentsSoonBody}
               </p>
               <motion.button
                 type="button"
@@ -957,7 +966,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                 whileTap={{ scale: 0.98 }}
                 transition={ARTISAN_SPRING}
               >
-                OK
+                {tx.common.ok}
               </motion.button>
             </motion.div>
           </motion.div>
@@ -976,7 +985,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           >
             <div className="rounded-2xl border border-[var(--border-gold)] bg-[#1e1e1e]/95 px-4 py-3 text-center shadow-[var(--landing-shadow-deep)] backdrop-blur-md">
               <p className="text-[13px] leading-snug text-[var(--landing-text-body)]">
-                You do not have permission to access the admin settings.
+                {tx.memorial.adminForbidden}
               </p>
             </div>
           </motion.div>
@@ -990,7 +999,7 @@ export default function GuestFeedPage({ params }: PageProps) {
             transition={ARTISAN_SPRING}
           >
             <p className="text-[var(--aeterna-gold)] font-serif text-sm leading-relaxed">
-              Thank you for your thoughtful support.
+              {tx.memorial.donationThankYou}
             </p>
           </motion.div>
         )}
@@ -998,7 +1007,11 @@ export default function GuestFeedPage({ params }: PageProps) {
           <motion.div
             role="status"
             aria-live="polite"
-            className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-[60] w-[min(calc(100vw-2rem),22rem)] -translate-x-1/2 px-4"
+            className={
+              showAfterUploadEmailField && !afterUploadDone
+                ? "fixed left-1/2 top-[max(1rem,env(safe-area-inset-top))] z-[60] w-[min(calc(100vw-2rem),22rem)] -translate-x-1/2 px-4 max-h-[min(90dvh,560px)] overflow-y-auto"
+                : "fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-[60] w-[min(calc(100vw-2rem),22rem)] -translate-x-1/2 px-4"
+            }
             initial={artisanPresence.initial}
             animate={artisanPresence.animate}
             exit={artisanPresence.exit}
@@ -1006,10 +1019,10 @@ export default function GuestFeedPage({ params }: PageProps) {
           >
             <div className="rounded-2xl border border-white/[0.12] bg-[#030303]/80 px-5 py-4 text-center shadow-[0_16px_48px_rgba(0,0,0,0.5)] backdrop-blur-md">
               <p className="font-[var(--font-serif)] text-[16px] font-medium tracking-tight text-white">
-                Memory Received
+                {tx.memorial.memoryReceivedTitle}
               </p>
               <p className="mt-2 text-[13px] leading-relaxed text-white/75">
-                It will appear on the shrine once approved. Thank you.
+                {tx.memorial.memoryReceivedBody}
               </p>
               {!afterUploadDone && !showAfterUploadEmailField ? (
                 <button
@@ -1017,7 +1030,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   onClick={() => setShowAfterUploadEmailField(true)}
                   className="mt-3 block w-full text-center text-[12px] text-[var(--aeterna-gold)]/95 underline-offset-2 hover:underline"
                 >
-                  Get an email when it&apos;s live
+                  {tx.memorial.emailWhenLive}
                 </button>
               ) : null}
               {showAfterUploadEmailField && !afterUploadDone ? (
@@ -1031,15 +1044,18 @@ export default function GuestFeedPage({ params }: PageProps) {
                     onChange={(e) => setAfterUploadEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    placeholder="Email"
-                    className="min-h-[40px] w-full rounded-xl border border-white/[0.14] bg-white/[0.06] px-3 text-[13px] text-white placeholder:text-white/38 focus:outline-none focus:ring-1 focus:ring-[var(--aeterna-gold)]/40"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    enterKeyHint="done"
+                    placeholder={tx.memorial.emailPlaceholder}
+                    className="min-h-[44px] w-full rounded-xl border border-white/[0.14] bg-white/[0.06] px-3 text-[13px] text-white placeholder:text-white/38 focus:outline-none focus:ring-1 focus:ring-[var(--aeterna-gold)]/40"
                   />
                   <button
                     type="submit"
                     disabled={afterUploadLoading}
                     className="min-h-[38px] w-full rounded-lg border border-[var(--aeterna-gold)]/40 bg-[var(--aeterna-gold)]/12 px-3 text-[12px] font-medium text-[var(--aeterna-gold)] transition-colors hover:bg-[var(--aeterna-gold)]/18 disabled:opacity-50"
                   >
-                    {afterUploadLoading ? "Saving…" : "Save"}
+                    {afterUploadLoading ? tx.memorial.saving : tx.common.save}
                   </button>
                 </form>
               ) : null}
@@ -1048,12 +1064,17 @@ export default function GuestFeedPage({ params }: PageProps) {
                   {afterUploadError}
                 </p>
               ) : null}
+              {afterUploadDone ? (
+                <p className="mt-3 text-[13px] leading-relaxed text-[var(--aeterna-gold)]">
+                  {tx.memorial.afterUploadDone}
+                </p>
+              ) : null}
               <button
                 type="button"
                 onClick={dismissUploadSuccessToast}
                 className="mt-4 w-full min-h-[40px] rounded-xl border border-white/[0.12] bg-white/[0.06] text-[12px] font-medium tracking-wide text-white/90 transition-colors hover:bg-white/[0.1]"
               >
-                Close
+                {tx.memorial.close}
               </button>
             </div>
           </motion.div>
@@ -1075,10 +1096,10 @@ export default function GuestFeedPage({ params }: PageProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <p id="memorial-share-title" className="text-[13px] font-medium leading-relaxed text-white">
-                Share this memorial
+                {tx.memorial.shareModalTitle}
               </p>
               <p className="mt-2 text-[11px] leading-relaxed text-white/70">
-                Invite family and friends to visit and contribute.
+                {tx.memorial.shareModalBody}
               </p>
               <div className="mt-4 grid grid-cols-3 gap-2">
                 <button
@@ -1086,21 +1107,21 @@ export default function GuestFeedPage({ params }: PageProps) {
                   onClick={handleRankShareWhatsApp}
                   className={`${shareChannelBtnBase} border border-[var(--border-gold)] bg-[#030303]/30 text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold)]/10`}
                 >
-                  WhatsApp
+                  {tx.memorial.whatsApp}
                 </button>
                 <button
                   type="button"
                   onClick={handleRankShareMessage}
                   className={`${shareChannelBtnBase} border border-[var(--border-gold)] bg-[#030303]/35 text-[var(--landing-text-hero)] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10`}
                 >
-                  Message
+                  {tx.memorial.message}
                 </button>
                 <button
                   type="button"
                   onClick={handleRankShareCopy}
                   className={`${shareChannelBtnBase} border border-white/20 bg-white/[0.06] text-[var(--landing-text-body)] hover:bg-white/10`}
                 >
-                  Copy link
+                  {tx.memorial.copyLink}
                 </button>
               </div>
               <button
@@ -1108,7 +1129,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                 onClick={closeShareModal}
                 className="mt-4 w-full min-h-[40px] rounded-full border border-white/15 text-[11px] font-medium tracking-wide text-white/80 hover:bg-white/[0.06] transition-colors"
               >
-                Close
+                {tx.memorial.close}
               </button>
             </div>
           </div>,
@@ -1177,14 +1198,14 @@ export default function GuestFeedPage({ params }: PageProps) {
                 whileTap={{ scale: 0.99 }}
                 transition={ARTISAN_SPRING}
               >
-                Share
+                {tx.memorial.share}
               </motion.button>
               {isOwner ? (
                 <Link
                   href={`/p/${slug}/admin`}
                   className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)]"
                 >
-                  Admin
+                  {tx.memorial.admin}
                 </Link>
               ) : null}
             </div>
@@ -1195,7 +1216,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           !isPhotoDeadlinePassed &&
           !isPaidMemorial ? (
             <p className="mt-5 text-[10px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">
-              Photo window ·{" "}
+              {tx.memorial.photoWindow}{" "}
               <span className="font-mono tabular-nums text-[var(--aeterna-gold)]">
                 {formatMemorialCountdownDisplay(photoDeadlineRemainingMs)}
               </span>
@@ -1208,7 +1229,7 @@ export default function GuestFeedPage({ params }: PageProps) {
       {filmReleased && (
         <section
           className="w-full bg-landing py-8 md:py-12 animate-[theaterEntrance_1.8s_ease-out_forwards] animate-[fadeInUp_0.85s_ease-out_both]"
-          aria-label="AI Memorial Film"
+          aria-label={tx.memorial.filmAria}
         >
           {/* Soft gold glow behind video */}
           <div className="relative w-full flex justify-center px-0">
@@ -1228,11 +1249,11 @@ export default function GuestFeedPage({ params }: PageProps) {
                   playsInline
                   className="w-full h-full object-cover rounded-lg"
                 >
-                  Your browser does not support the video tag.
+                  {tx.memorial.videoUnsupported}
                 </video>
               ) : (
                 <div className="w-full h-full bg-[var(--aeterna-charcoal-muted)] flex items-center justify-center rounded-lg">
-                  <span className="text-[var(--aeterna-gold-muted)] text-sm tracking-[0.2em] uppercase">Film</span>
+                  <span className="text-[var(--aeterna-gold-muted)] text-sm tracking-[0.2em] uppercase">{tx.memorial.filmLabel}</span>
                 </div>
               )}
             </div>
@@ -1250,7 +1271,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   whileTap={{ scale: 0.97 }}
                   transition={ARTISAN_SPRING}
                 >
-                  {checkoutLoading ? "Redirecting to checkout…" : "Download High-Quality Film"}
+                  {checkoutLoading ? tx.memorial.redirectCheckout : tx.memorial.downloadFilm}
                 </motion.button>
                 {checkoutError && (
                   <p className="text-[var(--aeterna-gold-muted)] text-sm text-center">{checkoutError}</p>
@@ -1265,7 +1286,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   whileTap={{ scale: 0.98 }}
                   transition={ARTISAN_SPRING}
                 >
-                  {checkoutLoading ? "Redirecting…" : "Download High-Quality Film"}
+                  {checkoutLoading ? tx.common.redirecting : tx.memorial.downloadFilm}
                 </motion.button>
               </div>
             </>
@@ -1279,18 +1300,16 @@ export default function GuestFeedPage({ params }: PageProps) {
           {isClosed ? (
             <section
               className="relative rounded-2xl overflow-hidden border border-[var(--border-gold-subtle)] bg-[#1e1e1e]/95 shadow-[var(--shadow-deep)]"
-              aria-label={isPremiumTier ? "AI Memorial Film" : "Memorial collection closed"}
+              aria-label={isPremiumTier ? tx.memorial.filmAria : tx.memorial.collectionClosed}
             >
               <div className="absolute inset-0 bg-gradient-to-b from-[color:var(--landing-bg)] via-[#141414] to-[color:var(--landing-bg)] pointer-events-none" />
 
               <div className="relative px-6 py-10 md:py-14">
                 <p className="text-center font-heading font-serif text-[var(--aeterna-headline)] text-lg md:text-xl label-uppercase tracking-widest uppercase mb-2">
-                  {isPremiumTier ? "The AI Memorial Film is being crafted" : "Photo submission has closed"}
+                  {isPremiumTier ? tx.memorial.filmCraftedTitle : tx.memorial.collectionClosed}
                 </p>
                 <p className="text-center text-[var(--aeterna-gold-muted)] text-sm label-uppercase tracking-widest mb-8">
-                  {isPremiumTier
-                    ? "Your memories are being woven into a lasting tribute"
-                    : "Thank you for the memories shared here — family and friends can still view the gallery below."}
+                  {isPremiumTier ? tx.memorial.filmCraftedSubtitle : tx.memorial.collectionClosedGalleryNote}
                 </p>
 
                 {isPremiumTier && (
@@ -1332,11 +1351,11 @@ export default function GuestFeedPage({ params }: PageProps) {
                 {isPremiumTier ? (
                 <div className="max-w-sm mx-auto">
                   <p className="text-center text-[var(--aeterna-headline)] text-sm tracking-[0.1em] mb-4">
-                    Notify me when the film is released
+                    {tx.memorial.notifyFilmTitle}
                   </p>
                   {notificationSubmitted ? (
                     <p className="text-center text-[var(--aeterna-gold)] text-sm tracking-wide py-3">
-                      Thank you. We&apos;ll notify you when it&apos;s ready.
+                      {tx.memorial.notifyFilmThanks}
                     </p>
                   ) : (
                     <form onSubmit={handleNotifySubmit} className="flex flex-col sm:flex-row gap-3">
@@ -1344,7 +1363,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                         type="email"
                         name="notify_email"
                         required
-                        placeholder="Your email"
+                        placeholder={tx.memorial.notifyPlaceholder}
                         className="flex-1 min-h-[44px] px-4 rounded-xl border border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)] text-sm"
                       />
                       <motion.button
@@ -1355,7 +1374,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                         whileTap={{ scale: 0.97 }}
                         transition={ARTISAN_SPRING}
                       >
-                        {notificationLoading ? "Saving…" : "Notify me"}
+                        {notificationLoading ? tx.memorial.saving : tx.memorial.notifyMe}
                       </motion.button>
                     </form>
                   )}
@@ -1366,9 +1385,9 @@ export default function GuestFeedPage({ params }: PageProps) {
                 ) : (
                   <p className="text-center text-sm text-[var(--aeterna-gold-muted)] max-w-md mx-auto">
                     <Link href="/create?plan=film" className="text-[var(--aeterna-gold)] underline underline-offset-2 hover:text-[var(--aeterna-gold-light)]">
-                      Upgrade to Premium
+                      {tx.memorial.upgradePremiumCta}
                     </Link>{" "}
-                    for an AI tribute film on future memorials.
+                    {tx.memorial.upgradePremiumTail}
                   </p>
                 )}
               </div>
@@ -1381,7 +1400,7 @@ export default function GuestFeedPage({ params }: PageProps) {
       <main className="animate-[fadeInUp_0.85s_ease-out_both] border-t border-white/[0.06] pb-[max(6.5rem,env(safe-area-inset-bottom))] pt-1 [animation-delay:0.18s]">
         {stories.length === 0 ? (
           <div className="mx-auto max-w-xl bg-landing px-4 py-10">
-            <p className="text-center text-sm tracking-wide text-[var(--landing-text-muted)]">No memories shared yet.</p>
+            <p className="text-center text-sm tracking-wide text-[var(--landing-text-muted)]">{tx.memorial.noMemoriesYet}</p>
           </div>
         ) : (
           <>
@@ -1402,7 +1421,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                     whileTap={{ scale: 0.98 }}
                     transition={ARTISAN_SPRING}
                   >
-                    {checkoutLoading ? "Redirecting…" : "Unlock all memories"}
+                    {checkoutLoading ? tx.common.redirecting : tx.memorial.unlockMemories}
                   </motion.button>
                   {checkoutError && (
                     <p className={`text-[var(--aeterna-gold-muted)] text-xs ${filmReleased ? "block" : "hidden md:block"}`}>{checkoutError}</p>
@@ -1418,7 +1437,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                       whileTap={{ scale: 0.98 }}
                       transition={ARTISAN_SPRING}
                     >
-                      {checkoutLoading ? "Redirecting…" : "Unlock all memories"}
+                      {checkoutLoading ? tx.common.redirecting : tx.memorial.unlockMemories}
                     </motion.button>
                     {checkoutError && <p className="text-[var(--aeterna-gold-muted)] text-xs text-center mt-2">{checkoutError}</p>}
                   </div>
@@ -1444,7 +1463,13 @@ export default function GuestFeedPage({ params }: PageProps) {
                         if (showBlurByDeadline) setShowPremiumBlurPopup(true)
                         else if (!isBlurredByPaywall) setViewerStory(story)
                       }}
-                      aria-label={isBlurred ? (showBlurByDeadline ? "Restore with Premium" : "Locked") : "View story"}
+                      aria-label={
+                        isBlurred
+                          ? showBlurByDeadline
+                            ? tx.memorial.restorePremium
+                            : tx.memorial.locked
+                          : tx.memorial.viewStoryAria
+                      }
                       disabled={isBlurredByPaywall}
                       onContextMenu={(e) => e.preventDefault()}
                     >
@@ -1470,7 +1495,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                         <span className="text-[10px] font-serif uppercase tracking-wider text-white/90">
-                          {showBlurByDeadline ? "Premium" : "Locked"}
+                          {showBlurByDeadline ? tx.memorial.premium : tx.memorial.locked}
                         </span>
                       </div>
                     )}
@@ -1532,7 +1557,9 @@ export default function GuestFeedPage({ params }: PageProps) {
                       whileTap={platformTipChecked && !donationCheckoutLoading ? { scale: 0.98 } : undefined}
                       transition={ARTISAN_SPRING}
                     >
-                      {donationCheckoutLoading ? "Redirecting to checkout…" : `${donationAmountLabel} support · view account details`}
+                      {donationCheckoutLoading
+                        ? tx.memorial.redirectCheckout
+                        : `${donationAmountLabel} ${tx.memorial.donationSupportCta}`}
                     </motion.button>
                     <button
                       type="button"
@@ -1564,14 +1591,14 @@ export default function GuestFeedPage({ params }: PageProps) {
         {/* Donation status (social proof) — only when there are records */}
         {event && donationStats && donationStats.count > 0 && (
           <section
-            aria-label="Donation status"
+            aria-label={tx.memorial.donationStatusAria}
             className="mt-10 pt-8 border-t border-[var(--border-gold-subtle)]/50"
           >
             <h2 className="text-sm font-medium text-[var(--aeterna-gold)] uppercase tracking-widest mb-3">
-              Donation status
+              {tx.memorial.donationStatus}
             </h2>
             <p className="text-[var(--aeterna-headline)] text-sm mb-4">
-              So far, <strong className="text-[var(--aeterna-gold)]">{donationStats.count}</strong> people have shared support for the family.
+              {tx.memorial.donationSoFar(donationStats.count)}
             </p>
             <ul className="space-y-1.5 text-xs text-[var(--aeterna-body)]">
               {donationStats.list.map((item, i) => (
@@ -1639,17 +1666,17 @@ export default function GuestFeedPage({ params }: PageProps) {
                     id="form-title"
                     className="text-[11px] font-sans font-normal text-[var(--aeterna-gold-muted)] tracking-[0.28em] uppercase"
                   >
-                    Share a memory
+                    {tx.memorial.shareMemoryTitle}
                   </h2>
                   <p className="mt-1.5 text-[10px] font-sans text-[var(--aeterna-gold-muted)]/90 tracking-[0.2em] uppercase tabular-nums">
-                    {shareStep} / 3
+                    {tx.memorial.stepCounter(shareStep)}
                   </p>
                 </div>
                 <motion.button
                   type="button"
                   onClick={handleCloseForm}
                   className="shrink-0 p-2 text-[var(--landing-text-body)] hover:text-[var(--landing-text-hero)] rounded-lg"
-                  aria-label="Close"
+                  aria-label={tx.memorial.close}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   transition={ARTISAN_SPRING}
@@ -1672,7 +1699,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   {shareStep === 1 && (
                     <>
                       <h3 className="font-heading font-serif text-xl md:text-[1.35rem] text-[var(--aeterna-headline)] text-center leading-snug mb-8 mt-2">
-                        What is your name?
+                        {tx.memorial.formNameTitle}
                       </h3>
                       <input
                         type="text"
@@ -1680,7 +1707,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                         onChange={(e) => setMemoryAuthorName(e.target.value)}
                         autoComplete="name"
                         autoFocus
-                        placeholder="Your name"
+                        placeholder={tx.memorial.formNamePh}
                         className="w-full min-h-[52px] px-4 rounded-xl border border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)] font-sans text-base text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] placeholder:opacity-80 focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)]/70"
                       />
                     </>
@@ -1689,7 +1716,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   {shareStep === 2 && (
                     <>
                       <h3 className="font-heading font-serif text-xl md:text-[1.35rem] text-[var(--aeterna-headline)] text-center leading-snug mb-6 mt-2">
-                        Add a memory.
+                        {tx.memorial.formPhotoTitle}
                       </h3>
                       <input
                         ref={memoryFileInputRef}
@@ -1713,9 +1740,9 @@ export default function GuestFeedPage({ params }: PageProps) {
                         className="group flex min-h-[168px] w-full flex-col items-center justify-center gap-3 rounded-[32px] border border-dashed border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)]/50 px-4 py-8 text-center font-sans transition-[colors,transform,box-shadow] duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-[var(--aeterna-gold-muted)]/60 hover:bg-[var(--aeterna-charcoal-soft)]/40"
                       >
                         <span className="text-sm text-[var(--aeterna-headline)]">
-                          {memoryPhotoFile ? "Change photo" : "Tap to add a memory"}
+                          {memoryPhotoFile ? tx.memorial.changePhoto : tx.memorial.tapAddMemory}
                         </span>
-                        <span className="text-xs text-[var(--aeterna-gold-muted)]">or drag one here</span>
+                        <span className="text-xs text-[var(--aeterna-gold-muted)]">{tx.memorial.dragHere}</span>
                       </button>
                       {(photoPermanentUrl || photoPreviewUrl) && (
                         <div className="mt-5 overflow-hidden rounded-[32px] border-[0.5px] border-[rgba(255,255,255,0.1)]">
@@ -1733,20 +1760,18 @@ export default function GuestFeedPage({ params }: PageProps) {
                   {shareStep === 3 && (
                     <>
                       <h3 className="font-heading font-serif text-xl md:text-[1.35rem] text-[var(--aeterna-headline)] text-center leading-snug mb-6 mt-2">
-                        Tell us the story behind this photo.
+                        {tx.memorial.formStoryTitle}
                       </h3>
                       <textarea
                         value={memoryStoryText}
                         onChange={(e) => setMemoryStoryText(e.target.value)}
                         autoFocus
                         rows={5}
-                        placeholder="A favorite trip, a quiet everyday moment, or a smile you’ll always remember…"
+                        placeholder={tx.memorial.formStoryPh}
                         className="w-full resize-none rounded-[32px] border-[0.5px] border-[rgba(255,255,255,0.1)] bg-[var(--aeterna-charcoal)] px-4 py-3.5 font-sans text-base leading-relaxed text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] placeholder:opacity-75 focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)]/70"
                       />
                       <p className="mt-6 text-center font-sans text-sm leading-relaxed text-[var(--aeterna-body)] text-balance">
-                        {isPremiumTier
-                          ? "Your photo might be featured in the 1-minute AI tribute film."
-                          : "Thank you for sharing your precious memory."}
+                        {isPremiumTier ? tx.memorial.formStoryPremium : tx.memorial.formStoryFree}
                       </p>
                     </>
                   )}
@@ -1770,7 +1795,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                     whileTap={{ scale: submitLoading ? 1 : 0.99 }}
                     transition={ARTISAN_SPRING}
                   >
-                    Back
+                    {tx.common.back}
                   </motion.button>
                 ) : null}
                 {shareStep < 3 ? (
@@ -1782,7 +1807,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                     whileTap={{ scale: 0.98, boxShadow: "0 0 36px rgba(197, 160, 89, 0.42)" }}
                     transition={ARTISAN_SPRING}
                   >
-                    Continue the Story
+                    {tx.memorial.continueTheStoryBtn}
                   </motion.button>
                 ) : (
                   <motion.button
@@ -1794,7 +1819,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                     whileTap={{ scale: submitLoading ? 1 : 0.99 }}
                     transition={ARTISAN_SPRING}
                   >
-                    {submitLoading ? "Sending…" : "Share this memory"}
+                    {submitLoading ? tx.memorial.sending : tx.memorial.shareThisMemory}
                   </motion.button>
                 )}
               </div>

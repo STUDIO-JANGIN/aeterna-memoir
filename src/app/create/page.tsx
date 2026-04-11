@@ -444,9 +444,11 @@ function CreateEventForm() {
     const maxStep = WIZARD_STEPS_FULL
 
     if (draft) {
-      setMemorialType(draft.memorialType)
-      setWizardStep(Math.min(Math.max(1, draft.wizardStep), maxStep))
-      if (draft.memorialType !== null) {
+      const mt: MemorialType | null =
+        draft.memorialType === "person" || draft.memorialType === "pet" ? draft.memorialType : null
+      setMemorialType(mt)
+      setWizardStep(Math.min(Math.max(1, mt === null ? 1 : draft.wizardStep), maxStep))
+      if (mt !== null) {
         resumeToastAfterAuthRef.current = true
       }
       setName(draft.name)

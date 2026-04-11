@@ -133,9 +133,19 @@ export function readCreateDraft(): CreateDraftV1 | null {
       if (step >= 4) step += 1
       step = Math.min(step, DRAFT_MAX_STEP)
     }
+
+    const rawMt = parsed.memorialType
+    const memorialType: MemorialType | null =
+      rawMt === "person" || rawMt === "pet" ? rawMt : null
+    /** Legacy drafts omitted type — must show human vs. pet first, not step 1. */
+    if (memorialType === null) {
+      step = 1
+    }
+
     return {
       ...(parsed as unknown as Partial<CreateDraftV1>),
       v: 6,
+      memorialType,
       wizardStep: step,
       willHostMemorialService: willHost ?? null,
     } as CreateDraftV1

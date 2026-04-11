@@ -119,19 +119,19 @@ function LandingPageInner() {
   /** Desktop: script-appropriate Noto* on md+ (see globals `.landing-*-md`); mobile keeps default stack. */
   const { serif: locSerif, sans: locSans } = getLandingLocaleFontClasses(locale)
   const heroTitleTracking = getLandingHeroTitleTrackingClass(locale)
-  /** Pan hero footage slightly left on CJK landings so both elders stay visible past the iPhone mockups */
+  /** Pan KO/JA/ZH hero footage further left so both elders’ faces clear the stacked iPhone mockups */
   const isCjkHeroLocale = locale === "ko" || locale === "ja" || locale === "zh"
-  /** Gulf footage: ease off tight face close-up; nudge framing right and zoom out slightly */
+  /** Gulf footage: zoom out so faces aren’t tight; light horizontal nudge */
   const isArHeroLocale = locale === "ar"
   const heroVideoObjectClass = isCjkHeroLocale
-    ? "object-[34%_11%] md:object-[30%_10%] lg:object-[28%_10%] max-md:object-[36%_7%]"
+    ? "object-[26%_11%] md:object-[22%_10%] lg:object-[20%_10%] max-md:object-[28%_7%]"
     : isArHeroLocale
-      ? "object-[43%_10%] md:object-[45%_10%] lg:object-[44%_10%] max-md:object-[41%_7%]"
+      ? "object-[44%_12%] md:object-[45%_11%] lg:object-[44%_11%] max-md:object-[42%_8%]"
       : "object-[center_10%] max-md:object-[center_6%]"
   const heroVideoTransformClass = isCjkHeroLocale
-    ? "-translate-x-[3%] md:-translate-x-[4%] lg:-translate-x-[5%] scale-[1.05] origin-[40%_50%]"
+    ? "-translate-x-[6%] md:-translate-x-[7%] lg:-translate-x-[8%] scale-[1.06] md:scale-[1.07] origin-[32%_48%]"
     : isArHeroLocale
-      ? "scale-[0.93] md:scale-[0.94] origin-[46%_34%] translate-x-[1.5%] md:translate-x-[2%]"
+      ? "scale-[0.86] md:scale-[0.88] lg:scale-[0.89] origin-[46%_36%] translate-x-[1.5%] md:translate-x-[2%]"
       : ""
 
   /** After client navigation from other routes (e.g. memorial “upgrade” → /#pricing), scroll to pricing. */

@@ -1,3 +1,5 @@
+/* Korean UI/body — Pretendard; must precede Tailwind @import */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 
 /*
@@ -83,6 +85,8 @@
   --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: "Syne", "Inter", system-ui, sans-serif;
+  /* Pretendard: loaded via @import above; KO body prefers this over Noto Sans KR */
+  --font-pretendard: "Pretendard Variable", Pretendard, system-ui, -apple-system, sans-serif;
 
   /* Landing / memorial canvas — obsidian */
   --landing-bg: #030303;
@@ -127,6 +131,31 @@
 }
 
 @layer base {
+  /**
+   * Locale-aware typography (variables from next/font on <html>).
+   * KO: Noto Serif KR titles + Pretendard body · JA: Shippori + Noto Sans JP · zh: Noto TC · ar: Amiri · fr/es: Playfair + Cormorant.
+   */
+  html[data-locale="ko"] {
+    --font-serif: var(--font-ko-serif), "Noto Serif KR", ui-serif, serif;
+    --font-sans: var(--font-pretendard), var(--font-ko-sans), ui-sans-serif, sans-serif;
+  }
+  html[data-locale="ja"] {
+    --font-serif: var(--font-ja-serif), "Shippori Mincho", ui-serif, serif;
+    --font-sans: var(--font-ja-sans), "Noto Sans JP", ui-sans-serif, sans-serif;
+  }
+  html[data-locale="zh"] {
+    --font-serif: var(--font-zh-serif), "Noto Serif TC", ui-serif, serif;
+    --font-sans: var(--font-zh-sans), "Noto Sans TC", ui-sans-serif, sans-serif;
+  }
+  html[data-locale="ar"] {
+    --font-serif: var(--font-ar-amiri), "Amiri", serif;
+    --font-sans: var(--font-ar-amiri), "Amiri", serif;
+  }
+  html[data-locale="fr"],
+  html[data-locale="es"] {
+    --font-sans: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  }
+
   html {
     font-family: var(--font-sans);
     background-color: var(--landing-bg);
@@ -153,6 +182,9 @@
     color: var(--text-primary);
     line-height: 1.8;
     letter-spacing: 0.01em;
+  }
+  html[data-locale="ar"] body {
+    line-height: 1.6;
   }
   h1,
   h2,
@@ -354,6 +386,34 @@
     line-height: 1.12;
     letter-spacing: -0.04em;
     color: var(--landing-text-hero);
+  }
+
+  /**
+   * Landing (/) locale fonts on md+ — script-tuned Noto families; mobile keeps default stack.
+   * en/fr/es: no classes (Playfair/Inter + latin-ext from layout).
+   */
+  @media (min-width: 768px) {
+    .landing-ko-serif-md {
+      font-family: var(--font-ko-serif), ui-serif, serif !important;
+    }
+    .landing-ko-sans-md {
+      font-family: var(--font-pretendard), var(--font-ko-sans), ui-sans-serif, sans-serif !important;
+    }
+    .landing-ja-serif-md {
+      font-family: var(--font-ja-serif), ui-serif, serif !important;
+    }
+    .landing-ja-sans-md {
+      font-family: var(--font-ja-sans), ui-sans-serif, sans-serif !important;
+    }
+    .landing-zh-serif-md {
+      font-family: var(--font-zh-serif), ui-serif, serif !important;
+    }
+    .landing-zh-sans-md {
+      font-family: var(--font-zh-sans), ui-sans-serif, sans-serif !important;
+    }
+    .landing-ar-sans-md {
+      font-family: var(--font-ar-amiri), "Amiri", serif !important;
+    }
   }
 
   .text-landing-section-title {

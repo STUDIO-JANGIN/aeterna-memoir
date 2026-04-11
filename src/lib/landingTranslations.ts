@@ -19,7 +19,7 @@ export const LANDING_LOCALES: {
   { code: "fr", label: "French", native: "Français" },
   { code: "es", label: "Spanish", native: "Español" },
   { code: "ar", label: "Arabic", native: "العربية" },
-  { code: "zh", label: "Chinese", native: "中文" },
+  { code: "zh", label: "Chinese (Traditional)", native: "繁體中文" },
 ]
 
 export type LandingStrings = {
@@ -175,9 +175,9 @@ const KO: LandingStrings = {
     ctaCreate: "지금 기념관 만들기",
     ctaMyMemorial: "내 기념관",
     heroPortraitAlt:
-      "인자하게 웃고 계신 한국인 할머니의 초상. 따뜻한 니트나 한복 소재를 떠올리는 포근한 분위기입니다.",
-    heroSecondaryAlt:
       "따뜻하게 미소 지으며 정면을 바라보시는 동아시아 할머니의 초상.",
+    heroSecondaryAlt:
+      "집에서 함께한 반려견과 반려묘 — 가족 이야기의 한 부분으로 남는 장면.",
   },
   howItWorks: {
     kicker: "이용 방법",
@@ -269,16 +269,16 @@ const KO: LandingStrings = {
 const JA: LandingStrings = {
   nav: { howItWorks: "使い方", pricing: "料金", faq: "よくある質問" },
   hero: {
-    title1: "静かに祈る、",
-    title2: "個人の追悼の場所",
+    title1: "心を込めて偲ぶ、",
+    title2: "尊き追憶の聖域",
     body: "礼儀と余白を大切にした、極めてシンプルなデジタル空間です。QRやリンクで家族が静かに集まり、アプリ不要で写真と言の葉を綴れます。お盆のように灯りを分かち合うように、思い出はそっと並びます。",
     tagline: "不完全さのなかにある美しさを、そっと残す。",
     ctaCreate: "いつでも追悼ページを作る",
     ctaMyMemorial: "マイ追悼",
     heroPortraitAlt:
-      "畳や庭園を思わせる落ち着いた光の中の、品のあるご高齢の方のポートレート。",
-    heroSecondaryAlt:
       "温かく微笑み、こちらをまっすぐ見つめる東アジアのご高齢の女性のポートレート。",
+    heroSecondaryAlt:
+      "犬や猫など、家族の記憶とともに歩んだペットたち。",
   },
   howItWorks: {
     kicker: "使い方",
@@ -579,9 +579,9 @@ const AR: LandingStrings = {
     ctaCreate: "أنشئ نصبًا تذكاريًا الآن",
     ctaMyMemorial: "نصبي التذكاري",
     heroPortraitAlt:
-      "صورة لمسنّ أو مسنّة بابتسامة حانية، يُقصد بها إثارة صورة الجدّ أو الجدّة في العائلة العربية، بلباسٍ تقليدي أو هادئ يليق بالاحترام.",
-    heroSecondaryAlt:
       "صورة مقرّبة لسيدة سعودية مسنّة ترتدي حجابًا يغطي الشعر دون نقاب، تبتسم بحرارة وترفع النظر مباشرة نحو المشاهد.",
+    heroSecondaryAlt:
+      "كلاب وقطط معًا — رفقاء في البيت يشكلون جزءًا من قصة العائلة على الجدار نفسه.",
   },
   howItWorks: {
     kicker: "كيف يعمل",
@@ -670,67 +670,101 @@ const AR: LandingStrings = {
   footer: "للمهنيين في احتفالات الحياة ومقدمي الرعاية · hoon@aya.yale.edu",
 }
 
-/** Simplified Chinese — USD pricing profile (same numeric tier as EN). */
+/** Traditional Chinese (HK/TW) — classical, elegant diction; tier names follow EN product keys. */
 const ZH: LandingStrings = {
-  nav: { howItWorks: "使用方式", pricing: "定价", faq: "常见问题" },
+  nav: { howItWorks: "使用方式", pricing: "方案", faq: "常見問題" },
   hero: {
-    title1: "承载珍贵记忆的",
-    title2: "数字纪念空间",
-    body: "为人与宠物而设，庄重保存。通过二维码或链接即时分享：无需应用；亲友可在手机上添加照片与故事。温和的纪念动态，访客可为每条回忆点赞与留言，如同一条神圣的时间线。",
-    tagline: "足迹、追思与保存，同在一处圣洁之地。",
-    ctaCreate: "立即创建纪念页",
-    ctaMyMemorial: "我的纪念页",
-    heroPortraitAlt:
-      "纪念页上一位长者的肖像——唤起您对祖辈与家人的记忆。",
-    heroSecondaryAlt: "温和微笑、正视观者的东亚长者肖像。",
+    title1: "安放思念的",
+    title2: "數位聖所",
+    body:
+      "為摯愛與毛孩而設，以敬謹之心長久保存。藉 QR 或連結即可分享，無需下載應用程式；親友於手機上獻上相片與故事。溫柔的追思之流，訪客可為每一段回憶獻上心與言，彷彿一條承載遺產的神聖時間軸。",
+    tagline: "足跡、追念與保存，同在一方靜謐聖所。",
+    ctaCreate: "建立紀念頁",
+    ctaMyMemorial: "我的紀念頁",
+    heroPortraitAlt: "溫和微笑、凝望觀者的東亞長者肖像。",
+    heroSecondaryAlt: "寵物與同伴，家庭敘事中的一頁。",
   },
   howItWorks: {
     kicker: "使用方式",
-    title: "创建 · 分享 · 汇聚",
+    title: "建立 · 分享 · 匯聚",
     subtitle:
-      "三大支柱：人与宠物的数字纪念空间；二维码或链接零门槛访问；访客点赞与留言的社区纪念墙。",
+      "三根柱石：為人與寵物而設的數位聖所；以 QR 或連結暢達無阻、無需應用程式；訪客以讚與留言共築社群紀念牆。",
     steps: [
       {
-        title: "创建数字纪念空间",
-        description: "数秒内为挚爱或宠物建立庄重的纪念页。",
+        title: "建立數位聖所",
+        description: "片刻之間，為摯愛或毛孩闢一方莊重空間。",
       },
       {
-        title: "扫描 · 分享",
-        description: "在仪式现场放置二维码或分享链接。访客即时上传照片与故事，无需安装应用。",
+        title: "掃描 · 分享",
+        description: "於儀式現場置放 QR 或寄出連結。訪客即時獻上相片與故事，無須安裝應用程式。",
       },
       {
-        title: "连结 · 重温",
-        description: "亲友为心动的回忆点赞，最受欢迎的故事浮于顶端。",
+        title: "相繫 · 重溫",
+        description: "眾人為心儀的回憶獻上心，最受珍視的敘事自然浮升。",
       },
     ],
   },
   pricing: {
-    kicker: "定价",
-    title: "神圣保存。一次性付费。",
-    subtitle: "首 7 天为免费收集回忆的窗口。可随时升级，永久保存纪念空间。",
-    currencyDisclaimer: "货币依据您的地区（首次访问）或所选语言显示。可在付款前于下方更改。",
-    comingSoon: "即将推出",
+    kicker: "方案",
+    title: "敬謹保存。一次付清。",
+    subtitle: "首七日為免費之窗，匯聚回憶。日後隨時升級，使聖所永存。",
+    currencyDisclaimer: "幣別依您所在區域（首次造訪）或所選語言而定；結帳前可於下方調整。",
+    comingSoon: "即將推出",
     plans: [
       {
         tierName: "Sacred Window",
-        value: "7 天收集回忆。温和的开始。",
-        cta: "开始",
+        value: "七日之內，匯聚回憶。溫柔的起始。",
+        cta: "開始",
       },
       {
         tierName: "Eternal Legacy",
-        value: "永久保存每张照片与故事。无到期。",
-        cta: "选择",
+        value: "每一幀影像、每一段敘事，皆永久保存，無有期限。",
+        cta: "選擇",
       },
       {
         tierName: "The Eternal Film",
-        value: "包含 Legacy 全部权益，另含 1 分钟 AI 纪念影片优先体验。",
-        cta: "选择",
-        statusTag: "即将推出",
+        value: "含「永恆遺產」之全部，並優先預覽一分鐘 AI 致敬影片。",
+        cta: "選擇",
+        statusTag: "即將推出",
       },
     ],
   },
-  faq: EN.faq,
-  footer: "面向生命庆典从业者与照护者 · hoon@aya.yale.edu",
+  faq: {
+    kicker: "常見問題",
+    title: "以柔靜之語，為您解惑",
+    subtitle: "願以匠心照護，陪伴各地家庭。",
+    items: [
+      {
+        q: "Aeterna 是什麼？",
+        a: "Aeterna 是安放所愛回憶的數位寶匣——無論是人或毛孩。在此，笑顏、聲音與故事得以長存，不致埋沒於相簿深處或塵封冊頁。",
+      },
+      {
+        q: "為何創立？",
+        a: "創辦人在喪父之後，深感缺少一方美好而共有的數位空間，以禮赞生命。願 Aeterna 使追思不孤單，使「聖所」成為愛的延續與慶典。",
+      },
+      {
+        q: "如何開始紀念頁？",
+        a: "如植一顆種子：先為摯愛立一檔案，再以連結或 QR 邀請親友。無須下載應用程式，亦無繁瑣登入，唯有直達思念的路徑。",
+      },
+      {
+        q: "親友如何參與？",
+        a: "收到連結後，即可上傳相片、獻上讚或留下暖語。彷彿眾人環抱，各自獻上最珍視的一段回憶，使敘事滋長。",
+      },
+      {
+        q: "實體儀式可用嗎？",
+        a: "可以。可製作附唯一 QR 的雅緻 PDF 邀函，印製於現場或以訊息寄送。訪客以手機掃描，即可即時獻上相片與話語。",
+      },
+      {
+        q: "是否安全、私密？",
+        a: "然。如秘園深處，唯受邀者可入。回憶非商品，乃獻予真正識得亡者之人的聖物。",
+      },
+      {
+        q: "長遠而言？",
+        a: "我們相信回憶應當流動、應當被訴說。日後將助您把最受珍視的影像，織成 AI 致敬影片——使生命故事在世代之間依然鮮明。",
+      },
+    ],
+  },
+  footer: "獻予生命禮赞專業與照護者 · hoon@aya.yale.edu",
 }
 
 export const LANDING_COPY: Record<LandingLocale, LandingStrings> = {

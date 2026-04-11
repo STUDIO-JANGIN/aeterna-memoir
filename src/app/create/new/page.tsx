@@ -4,7 +4,6 @@ import { useEffect, useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/browser"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
-import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
 
 const CEREMONY_MONTHS = [
   "",
@@ -191,9 +190,6 @@ export default function NewMemorialPage() {
   if (loading) {
     return (
       <div className="relative min-h-dvh bg-landing flex items-center justify-center px-6">
-        <div className="absolute end-4 top-4 z-10">
-          <LandingLanguageSwitcher />
-        </div>
         <p className="text-landing-label">{t.createNew.preparing}</p>
       </div>
     )
@@ -201,9 +197,6 @@ export default function NewMemorialPage() {
 
   return (
     <div className="relative min-h-dvh bg-landing flex flex-col items-center justify-center px-6 py-12 md:py-16 text-[var(--landing-text-hero)]">
-      <div className="absolute end-4 top-4 z-10">
-        <LandingLanguageSwitcher />
-      </div>
       <div className="w-full max-w-3xl card-landing-airy px-6 py-8 md:px-10 md:py-12">
         <p className="text-landing-label mb-3">{t.createNew.kicker}</p>
         <h1 className="text-landing-section-title mb-4">{t.createNew.title}</h1>

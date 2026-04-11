@@ -4,6 +4,10 @@
 
 import type { PricingCurrencyId } from "@/lib/landingPricing"
 import type { LandingLocale } from "@/lib/landingTranslations"
+import { AR_APP_REST } from "@/lib/locales/arAppPartial"
+import { ES_APP_REST } from "@/lib/locales/esAppPartial"
+import { FR_APP_REST } from "@/lib/locales/frAppPartial"
+import { ZH_APP_REST } from "@/lib/locales/zhAppPartial"
 
 /** Simple `{name}` / `{current}` style interpolation */
 export function interpolate(template: string, vars: Record<string, string | number>): string {
@@ -276,7 +280,7 @@ export type AppStrings = {
   }
 }
 
-type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] }
+export type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] }
 
 function mergeApp(base: AppStrings, patch: DeepPartial<AppStrings>): AppStrings {
   function deepMerge(a: unknown, b: unknown): unknown {
@@ -648,9 +652,9 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     kicker: "새 기념관 만들기",
     title: "소중한 분에 대해 알려주세요",
     body: "장례·추모 정보 설정에 도움이 됩니다. 가족 대시보드에서 언제든 수정할 수 있습니다.",
-    errName: "이름을 입력해 주세요.",
-    errCeremony: "예배(추모) 월·일·시간을 선택해 주세요.",
-    errCreate: "기념관을 만들 수 없었습니다. 다시 시도해 주세요.",
+    errName: "이름을 입력해 주십시오.",
+    errCeremony: "예배(추모) 월·일·시간을 선택해 주십시오.",
+    errCreate: "기념관을 만들 수 없었습니다. 다시 시도해 주십시오.",
     labelName: "이름",
     phName: "고인(반려동물)의 전체 이름",
     labelBirth: "생년월일",
@@ -743,17 +747,24 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     collectionClosed: "사진 제출이 마감되었습니다",
     filmCraftedTitle: "AI 추모 영상을 준비하고 있습니다",
     filmCraftedSubtitle: "추억들이 오래 남을 헌사로 엮이고 있습니다",
+    collectionClosedGalleryNote:
+      "이곳에 나눠 주신 추억에 감사드립니다 — 가족과 지인은 아래 갤러리를 계속 둘러보실 수 있습니다.",
     notifyPlaceholder: "이메일",
+    notifyFilmTitle: "영상이 공개되면 이메일로 알려 주세요",
+    notifyFilmThanks: "감사합니다. 준비되면 알려 드리겠습니다.",
+    noMemoriesYet: "아직 나눠 주신 추억이 없습니다.",
+    upgradePremiumCta: "프리미엄으로 업그레이드",
+    upgradePremiumTail: "향후 기념관의 AI 헌사 영상을 위해.",
     recentSupportAria: "최근 후원",
     donationStatusAria: "후원 현황",
     close: "닫기",
     returnHome: "홈으로",
     errors: {
-      nameRequired: "이름을 입력해 주세요.",
-      photoRequired: "사진을 선택해 주세요.",
-      storyRequired: "이름과 사진 뒤의 이야기를 입력해 주세요.",
-      emailRequired: "이메일을 입력해 주세요.",
-      subscribeFailed: "지금은 구독을 처리할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+      nameRequired: "이름을 입력해 주십시오.",
+      photoRequired: "사진을 선택해 주십시오.",
+      storyRequired: "이름과 사진 뒤의 이야기를 입력해 주십시오.",
+      emailRequired: "이메일을 입력해 주십시오.",
+      subscribeFailed: "지금은 구독을 처리할 수 없습니다. 잠시 후 다시 시도해 주십시오.",
       submitFailed: "제출에 실패했습니다.",
       memorialNotFound: "기념관을 찾을 수 없습니다.",
       loadFailed: "불러오는 중 문제가 발생했습니다.",
@@ -764,7 +775,7 @@ const KO_PATCH: DeepPartial<AppStrings> = {
   createWizard: {
     stepOf: "{current}단계 / 총 {total}단계",
     resumeToast: "이어서 진행할 수 있도록 저장했습니다.",
-    welcomeSacred: "당신의 성스러운 공간에 오신 것을 환영합니다.",
+    welcomeSacred: "고귀한 성소에 오신 것을 환영합니다.",
     paymentPending: "결제가 완료되지 않았습니다.",
     paymentPendingBold: "이야기 이어가기",
     dismiss: "닫기",
@@ -1027,7 +1038,7 @@ const JA_PATCH: DeepPartial<AppStrings> = {
   createWizard: {
     stepOf: "ステップ {current} / {total}",
     resumeToast: "続きから再開できるよう保存しました。",
-    welcomeSacred: "大切な空間へようこそ。",
+    welcomeSacred: "謹んでお迎えいたします。追憶を奉ずる静かな空間へ。",
     paymentPending: "お支払いが完了していません。",
     whoHonoringTitle: "誰を偲びますか？",
     whoHonoringSubtitle: "愛する人を静かに覚える場所です。",
@@ -1289,57 +1300,57 @@ const AR_PATCH: DeepPartial<AppStrings> = {
 
 const ZH_PATCH: DeepPartial<AppStrings> = {
   common: {
-    loading: "加载中…",
-    backToHome: "返回首页",
-    returnHome: "返回首页",
+    loading: "載入中…",
+    backToHome: "返回首頁",
+    returnHome: "返回首頁",
     cancel: "取消",
-    close: "关闭",
-    save: "保存",
-    ok: "确定",
-    tryAgain: "重试",
-    signingOut: "正在退出…",
-    signOut: "退出登录",
-    language: "语言",
-    open: "打开",
+    close: "關閉",
+    save: "儲存",
+    ok: "確定",
+    tryAgain: "重試",
+    signingOut: "正在登出…",
+    signOut: "登出",
+    language: "語言",
+    open: "開啟",
     back: "返回",
-    continueStory: "继续讲述",
-    creating: "创建中…",
-    redirecting: "跳转中…",
-    deleting: "删除中…",
-    memorialFallbackName: "纪念页",
+    continueStory: "續寫故事",
+    creating: "建立中…",
+    redirecting: "跳轉中…",
+    deleting: "刪除中…",
+    memorialFallbackName: "紀念頁",
   },
   signIn: {
-    kicker: "登录",
-    title: "欢迎回来",
-    body: "请使用创建纪念页时所用的 Google 账户。",
-    continueGoogle: "使用 Google 继续",
-    signInFailed: "无法开始登录。",
+    kicker: "登入",
+    title: "歡迎回來",
+    body: "請使用建立紀念頁時所選的 Google 帳戶。",
+    continueGoogle: "使用 Google 繼續",
+    signInFailed: "無法開始登入。",
   },
   find: {
-    kicker: "寻找亲友",
-    title: "前往纪念页面。",
-    body: "粘贴家属分享的链接，或输入邀请码，我们将带您直达。",
+    kicker: "尋覓摯友",
+    title: "前往紀念頁面。",
+    body: "貼上家屬分享的連結，或輸入邀請碼，我們將引您直達。",
     placeholder: "例如：https://aeterna.app/event/abc123 或 abc123",
-    badLink: "无法识别该链接或代码，请检查后重试。",
+    badLink: "無法辨識該連結或代碼，請檢查後再試。",
   },
   myMemorial: {
-    kicker: "我的纪念页",
-    loadingTitle: "加载中",
-    loadingBody: "正在验证账户…",
-    emptyTitle: "尚无纪念页",
-    emptyBody: "未找到与此账户关联的纪念页，请先创建。",
-    createCta: "创建纪念页",
-    listTitle: "您的纪念页",
-    listBody: "打开管理面板以管理故事与设置，或永久删除纪念页。",
-    deleteMemorialAria: (name: string) => `删除纪念页 ${name}`,
-    deleteTitle: "删除此纪念页？",
-    deleteBody: (name: string) => `将永久删除 ${name} 及其所有故事，无法恢复。`,
-    typeDelete: "请输入",
-    afterTypeWord: "以确认",
-    deleteCta: "删除纪念页",
-    errorTitle: "出错了",
-    errorFallback: "请重试。",
-    somethingWrong: "出错了",
+    kicker: "我的紀念頁",
+    loadingTitle: "載入中",
+    loadingBody: "正在驗證帳戶…",
+    emptyTitle: "尚無紀念頁",
+    emptyBody: "未找到與此帳戶連結的紀念頁，請先建立。",
+    createCta: "建立紀念頁",
+    listTitle: "您的紀念頁",
+    listBody: "開啟管理面板以管理故事與設定，或永久刪除紀念頁。",
+    deleteMemorialAria: (name: string) => `刪除紀念頁 ${name}`,
+    deleteTitle: "刪除此紀念頁？",
+    deleteBody: (name: string) => `將永久刪除 ${name} 及其所有故事，無法復原。`,
+    typeDelete: "請輸入",
+    afterTypeWord: "以確認",
+    deleteCta: "刪除紀念頁",
+    errorTitle: "發生錯誤",
+    errorFallback: "請再試一次。",
+    somethingWrong: "發生錯誤",
   },
 }
 
@@ -1347,10 +1358,10 @@ export const APP_COPY: Record<LandingLocale, AppStrings> = {
   en: EN,
   ko: mergeApp(EN, KO_PATCH),
   ja: mergeApp(EN, JA_PATCH),
-  fr: mergeApp(EN, FR_PATCH),
-  es: mergeApp(EN, ES_PATCH),
-  ar: mergeApp(EN, AR_PATCH),
-  zh: mergeApp(EN, ZH_PATCH),
+  fr: mergeApp(mergeApp(EN, FR_PATCH), FR_APP_REST),
+  es: mergeApp(mergeApp(EN, ES_PATCH), ES_APP_REST),
+  ar: mergeApp(mergeApp(EN, AR_PATCH), AR_APP_REST),
+  zh: mergeApp(mergeApp(EN, ZH_PATCH), ZH_APP_REST),
 }
 
 export function getAppStrings(locale: LandingLocale): AppStrings {

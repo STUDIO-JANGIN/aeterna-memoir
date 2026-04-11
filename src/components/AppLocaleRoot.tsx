@@ -8,6 +8,7 @@ function DocumentLangDirSync() {
   useEffect(() => {
     document.documentElement.lang = locale
     document.documentElement.dir = locale === "ar" ? "rtl" : "ltr"
+    document.documentElement.setAttribute("data-locale", locale)
   }, [locale])
   return null
 }

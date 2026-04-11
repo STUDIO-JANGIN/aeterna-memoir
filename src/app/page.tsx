@@ -18,6 +18,7 @@ import {
   landingPlanHref,
 } from "@/lib/landingPricing"
 import type { LandingLocale } from "@/lib/landingTranslations"
+import { getLandingHeroTitleTrackingClass, getLandingLocaleFontClasses } from "@/lib/landingLocaleFonts"
 import {
   IPhoneShell,
   StepScreenConnectVote,
@@ -115,6 +116,9 @@ function LandingPageInner() {
   const showPlaceholder = !hasVideo || videoError
   const stepFlowLabels = t.howItWorks.steps.map((s) => `${s.title}: ${s.description}`)
   const heroImages = getLandingHeroImages(locale)
+  /** Desktop: script-appropriate Noto* on md+ (see globals `.landing-*-md`); mobile keeps default stack. */
+  const { serif: locSerif, sans: locSans } = getLandingLocaleFontClasses(locale)
+  const heroTitleTracking = getLandingHeroTitleTrackingClass(locale)
 
   /** After client navigation from other routes (e.g. memorial “upgrade” → /#pricing), scroll to pricing. */
   useEffect(() => {
@@ -178,18 +182,22 @@ function LandingPageInner() {
         <button
           type="button"
           onClick={() => scrollTo("how-it-works")}
-          className={landingNavButtonClass("how-it-works")}
+          className={`${landingNavButtonClass("how-it-works")} ${locSans}`.trim()}
         >
           {t.nav.howItWorks}
         </button>
         <button
           type="button"
           onClick={() => scrollTo("pricing")}
-          className={landingNavButtonClass("pricing")}
+          className={`${landingNavButtonClass("pricing")} ${locSans}`.trim()}
         >
           {t.nav.pricing}
         </button>
-        <button type="button" onClick={() => scrollTo("faq")} className={landingNavButtonClass("faq")}>
+        <button
+          type="button"
+          onClick={() => scrollTo("faq")}
+          className={`${landingNavButtonClass("faq")} ${locSans}`.trim()}
+        >
           {t.nav.faq}
         </button>
       </Navbar>
@@ -231,15 +239,21 @@ function LandingPageInner() {
               {/* Value proposition: always on top on mobile; left column on desktop */}
               <div className="relative z-20 order-1 flex flex-col items-center text-center lg:items-start lg:text-start px-1 sm:px-2 pb-2 sm:pb-10 lg:pb-0">
                 <RevealSection className="w-full max-w-xl mx-auto lg:mx-0 lg:max-w-xl space-y-0">
-                  <h1 className="text-landing-hero font-semibold text-balance md:leading-[1.1] max-md:!text-[clamp(1.875rem,7.5vw,2.75rem)] max-md:!leading-[1.14] max-md:tracking-[-0.035em]">
+                  <h1
+                    className={`text-landing-hero font-semibold text-balance md:leading-[1.1] max-md:!text-[clamp(1.875rem,7.5vw,2.75rem)] max-md:!leading-[1.14] max-md:tracking-[-0.035em] ${locSerif} ${heroTitleTracking}`.trim()}
+                  >
                     {t.hero.title1}{" "}
                     <br className="md:hidden" aria-hidden />
                     {t.hero.title2}
                   </h1>
-                  <p className="mt-4 md:mt-8 text-[13px] md:text-lg leading-[1.72] md:leading-[1.6] text-[#f5f5f7]/90 font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance max-md:px-0.5">
+                  <p
+                    className={`mt-4 md:mt-8 text-[13px] md:text-lg leading-[1.72] md:leading-[1.6] text-[#f5f5f7]/90 font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance max-md:px-0.5 ${locSans}`.trim()}
+                  >
                     {t.hero.body}
                   </p>
-                  <p className="mt-5 md:mt-4 text-[11px] md:text-sm leading-[1.68] md:leading-relaxed font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance italic text-[#f0ebe3] [text-shadow:0px_2px_10px_rgba(0,0,0,0.8)] max-md:px-0.5">
+                  <p
+                    className={`mt-5 md:mt-4 text-[11px] md:text-sm leading-[1.68] md:leading-relaxed font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance italic text-[#f0ebe3] [text-shadow:0px_2px_10px_rgba(0,0,0,0.8)] max-md:px-0.5 ${locSans}`.trim()}
+                  >
                     {t.hero.tagline}
                   </p>
                 </RevealSection>
@@ -247,13 +261,13 @@ function LandingPageInner() {
                   <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 sm:gap-4 items-stretch sm:items-center justify-center lg:justify-start">
                     <Link
                       href="/create"
-                      className="cta-silk inline-flex min-h-[50px] md:min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-8 md:px-12 text-[10px] md:text-[11px] font-semibold tracking-[0.16em] uppercase text-[#0c0c0c] border border-[var(--aeterna-gold)] shadow-[0_16px_50px_-6px_rgba(197,160,89,0.42)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_20px_56px_-4px_rgba(197,160,89,0.5)]"
+                      className={`cta-silk inline-flex min-h-[50px] md:min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-8 md:px-12 text-[10px] md:text-[11px] font-semibold tracking-[0.16em] uppercase text-[#0c0c0c] border border-[var(--aeterna-gold)] shadow-[0_16px_50px_-6px_rgba(197,160,89,0.42)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_20px_56px_-4px_rgba(197,160,89,0.5)] ${locSans}`.trim()}
                     >
                       {t.hero.ctaCreate}
                     </Link>
                     <Link
                       href="/sign-in?next=%2Fmy-memorial"
-                      className="inline-flex min-h-[50px] md:min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full border border-[var(--aeterna-gold)]/55 bg-[#030303]/35 px-8 md:px-10 text-[10px] md:text-[11px] font-semibold tracking-[0.16em] uppercase text-[var(--aeterna-gold)] shadow-[0_8px_28px_-8px_rgba(0,0,0,0.4)] hover:bg-[var(--aeterna-gold)]/10 hover:border-[var(--aeterna-gold)]/80 transition-colors"
+                      className={`inline-flex min-h-[50px] md:min-h-[54px] w-full sm:w-auto items-center justify-center rounded-full border border-[var(--aeterna-gold)]/55 bg-[#030303]/35 px-8 md:px-10 text-[10px] md:text-[11px] font-semibold tracking-[0.16em] uppercase text-[var(--aeterna-gold)] shadow-[0_8px_28px_-8px_rgba(0,0,0,0.4)] hover:bg-[var(--aeterna-gold)]/10 hover:border-[var(--aeterna-gold)]/80 transition-colors ${locSans}`.trim()}
                     >
                       {t.hero.ctaMyMemorial}
                     </Link>
@@ -316,13 +330,19 @@ function LandingPageInner() {
         >
           <div className="max-w-6xl mx-auto">
             <RevealSection className="text-center mb-12 md:mb-20">
-              <p className="text-[9px] md:text-[10px] tracking-[0.32em] md:tracking-[0.35em] uppercase text-[#737373] mb-5 md:mb-4">
+              <p
+                className={`text-[9px] md:text-[10px] tracking-[0.32em] md:tracking-[0.35em] uppercase text-[#737373] mb-5 md:mb-4 ${locSans}`.trim()}
+              >
                 {t.howItWorks.kicker}
               </p>
-              <h2 className="font-[var(--font-serif)] text-[1.35rem] leading-[1.35] sm:text-2xl md:text-[2rem] md:leading-tight text-[color:var(--landing-text-title)] font-normal tracking-[0.05em] text-balance px-1">
+              <h2
+                className={`font-[var(--font-serif)] text-[1.35rem] leading-[1.35] sm:text-2xl md:text-[2rem] md:leading-tight text-[color:var(--landing-text-title)] font-normal tracking-[0.05em] text-balance px-1 ${locSerif}`.trim()}
+              >
                 {t.howItWorks.title}
               </h2>
-              <p className="mt-5 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance">
+              <p
+                className={`mt-5 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance ${locSans}`.trim()}
+              >
                 {t.howItWorks.subtitle}
               </p>
               <p className="sr-only">{stepFlowLabels.join(" ")}</p>
@@ -343,10 +363,14 @@ function LandingPageInner() {
                         <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
                       </div>
                       <div className="flex max-w-[320px] shrink-0 flex-col items-center px-1">
-                        <h3 className="font-[var(--font-serif)] text-xl md:text-[1.35rem] text-[#e8e4dc] font-semibold tracking-tight text-balance">
+                        <h3
+                          className={`font-[var(--font-serif)] text-xl md:text-[1.35rem] text-[#e8e4dc] font-semibold tracking-tight text-balance ${locSerif}`.trim()}
+                        >
                           {step.title}
                         </h3>
-                        <p className="mt-3 min-h-[4.5rem] text-sm leading-relaxed text-[#a3a3a3] font-[var(--font-sans)] text-balance md:min-h-[5rem]">
+                        <p
+                          className={`mt-3 min-h-[4.5rem] text-sm leading-relaxed text-[#a3a3a3] font-[var(--font-sans)] text-balance md:min-h-[5rem] ${locSans}`.trim()}
+                        >
                           {step.description}
                         </p>
                       </div>
@@ -368,16 +392,24 @@ function LandingPageInner() {
         >
           <div className="max-w-3xl mx-auto">
             <RevealSection className="text-center mb-14">
-              <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">{t.pricing.kicker}</p>
-              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[color:var(--landing-text-title)] font-normal tracking-[0.05em]">
+              <p className={`text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4 ${locSans}`.trim()}>
+                {t.pricing.kicker}
+              </p>
+              <h2
+                className={`font-[var(--font-serif)] text-2xl md:text-[2rem] text-[color:var(--landing-text-title)] font-normal tracking-[0.05em] ${locSerif}`.trim()}
+              >
                 {t.pricing.title}
               </h2>
-              <p className="mt-6 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance">
+              <p
+                className={`mt-6 max-w-2xl mx-auto px-2 text-xs md:text-sm leading-[1.65] text-[#8a8a8a] font-[var(--font-sans)] text-balance ${locSans}`.trim()}
+              >
                 {t.pricing.subtitle}
               </p>
             </RevealSection>
 
-            <p className="text-center text-xs text-[#737373] mb-8">{getLandingGridFootnote(locale, pricingCurrency)}</p>
+            <p className={`text-center text-xs text-[#737373] mb-8 ${locSans}`.trim()}>
+              {getLandingGridFootnote(locale, pricingCurrency)}
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-3 md:items-stretch gap-6 md:gap-4">
               {t.pricing.plans.map((plan, i) => {
                 const tierIndex = i as 0 | 1 | 2
@@ -409,12 +441,14 @@ function LandingPageInner() {
                         <p
                           dir="ltr"
                           lang={locale === "ja" ? "ja" : "en"}
-                          className="font-[var(--font-serif)] text-3xl md:text-4xl text-[color:var(--landing-text-hero)] tabular-nums tracking-[0.02em]"
+                          className={`font-[var(--font-serif)] text-3xl md:text-4xl text-[color:var(--landing-text-hero)] tabular-nums tracking-[0.02em] ${locSerif}`.trim()}
                         >
                           <span className="inline-block">{primary}</span>{" "}
                           <span className="text-lg font-normal text-white/35 md:text-xl">{suffix}</span>
                         </p>
-                        <p className="mt-4 font-[var(--font-sans)] text-sm text-[#a3a3a3] leading-snug">{plan.value}</p>
+                        <p className={`mt-4 font-[var(--font-sans)] text-sm text-[#a3a3a3] leading-snug ${locSans}`.trim()}>
+                          {plan.value}
+                        </p>
                         <div className="flex-1" />
                         <Link
                           href={href}
@@ -424,7 +458,7 @@ function LandingPageInner() {
                               : emphasis === "gold"
                                 ? "bg-[var(--aeterna-gold)] text-[color:var(--landing-bg)] hover:bg-[var(--aeterna-gold-light)]"
                                 : "border border-white/[0.12] text-[color:var(--landing-text-title)] hover:bg-white/[0.04]"
-                          }`}
+                          } ${locSans}`.trim()}
                         >
                           {plan.cta}
                         </Link>
@@ -444,11 +478,17 @@ function LandingPageInner() {
         >
           <div className="max-w-2xl mx-auto">
             <RevealSection className="text-center mb-14 md:mb-16">
-              <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">{t.faq.kicker}</p>
-              <h2 className="font-[var(--font-serif)] text-2xl md:text-[2rem] text-[color:var(--landing-text-title)] font-normal tracking-[0.05em]">
+              <p className={`text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4 ${locSans}`.trim()}>
+                {t.faq.kicker}
+              </p>
+              <h2
+                className={`font-[var(--font-serif)] text-2xl md:text-[2rem] text-[color:var(--landing-text-title)] font-normal tracking-[0.05em] ${locSerif}`.trim()}
+              >
                 {t.faq.title}
               </h2>
-              <p className="mt-5 max-w-md mx-auto font-[var(--font-sans)] text-sm md:text-[15px] text-[#8a8a8a] leading-relaxed">
+              <p
+                className={`mt-5 max-w-md mx-auto font-[var(--font-sans)] text-sm md:text-[15px] text-[#8a8a8a] leading-relaxed ${locSans}`.trim()}
+              >
                 {t.faq.subtitle}
               </p>
             </RevealSection>
@@ -461,7 +501,9 @@ function LandingPageInner() {
                       onClick={() => setOpenFaq(openFaq === i ? null : i)}
                       className="w-full px-6 py-5 md:py-[1.375rem] text-start flex items-start justify-between gap-5"
                     >
-                      <span className="font-[var(--font-sans)] text-[15px] md:text-base text-[#e5e5e5] leading-snug pe-2 tracking-[-0.01em]">
+                      <span
+                        className={`font-[var(--font-sans)] text-[15px] md:text-base text-[#e5e5e5] leading-snug pe-2 tracking-[-0.01em] ${locSans}`.trim()}
+                      >
                         {faq.q}
                       </span>
                       <span className="shrink-0 mt-0.5 text-[#737373] text-xl leading-none w-7 text-center tabular-nums font-light">
@@ -470,7 +512,9 @@ function LandingPageInner() {
                     </button>
                     {openFaq === i && (
                       <div className="px-6 pb-6 md:pb-7 pt-0">
-                        <p className="font-[var(--font-sans)] text-[15px] text-[#9ca3a3] leading-[1.75] border-t border-white/[0.06] pt-5">
+                        <p
+                          className={`font-[var(--font-sans)] text-[15px] text-[#9ca3a3] leading-[1.75] border-t border-white/[0.06] pt-5 ${locSans}`.trim()}
+                        >
                           {faq.a}
                         </p>
                       </div>
@@ -483,7 +527,7 @@ function LandingPageInner() {
         </section>
 
         <footer className="border-t border-white/[0.03] bg-landing px-5 py-14 text-center">
-          <p className="text-[10px] tracking-[0.22em] uppercase text-[#525252]">{t.footer}</p>
+          <p className={`text-[10px] tracking-[0.22em] uppercase text-[#525252] ${locSans}`.trim()}>{t.footer}</p>
         </footer>
       </div>
     </div>

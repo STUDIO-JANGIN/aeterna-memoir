@@ -34,7 +34,6 @@ import {
 import { getAppPricingFootnote, interpolate, type AppStrings } from "@/lib/appTranslations"
 import { isLandingLocale } from "@/lib/landingTranslations"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
-import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
 import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
 import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
@@ -1199,9 +1198,6 @@ function CreateEventForm() {
 
   return (
     <div className="relative min-h-dvh bg-landing text-[var(--landing-text-hero)]">
-      <div className="pointer-events-auto fixed end-4 top-4 z-[80] pt-[max(0.25rem,env(safe-area-inset-top))]">
-        <LandingLanguageSwitcher />
-      </div>
       <AnimatePresence>
         {showResumeToast && (
           <motion.div

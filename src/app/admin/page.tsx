@@ -13,7 +13,7 @@ export default function AdminLandingPage() {
         After creating a memorial at <strong className="text-[var(--aeterna-gold)]">/create</strong>, use the link you received: <strong className="text-[var(--aeterna-gold)]">/p/[slug]/admin</strong>. Example: if your guest link is <span className="font-mono text-sm text-[var(--landing-text-hero)]">/p/jane-doe-abc123</span>, open <span className="font-mono text-sm text-[var(--landing-text-hero)]">/p/jane-doe-abc123/admin</span>.
       </p>
       <div className="card-landing-airy px-8 py-10 md:px-12 md:py-12 max-w-xl w-full space-y-6">
-        <Link href="/create" className="btn-landing-primary w-full justify-center">
+        <Link href="/create?new=1" className="btn-landing-primary w-full justify-center">
           Create a memorial
         </Link>
         <Link

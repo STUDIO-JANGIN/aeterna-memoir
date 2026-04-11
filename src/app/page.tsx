@@ -285,7 +285,7 @@ function LandingPageInner() {
                 <RevealSection className="mt-8 w-full max-w-xl mx-auto lg:mx-0 pt-2 md:mt-10 md:pt-0 border-t border-white/[0.06] md:border-0 max-md:pb-2">
                   <div className="flex flex-col sm:flex-row sm:flex-wrap w-full sm:w-auto gap-3 sm:gap-4 items-stretch sm:items-center justify-center lg:justify-start">
                     <Link
-                      href="/create"
+                      href="/create?new=1"
                       className={`cta-silk inline-flex min-h-[50px] md:min-h-[54px] w-full min-w-0 sm:w-auto sm:max-w-full items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-6 sm:px-8 md:px-12 text-[10px] md:text-[11px] font-semibold tracking-[0.14em] sm:tracking-[0.16em] uppercase text-[#0c0c0c] whitespace-nowrap text-center border border-[var(--aeterna-gold)] shadow-[0_16px_50px_-6px_rgba(197,160,89,0.42)] hover:bg-[var(--aeterna-gold-light)] hover:shadow-[0_20px_56px_-4px_rgba(197,160,89,0.5)] ${locSans}`.trim()}
                     >
                       {t.hero.ctaCreate}

@@ -693,7 +693,7 @@ const ZH: LandingStrings = {
   },
   howItWorks: {
     kicker: "運作方式",
-    title: "記錄 · 分享 · 凝聚 (Create · Share · Gather)",
+    title: "記錄 · 分享 · 凝聚",
     subtitle:
       "三大核心：為至親與寵物建立的數位殿堂；無需 App、透過 QR Code 即可輕鬆存取的零門檻體驗；以及讓親友共同參與、讓珍貴瞬間永駐心間的追思社群。",
     steps: [

@@ -190,6 +190,8 @@ export function landingPlanHref(
   params.set("plan", plan)
   params.set("locale", locale)
   if (pricingCurrency) params.set("currency", pricingCurrency)
+  /** Discards any stale /create localStorage draft so “human vs pet” is not skipped (see create page). */
+  params.set("new", "1")
   return `/create?${params.toString()}`
 }
 

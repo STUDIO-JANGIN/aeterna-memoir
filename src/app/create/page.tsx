@@ -37,7 +37,6 @@ import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
 import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
-import { EnhanceRemembranceWithAi } from "@/components/remembrance/EnhanceRemembranceWithAi"
 
 /** URL `plan=` → internal tier. Legacy: `basic` = Plus; marketing: `forever` = Plus, `film` = Premium. */
 function parsePlanQueryParam(param: string | null): StoragePlan | null {
@@ -437,6 +436,15 @@ function CreateEventForm() {
   }, [searchParams])
 
   useEffect(() => {
+    /** Marketing entry (`?new=1`): start a clean wizard — stale drafts had memorialType set and skipped “who are we honoring?”. */
+    const entryParams = new URLSearchParams(window.location.search)
+    if (entryParams.get("new") === "1") {
+      clearCreateDraft()
+      entryParams.delete("new")
+      const qs = entryParams.toString()
+      window.history.replaceState({}, "", qs ? `/create?${qs}` : "/create")
+    }
+
     const draft = readCreateDraft()
     const params = new URLSearchParams(window.location.search)
     const planQs = params.get("plan")?.trim().toLowerCase() ?? null
@@ -1594,47 +1602,23 @@ function CreateEventForm() {
                     </h2>
                     <p className="text-base text-white/45 leading-relaxed">{a.createWizard.step4Body}</p>
                   </div>
-                  <EnhanceRemembranceWithAi
-                    label={
-                      <label htmlFor="create-invitation-bio" className={fieldLabelClass}>
-                        {a.createWizard.remembranceLabel}
-                      </label>
-                    }
-                    text={invitationBio}
-                    onApply={setInvitationBio}
-                    deceasedName={name.trim() || null}
-                    locale={locale}
-                    variant="create"
-                    labels={{
-                      enhanceWithAi: a.createWizard.enhanceWithAi,
-                      enhanceGenerating: a.createWizard.enhanceGenerating,
-                      enhanceChooseVersion: a.createWizard.enhanceChooseVersion,
-                      enhanceUseThis: a.createWizard.enhanceUseThis,
-                      enhanceWriteFirst: a.createWizard.enhanceWriteFirst,
-                      enhanceTooLong: a.createWizard.enhanceTooLong,
-                      enhanceErrorGeneric: a.createWizard.enhanceErrorGeneric,
-                      enhanceOptionPoetic: a.createWizard.enhanceOptionPoetic,
-                      enhanceOptionFormal: a.createWizard.enhanceOptionFormal,
-                      enhanceOptionWarm: a.createWizard.enhanceOptionWarm,
-                      enhanceRefine: a.createWizard.enhanceRefine,
-                      enhanceRefining: a.createWizard.enhanceRefining,
-                    }}
-                  >
-                    <>
-                      <textarea
-                        ref={invitationBioRef}
-                        id="create-invitation-bio"
-                        value={invitationBio}
-                        onChange={(e) => setInvitationBio(e.target.value)}
-                        placeholder={a.createWizard.remembrancePh}
-                        rows={6}
-                        maxLength={2000}
-                        className={textareaMemorial}
-                        aria-label="Words of remembrance for the invitation"
-                      />
-                      <p className="text-xs text-white/30 tabular-nums">{invitationBio.length} / 2000</p>
-                    </>
-                  </EnhanceRemembranceWithAi>
+                  <div className="space-y-3">
+                    <label htmlFor="create-invitation-bio" className={fieldLabelClass}>
+                      {a.createWizard.remembranceLabel}
+                    </label>
+                    <textarea
+                      ref={invitationBioRef}
+                      id="create-invitation-bio"
+                      value={invitationBio}
+                      onChange={(e) => setInvitationBio(e.target.value)}
+                      placeholder={a.createWizard.remembrancePh}
+                      rows={6}
+                      maxLength={2000}
+                      className={textareaMemorial}
+                      aria-label="Words of remembrance for the invitation"
+                    />
+                    <p className="text-xs text-white/30 tabular-nums">{invitationBio.length} / 2000</p>
+                  </div>
                 </div>
               )}
 

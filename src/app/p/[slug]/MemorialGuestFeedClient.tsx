@@ -1396,7 +1396,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                 </div>
                 ) : (
                   <p className="text-center text-sm text-[var(--aeterna-gold-muted)] max-w-md mx-auto">
-                    <Link href="/create?plan=film" className="text-[var(--aeterna-gold)] underline underline-offset-2 hover:text-[var(--aeterna-gold-light)]">
+                    <Link href="/create?plan=film&new=1" className="text-[var(--aeterna-gold)] underline underline-offset-2 hover:text-[var(--aeterna-gold-light)]">
                       {tx.memorial.upgradePremiumCta}
                     </Link>{" "}
                     {tx.memorial.upgradePremiumTail}

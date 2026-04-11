@@ -180,7 +180,7 @@ export function Navbar({ children, end, pageDir = "ltr" }: NavbarProps) {
 export function NavbarCreateLink() {
   return (
     <Link
-      href="/create"
+      href="/create?new=1"
       prefetch
       className="cta-silk relative z-[1] inline-flex min-h-[34px] cursor-pointer items-center rounded-full border-[0.5px] border-[rgba(255,255,255,0.1)] bg-[#030303] px-3 text-[9px] font-medium uppercase tracking-[0.14em] text-[#f5f5f7] hover:border-[rgba(255,255,255,0.18)] hover:bg-[#0c0c0c] sm:px-4 sm:text-[10px] sm:tracking-[0.16em] md:min-h-[40px] md:px-5"
     >

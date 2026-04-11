@@ -172,7 +172,7 @@ export default function MyMemorialPage() {
         <>
           <h1 className="text-landing-section-title max-w-xl mb-6">{t.myMemorial.emptyTitle}</h1>
           <p className="text-landing-body max-w-lg mb-10">{t.myMemorial.emptyBody}</p>
-          <Link href="/create" className="btn-landing-primary min-h-[52px] justify-center">
+          <Link href="/create?new=1" className="btn-landing-primary min-h-[52px] justify-center">
             {t.myMemorial.createCta}
           </Link>
           <Link

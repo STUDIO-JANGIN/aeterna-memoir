@@ -52,6 +52,8 @@ const WIZARD_STEPS_FULL = 9
 
 /** Step-2 profile file survives OAuth redirect / refresh (sessionStorage cap ~5MB). */
 const LS_PROFILE_IMAGE_DRAFT_KEY = "aeterna.create.profile-image.v1"
+/** Set only when starting Google OAuth — profile blob is restored on return if URL still has `code`. */
+const LS_OAUTH_PROFILE_RETURN_KEY = "aeterna.create.oauth-return"
 const PROFILE_IMAGE_DRAFT_MAX_CHARS = 4_500_000
 
 /** Inline pill next to plan titles (e.g. Eternal Film). */
@@ -440,6 +442,12 @@ function CreateEventForm() {
     const entryParams = new URLSearchParams(window.location.search)
     if (entryParams.get("new") === "1") {
       clearCreateDraft()
+      try {
+        sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
+        sessionStorage.removeItem(LS_OAUTH_PROFILE_RETURN_KEY)
+      } catch {
+        // ignore
+      }
       entryParams.delete("new")
       const qs = entryParams.toString()
       window.history.replaceState({}, "", qs ? `/create?${qs}` : "/create")
@@ -658,25 +666,58 @@ function CreateEventForm() {
     return () => URL.revokeObjectURL(url)
   }, [profileFile])
 
-  /** Restore profile image after OAuth redirect or refresh (draft JSON does not include binary). */
+  /**
+   * Restore profile image only when returning from Google OAuth (`code` + oauth-return flag).
+   * Otherwise drop stale sessionStorage so step 2 does not show an old photo by default.
+   */
   useEffect(() => {
     if (typeof window === "undefined") return
     let cancelled = false
     try {
+      const code = new URLSearchParams(window.location.search).get("code")
+      const oauthPending = sessionStorage.getItem(LS_OAUTH_PROFILE_RETURN_KEY) === "1"
       const raw = sessionStorage.getItem(LS_PROFILE_IMAGE_DRAFT_KEY)
-      if (!raw) return
-      const parsed = JSON.parse(raw) as { dataUrl?: string; name?: string; type?: string }
-      if (!parsed.dataUrl || typeof parsed.dataUrl !== "string") return
-      void fetch(parsed.dataUrl)
-        .then((r) => r.blob())
-        .then((blob) => {
-          if (cancelled) return
-          setProfileFile(
-            new File([blob], parsed.name?.trim() || "profile.jpg", {
-              type: parsed.type || blob.type || "image/jpeg",
-            }),
-          )
-        })
+
+      if (oauthPending && code && raw) {
+        const parsed = JSON.parse(raw) as { dataUrl?: string; name?: string; type?: string }
+        if (!parsed.dataUrl || typeof parsed.dataUrl !== "string") {
+          sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
+          sessionStorage.removeItem(LS_OAUTH_PROFILE_RETURN_KEY)
+          return
+        }
+        void fetch(parsed.dataUrl)
+          .then((r) => r.blob())
+          .then((blob) => {
+            if (cancelled) return
+            setProfileFile(
+              new File([blob], parsed.name?.trim() || "profile.jpg", {
+                type: parsed.type || blob.type || "image/jpeg",
+              }),
+            )
+            try {
+              sessionStorage.removeItem(LS_OAUTH_PROFILE_RETURN_KEY)
+            } catch {
+              // ignore
+            }
+          })
+          .catch(() => {
+            try {
+              sessionStorage.removeItem(LS_OAUTH_PROFILE_RETURN_KEY)
+            } catch {
+              // ignore
+            }
+          })
+        return () => {
+          cancelled = true
+        }
+      }
+
+      if (raw && !(oauthPending && code)) {
+        sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
+      }
+      if (oauthPending && !code) {
+        sessionStorage.removeItem(LS_OAUTH_PROFILE_RETURN_KEY)
+      }
     } catch {
       // ignore
     }
@@ -732,6 +773,11 @@ function CreateEventForm() {
     /** Must match Supabase Auth → Redirect URLs (`https://aeternamemoir.com/auth/callback`). */
     const redirectTo = buildOAuthCallbackRedirectUrl(nextPath)
     try {
+      sessionStorage.setItem(LS_OAUTH_PROFILE_RETURN_KEY, "1")
+    } catch {
+      // ignore
+    }
+    try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo },
@@ -740,6 +786,11 @@ function CreateEventForm() {
         setCreateError(error.message)
         setGoogleLoading(false)
         oauthStartLockRef.current = false
+        try {
+          sessionStorage.removeItem(LS_OAUTH_PROFILE_RETURN_KEY)
+        } catch {
+          // ignore
+        }
         return
       }
       /** Browser navigates to Google; keep loading until unload. */
@@ -747,6 +798,11 @@ function CreateEventForm() {
       setCreateError(e instanceof Error ? e.message : "Sign-in could not start. Please try again.")
       setGoogleLoading(false)
       oauthStartLockRef.current = false
+      try {
+        sessionStorage.removeItem(LS_OAUTH_PROFILE_RETURN_KEY)
+      } catch {
+        // ignore
+      }
     }
   }
 
@@ -783,6 +839,7 @@ function CreateEventForm() {
     setProfileUploadError(null)
     try {
       sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
+      sessionStorage.removeItem(LS_OAUTH_PROFILE_RETURN_KEY)
     } catch {
       // ignore
     }

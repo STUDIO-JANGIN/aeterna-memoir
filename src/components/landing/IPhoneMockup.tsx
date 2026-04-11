@@ -1,6 +1,8 @@
 "use client"
 
 import type { ReactNode } from "react"
+import type { LandingLocale } from "@/lib/landingTranslations"
+import { getLandingConnectMoments } from "@/lib/landingConnectMoments"
 
 /** Bezel + screen shell; screen uses 9:19.5 aspect (modern iPhone). */
 export function IPhoneShell({
@@ -172,73 +174,9 @@ export function StepScreenShareMemory() {
   )
 }
 
-/**
- * Six memory tiles: mixed subjects and eras (Connect & Relive landing mockup).
- * Shows one life (or one memorial) from many angles: portrait, years, pets, places, people.
- */
-const CONNECT_MOMENTS: {
-  id: string
-  src: string
-  position: string
-  hearts: number
-  alt: string
-  caption: string
-  imgClassName?: string
-}[] = [
-  {
-    id: "portrait-anchor",
-    src: "/landing-hero-blasian-patriarch.png",
-    position: "center 22%",
-    hearts: 48,
-    alt: "Warm studio portrait of an elder, calm and present: the kind of image families choose as the main tribute photo.",
-    caption: "The portrait · Center of the story",
-  },
-  {
-    id: "garden-light",
-    src: "/landing-connect-grandma-02.png",
-    position: "center 30%",
-    hearts: 22,
-    alt: "A loved one outdoors in a straw hat with bright flowers, sun on their face, hobbies and seasons remembered.",
-    caption: "The garden · Sun & seasons",
-  },
-  {
-    id: "pets-family",
-    src: "/landing-hero-pets.png",
-    position: "center 40%",
-    hearts: 36,
-    alt: "Dogs and cats together, the companions who shared a home: pet memories beside human ones on the same wall.",
-    caption: "The pets · Who walked with them",
-  },
-  {
-    id: "archive-years",
-    src: "/landing-connect-grandma-04.png",
-    position: "center 32%",
-    hearts: 11,
-    alt: "Faded color photo from decades past: early adulthood, a different chapter brought forward by family.",
-    caption: "The years · From the archive",
-    imgClassName: "grayscale contrast-[1.08] sepia-[0.42] brightness-[0.98]",
-  },
-  {
-    id: "bond-companion",
-    src: "/landing-connect-grandma-03.png",
-    position: "center 28%",
-    hearts: 29,
-    alt: "A candid hug with a golden retriever: friends, neighbors, and animals woven into one story.",
-    caption: "The bond · People & pets",
-  },
-  {
-    id: "gathering-joy",
-    src: "/landing-hero-grandmother.png",
-    position: "center 34%",
-    hearts: 52,
-    alt: "A playful celebration snapshot: laughter at a table, the side of a life guests remember best.",
-    caption: "The gathering · Laughter & light",
-    imgClassName: "scale-105 brightness-[1.06] saturate-[1.12] blur-[0.5px]",
-  },
-]
-
-/** Memorial grid with hearts (vote counts vary per card). */
-export function StepScreenConnectVote() {
+/** Memorial grid with hearts (vote counts vary per card). Locale selects Connect & Relive tile imagery. */
+export function StepScreenConnectVote({ locale }: { locale: LandingLocale }) {
+  const moments = getLandingConnectMoments(locale)
   return (
     <div className="absolute inset-0 flex flex-col bg-[#050712] text-white">
       <div className="shrink-0 border-b border-white/[0.06] px-2 py-2">
@@ -246,7 +184,7 @@ export function StepScreenConnectVote() {
         <p className="text-center text-[6px] text-white/40">Heart the moments that matter</p>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-2 gap-px overflow-y-auto bg-[#030303]/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {CONNECT_MOMENTS.map((moment, i) => (
+        {moments.map((moment, i) => (
           <div
             key={moment.id}
             title={`${moment.caption} · ${moment.hearts} hearts`}

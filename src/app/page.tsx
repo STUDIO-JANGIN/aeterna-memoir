@@ -15,9 +15,7 @@ import { getLandingHeroImages } from "@/lib/landingHeroMedia"
 import {
   formatLandingTierPrice,
   getLandingGridFootnote,
-  isPricingCurrencyId,
   landingPlanHref,
-  PRICING_CURRENCY_IDS,
 } from "@/lib/landingPricing"
 import type { LandingLocale } from "@/lib/landingTranslations"
 import {
@@ -60,7 +58,13 @@ type LandingNavId = (typeof LANDING_NAV_IDS)[number]
 const PLAN_TIER_EMPHASIS = ["subtle", "gold", "subtle"] as const
 
 /** Same footprint + shared baseline: phones align on one horizontal line on md+. */
-function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_META)[number]["mockup"] }) {
+function HowItWorksMockup({
+  mockup,
+  locale,
+}: {
+  mockup: (typeof HOW_IT_WORKS_META)[number]["mockup"]
+  locale: LandingLocale
+}) {
   const shellClass = "shadow-[0_32px_80px_rgba(0,0,0,0.45)]"
   const slotClass =
     "flex h-full min-h-[min(400px,56vw)] w-full items-end justify-center md:min-h-[448px]"
@@ -95,39 +99,8 @@ function HowItWorksMockup({ mockup }: { mockup: (typeof HOW_IT_WORKS_META)[numbe
 
   return phone(
     <IPhoneShell className={`relative z-10 mx-auto w-full ${shellClass}`}>
-      <StepScreenConnectVote />
+      <StepScreenConnectVote locale={locale} />
     </IPhoneShell>,
-  )
-}
-
-function LandingPricingCurrencyRow() {
-  const { strings: t } = useLandingLocale()
-  const { pricingCurrency, setPricingCurrencyManual } = useLandingPricingCurrency()
-
-  return (
-    <div className="mt-10 flex flex-col items-center gap-2.5 px-2" dir="ltr">
-      <p className="max-w-md text-center text-[9px] leading-relaxed text-[#5c5c5c] md:text-[10px]">
-        {t.pricing.currencyDisclaimer}
-      </p>
-      <label htmlFor="landing-pricing-currency" className="sr-only">
-        Checkout currency
-      </label>
-      <select
-        id="landing-pricing-currency"
-        value={pricingCurrency}
-        onChange={(e) => {
-          const v = e.target.value
-          if (isPricingCurrencyId(v)) setPricingCurrencyManual(v)
-        }}
-        className="appearance-none cursor-pointer rounded-lg border border-white/[0.12] bg-[#0a0a0a]/90 py-1.5 pl-2.5 pr-8 text-[9px] font-medium uppercase tracking-[0.12em] text-[#e8e4dc] shadow-sm hover:border-white/[0.2] hover:bg-white/[0.06] focus:border-[var(--aeterna-gold)]/40 focus:outline-none focus:ring-1 focus:ring-[var(--aeterna-gold)]/30 md:py-2 md:pl-3 md:pr-9 md:text-[10px] md:tracking-[0.14em]"
-      >
-        {PRICING_CURRENCY_IDS.map((id) => (
-          <option key={id} value={id}>
-            {id.toUpperCase()}
-          </option>
-        ))}
-      </select>
-    </div>
   )
 }
 
@@ -378,7 +351,7 @@ function LandingPageInner() {
                         </p>
                       </div>
                       <div className="relative mt-6 flex w-full flex-1 flex-col justify-end md:mt-8 md:px-0">
-                        <HowItWorksMockup mockup={meta.mockup} />
+                        <HowItWorksMockup mockup={meta.mockup} locale={locale} />
                       </div>
                     </RevealSection>
                   </li>
@@ -461,7 +434,6 @@ function LandingPageInner() {
                 )
               })}
             </div>
-            <LandingPricingCurrencyRow />
           </div>
         </section>
 

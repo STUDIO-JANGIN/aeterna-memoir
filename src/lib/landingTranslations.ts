@@ -211,21 +211,21 @@ const KO: LandingStrings = {
     comingSoon: "곧 출시",
     plans: [
       {
-        tierName: "기억의 창 (Sacred Window)",
+        tierName: "기억의 창",
         value: "추억을 모으기 위한 7일간의 여정. 평온하고 부드러운 시작.",
         cta: "시작하기",
       },
       {
-        tierName: "영원한 유산 (Eternal Legacy)",
+        tierName: "영원한 유산",
         value: "모든 사진과 기록을 유효기간 없이 영구히 보존합니다.",
         cta: "선택",
       },
       {
-        tierName: "영원한 필름 (Coming Soon)",
+        tierName: "영원한 필름",
         value:
           "Legacy의 모든 혜택과 더불어, AI가 제작하는 1분 추모 필름 우선 이용권을 제공합니다.",
         cta: "선택",
-        statusTag: "",
+        statusTag: "곧 출시",
       },
     ],
   },
@@ -313,21 +313,21 @@ const JA: LandingStrings = {
     comingSoon: "近日公開",
     plans: [
       {
-        tierName: "記憶の窓 (Sacred Window)",
+        tierName: "記憶の窓",
         value: "想い出を紡ぎ始めるための7日間。穏やかで優しい始まりの時。",
         cta: "始める",
       },
       {
-        tierName: "永遠の遺産 (Eternal Legacy)",
+        tierName: "永遠の遺産",
         value: "すべての写真と物語を、期限なく永久に保存いたします。",
         cta: "選ぶ",
       },
       {
-        tierName: "永遠のフィルム (Coming Soon)",
+        tierName: "永遠のフィルム",
         value:
           "永遠の遺産プランの全特典に加え、AIが制作する1分間の追悼フィルムへの優先アクセスをご提供します。",
         cta: "選ぶ",
-        statusTag: "",
+        statusTag: "近日公開",
       },
     ],
   },
@@ -377,15 +377,15 @@ const FR: LandingStrings = {
     body:
       "Un espace pérenne pour les êtres chers et les compagnons de vie, préservé avec dignité. Partagez instantanément via un QR code ou un lien : sans application, sans contrainte. Les proches ajoutent photos et souvenirs depuis n'importe quel téléphone. Un fil commémoratif apaisant où chaque souvenir reçoit un hommage, telle une ligne du temps sacrée de leur héritage.",
     tagline: "Empreintes, recueillement et éternité en un seul lieu sacré.",
-    ctaCreate: "Créer un sanctuaire maintenant",
-    ctaMyMemorial: "Mes sanctuaires",
+    ctaCreate: "Créer un sanctuaire",
+    ctaMyMemorial: "Mon espace",
     heroPortraitAlt:
       "Portrait d’un aîné sur une page commémorative — pour évoquer vos propres parents et grands-parents.",
     heroSecondaryAlt: "Compagnons à quatre pattes et animaux de famille au cœur du récit.",
   },
   howItWorks: {
     kicker: "Fonctionnement",
-    title: "Créer · Partager · Recueillir (Create · Share · Gather)",
+    title: "Créer · Partager · Recueillir",
     subtitle:
       "Trois piliers : un sanctuaire numérique pour humains et animaux ; un accès fluide par QR ou lien sans application ; et un mémorial communautaire où les cœurs et les commentaires font vivre les moments les plus précieux.",
     steps: [
@@ -416,21 +416,21 @@ const FR: LandingStrings = {
     comingSoon: "Bientôt disponible",
     plans: [
       {
-        tierName: "Fenêtre de Mémoire (Sacred Window)",
+        tierName: "Fenêtre de Mémoire",
         value: "7 jours pour réunir les premiers souvenirs. Un début doux et serein.",
         cta: "Commencer",
       },
       {
-        tierName: "Héritage Éternel (Eternal Legacy)",
+        tierName: "Héritage Éternel",
         value: "Préservez chaque photo et chaque récit pour toujours. Sans date d'expiration.",
         cta: "Choisir",
       },
       {
-        tierName: "Le Film Éternel (Bientôt disponible)",
+        tierName: "Le Film Éternel",
         value:
           "Tous les avantages d'Héritage Éternel, avec un accès prioritaire à votre film hommage d'une minute conçu par IA.",
         cta: "Choisir",
-        statusTag: "",
+        statusTag: "Bientôt disponible",
       },
     ],
   },
@@ -480,7 +480,7 @@ const ES: LandingStrings = {
     body:
       "Un espacio perdurable para personas y mascotas, preservado con la máxima dignidad. Comparta al instante mediante código QR o enlace: sin aplicaciones, sin fricciones; los invitados añaden fotos e historias desde cualquier teléfono. Un muro conmemorativo donde los visitantes dejan corazones y comentan cada recuerdo, creando una línea de tiempo sagrada de su legado.",
     tagline: "Huellas, recuerdos y preservación en un solo lugar sagrado.",
-    ctaCreate: "Crear un espacio de memoria ahora",
+    ctaCreate: "Crear un memorial",
     ctaMyMemorial: "Mi espacio",
     heroPortraitAlt:
       "Retrato de una persona mayor en una página conmemorativa — evoca a sus propios familiares.",
@@ -488,7 +488,7 @@ const ES: LandingStrings = {
   },
   howItWorks: {
     kicker: "Cómo funciona",
-    title: "Crear · Compartir · Reunir (Create · Share · Gather)",
+    title: "Crear · Compartir · Reunir",
     subtitle:
       "Tres pilares: un santuario digital para humanos y mascotas; acceso sin fricciones mediante QR o enlace sin necesidad de apps; y un memorial comunitario donde los visitantes interactúan para que los momentos más importantes permanezcan siempre presentes.",
     steps: [
@@ -519,21 +519,21 @@ const ES: LandingStrings = {
     comingSoon: "Próximamente",
     plans: [
       {
-        tierName: "Ventana del Recuerdo (Sacred Window)",
+        tierName: "Ventana del Recuerdo",
         value: "7 días para reunir recuerdos. Un comienzo suave y lleno de paz.",
         cta: "Empezar",
       },
       {
-        tierName: "Legado Eterno (Eternal Legacy)",
+        tierName: "Legado Eterno",
         value: "Mantenga cada foto e historia preservada para siempre. Sin fecha de expiración.",
         cta: "Elegir",
       },
       {
-        tierName: "La Película Eterna (Próximamente)",
+        tierName: "La Película Eterna",
         value:
           "Todo lo incluido en Legado Eterno, además de acceso prioritario a su película tributo de 1 minuto creada con IA.",
         cta: "Elegir",
-        statusTag: "",
+        statusTag: "Próximamente",
       },
     ],
   },
@@ -621,21 +621,21 @@ const AR: LandingStrings = {
     comingSoon: "قريباً",
     plans: [
       {
-        tierName: "نافذة الذكرى (Sacred Window)",
+        tierName: "نافذة الذكرى",
         value: "7 أيام لجمع الذكريات. بداية هادئة ومفعمة بالسلام.",
         cta: "ابدأ",
       },
       {
-        tierName: "الإرث الأبدي (Eternal Legacy)",
+        tierName: "الإرث الأبدي",
         value: "حفظ دائم لكل الصور والقصص للأبد، بدون تاريخ انتهاء.",
         cta: "اختر",
       },
       {
-        tierName: "الفيلم الخالد (قريباً)",
+        tierName: "الفيلم الخالد",
         value:
           "كل مزايا «الإرث الأبدي»، بالإضافة إلى أولوية الوصول إلى فيلمك التكريمي المنتج بالذكاء الاصطناعي.",
         cta: "اختر",
-        statusTag: "",
+        statusTag: "قريباً",
       },
     ],
   },
@@ -721,20 +721,20 @@ const ZH: LandingStrings = {
     comingSoon: "即將推出",
     plans: [
       {
-        tierName: "記憶之窗 (Sacred Window)",
+        tierName: "記憶之窗",
         value: "開啟為期 7 天的回憶收集。一個溫柔且平和的開端。",
         cta: "開始",
       },
       {
-        tierName: "永恆傳承 (Eternal Legacy)",
+        tierName: "永恆傳承",
         value: "永久保存每一張照片與故事，永不過期。",
         cta: "選擇",
       },
       {
-        tierName: "永恆影卷 (Coming Soon)",
+        tierName: "永恆影卷",
         value: "包含「永恆傳承」所有功能，並享有優先製作 1 分鐘 AI 追思影片的權利。",
         cta: "選擇",
-        statusTag: "",
+        statusTag: "即將推出",
       },
     ],
   },

@@ -1601,6 +1601,7 @@ function CreateEventForm() {
                     text={invitationBio}
                     onApply={setInvitationBio}
                     deceasedName={name.trim() || null}
+                    locale={locale}
                     variant="create"
                     labels={{
                       enhanceWithAi: a.createWizard.enhanceWithAi,
@@ -1610,6 +1611,11 @@ function CreateEventForm() {
                       enhanceWriteFirst: a.createWizard.enhanceWriteFirst,
                       enhanceTooLong: a.createWizard.enhanceTooLong,
                       enhanceErrorGeneric: a.createWizard.enhanceErrorGeneric,
+                      enhanceOptionPoetic: a.createWizard.enhanceOptionPoetic,
+                      enhanceOptionFormal: a.createWizard.enhanceOptionFormal,
+                      enhanceOptionWarm: a.createWizard.enhanceOptionWarm,
+                      enhanceRefine: a.createWizard.enhanceRefine,
+                      enhanceRefining: a.createWizard.enhanceRefining,
                     }}
                   >
                     <>

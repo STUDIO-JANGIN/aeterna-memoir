@@ -12,6 +12,7 @@ import {
   type VisitorRow,
 } from "@/app/actions/getMemorialVisitors"
 import { EnhanceRemembranceWithAi } from "@/components/remembrance/EnhanceRemembranceWithAi"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -21,6 +22,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
   const resolvedParams = use(params)
   const slug = typeof resolvedParams?.slug === "string" ? resolvedParams.slug.trim() : ""
   const router = useRouter()
+  const { locale, app: a } = useLandingLocale()
 
   const [event, setEvent] = useState<AdminEvent | null>(null)
   const [loading, setLoading] = useState(true)
@@ -307,7 +309,22 @@ export default function AdminSettingsPage({ params }: PageProps) {
               text={invitationBio}
               onApply={setInvitationBio}
               deceasedName={event.name}
+              locale={locale}
               variant="settings"
+              labels={{
+                enhanceWithAi: a.createWizard.enhanceWithAi,
+                enhanceGenerating: a.createWizard.enhanceGenerating,
+                enhanceChooseVersion: a.createWizard.enhanceChooseVersion,
+                enhanceUseThis: a.createWizard.enhanceUseThis,
+                enhanceWriteFirst: a.createWizard.enhanceWriteFirst,
+                enhanceTooLong: a.createWizard.enhanceTooLong,
+                enhanceErrorGeneric: a.createWizard.enhanceErrorGeneric,
+                enhanceOptionPoetic: a.createWizard.enhanceOptionPoetic,
+                enhanceOptionFormal: a.createWizard.enhanceOptionFormal,
+                enhanceOptionWarm: a.createWizard.enhanceOptionWarm,
+                enhanceRefine: a.createWizard.enhanceRefine,
+                enhanceRefining: a.createWizard.enhanceRefining,
+              }}
             >
               <>
                 <textarea

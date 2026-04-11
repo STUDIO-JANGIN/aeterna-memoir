@@ -6,10 +6,7 @@ import {
   Noto_Sans_JP,
   Noto_Sans_KR,
   Noto_Sans_TC,
-  Noto_Serif_KR,
-  Noto_Serif_TC,
   Playfair_Display,
-  Shippori_Mincho,
   Syne,
 } from 'next/font/google'
 import './globals.css'
@@ -40,27 +37,11 @@ const syne = Syne({
   display: 'swap',
 })
 
-/** Korean landing (md+): Hangul-tuned families; variables used by `.landing-ko-*-md` in globals.css */
-/** Full Hangul coverage uses the default glyph set from these families (subset `latin` is what Next exposes for KR fonts). */
-const notoSerifKr = Noto_Serif_KR({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-ko-serif',
-  display: 'swap',
-})
-
+/** Korean body: Noto Sans KR variable + Pretendard (globals); titles use Noto Serif KR via globals @import. */
 const notoSansKr = Noto_Sans_KR({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-ko-sans',
-  display: 'swap',
-})
-
-/** Japanese display — Shippori Mincho (titles / landing serif) */
-const shipporiMincho = Shippori_Mincho({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-ja-serif',
   display: 'swap',
 })
 
@@ -71,14 +52,7 @@ const notoSansJp = Noto_Sans_JP({
   display: 'swap',
 })
 
-/** Traditional Chinese (HK/TW) — Noto Serif TC + Noto Sans TC */
-const notoSerifTc = Noto_Serif_TC({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-zh-serif',
-  display: 'swap',
-})
-
+/** Traditional Chinese (HK/TW) — Noto Sans TC for UI (serif display avoided on web) */
 const notoSansTc = Noto_Sans_TC({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
@@ -94,7 +68,7 @@ const amiri = Amiri({
   display: 'swap',
 })
 
-/** Spanish / French body — pairs with Playfair titles */
+/** Optional classical serif variable (unused for FR body — FR uses Inter with Playfair titles). */
 const cormorant = Cormorant_Garamond({
   subsets: ['latin', 'latin-ext'],
   weight: ['400', '500', '600', '700'],
@@ -145,7 +119,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-locale="en"
-      className={`${playfair.variable} ${inter.variable} ${syne.variable} ${cormorant.variable} ${notoSerifKr.variable} ${notoSansKr.variable} ${shipporiMincho.variable} ${notoSansJp.variable} ${notoSerifTc.variable} ${notoSansTc.variable} ${amiri.variable}`}
+      className={`${playfair.variable} ${inter.variable} ${syne.variable} ${cormorant.variable} ${notoSansKr.variable} ${notoSansJp.variable} ${notoSansTc.variable} ${amiri.variable}`}
     >
       <body className="relative antialiased bg-[color:var(--landing-bg)] text-[color:var(--text-primary)]">
         <AppLocaleRoot>

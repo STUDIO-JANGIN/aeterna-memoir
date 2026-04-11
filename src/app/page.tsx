@@ -71,7 +71,7 @@ function HowItWorksMockup({
     "flex h-full min-h-[min(400px,56vw)] w-full items-end justify-center md:min-h-[448px]"
 
   const phone = (inner: ReactNode) => (
-    <div className={slotClass} dir="ltr">
+    <div className={slotClass} dir={locale === "ar" ? "rtl" : "ltr"}>
       <div className="relative w-full max-w-[260px]">
         <div
           className="pointer-events-none absolute -inset-3 rounded-[2.5rem] bg-[var(--aeterna-gold)]/[0.06] blur-3xl md:-inset-4"
@@ -85,7 +85,7 @@ function HowItWorksMockup({
   if (mockup === "create") {
     return phone(
       <IPhoneShell className={`relative z-10 mx-auto w-full ${shellClass}`}>
-        <StepScreenCreate />
+        <StepScreenCreate locale={locale} />
       </IPhoneShell>,
     )
   }
@@ -93,7 +93,7 @@ function HowItWorksMockup({
   if (mockup === "qr") {
     return phone(
       <IPhoneShell className={`relative z-10 mx-auto w-full ${shellClass}`}>
-        <StepScreenMemorialShare />
+        <StepScreenMemorialShare locale={locale} />
       </IPhoneShell>,
     )
   }
@@ -119,6 +119,20 @@ function LandingPageInner() {
   /** Desktop: script-appropriate Noto* on md+ (see globals `.landing-*-md`); mobile keeps default stack. */
   const { serif: locSerif, sans: locSans } = getLandingLocaleFontClasses(locale)
   const heroTitleTracking = getLandingHeroTitleTrackingClass(locale)
+  /** Pan hero footage slightly left on CJK landings so both elders stay visible past the iPhone mockups */
+  const isCjkHeroLocale = locale === "ko" || locale === "ja" || locale === "zh"
+  /** Gulf footage: ease off tight face close-up; nudge framing right and zoom out slightly */
+  const isArHeroLocale = locale === "ar"
+  const heroVideoObjectClass = isCjkHeroLocale
+    ? "object-[34%_11%] md:object-[30%_10%] lg:object-[28%_10%] max-md:object-[36%_7%]"
+    : isArHeroLocale
+      ? "object-[43%_10%] md:object-[45%_10%] lg:object-[44%_10%] max-md:object-[41%_7%]"
+      : "object-[center_10%] max-md:object-[center_6%]"
+  const heroVideoTransformClass = isCjkHeroLocale
+    ? "-translate-x-[3%] md:-translate-x-[4%] lg:-translate-x-[5%] scale-[1.05] origin-[40%_50%]"
+    : isArHeroLocale
+      ? "scale-[0.93] md:scale-[0.94] origin-[46%_34%] translate-x-[1.5%] md:translate-x-[2%]"
+      : ""
 
   /** After client navigation from other routes (e.g. memorial “upgrade” → /#pricing), scroll to pricing. */
   useEffect(() => {
@@ -203,16 +217,21 @@ function LandingPageInner() {
       </Navbar>
 
       {/* Background — decorative video/poster: LTR so playback/scrub semantics stay global; no mirroring of footage */}
-      <div className="absolute inset-0 z-0 min-h-dvh pointer-events-none" dir="ltr">
+      <div className="absolute inset-0 z-0 min-h-dvh overflow-hidden pointer-events-none" dir="ltr">
         <div className={`absolute inset-0 transition-opacity ${showPlaceholder ? "opacity-100" : "opacity-0"}`}>
           <div className="absolute inset-0 bg-landing" />
-          <img src={LANDING_BACKGROUND_POSTER_URL} alt="" className="absolute inset-0 w-full h-full object-cover opacity-[0.12]" fetchPriority="high" />
+          <img
+            src={LANDING_BACKGROUND_POSTER_URL}
+            alt=""
+            className={`absolute inset-0 h-full w-full object-cover opacity-[0.12] ${heroVideoObjectClass}`}
+            fetchPriority="high"
+          />
         </div>
         {hasVideo && !videoError && (
           <>
             <video
               key={heroBackgroundVideoUrl}
-              className="absolute inset-0 z-0 h-full w-full max-h-[100dvh] object-cover object-[center_10%] max-md:object-[center_6%]"
+              className={`absolute inset-0 z-0 h-full w-full max-h-[100dvh] object-cover ${heroVideoObjectClass} ${heroVideoTransformClass}`}
               autoPlay
               loop
               muted
@@ -242,9 +261,15 @@ function LandingPageInner() {
                   <h1
                     className={`text-landing-hero font-semibold text-balance md:leading-[1.1] max-md:!text-[clamp(1.875rem,7.5vw,2.75rem)] max-md:!leading-[1.14] max-md:tracking-[-0.035em] ${locSerif} ${heroTitleTracking}`.trim()}
                   >
-                    {t.hero.title1}{" "}
-                    <br className="md:hidden" aria-hidden />
-                    {t.hero.title2}
+                    {t.hero.title2.trim() ? (
+                      <>
+                        {t.hero.title1}{" "}
+                        <br className="md:hidden" aria-hidden />
+                        {t.hero.title2}
+                      </>
+                    ) : (
+                      t.hero.title1
+                    )}
                   </h1>
                   <p
                     className={`mt-4 md:mt-8 text-[13px] md:text-lg leading-[1.72] md:leading-[1.6] text-[#f5f5f7]/90 font-[var(--font-sans)] max-w-xl mx-auto lg:mx-0 text-balance max-md:px-0.5 ${locSans}`.trim()}
@@ -417,6 +442,8 @@ function LandingPageInner() {
                 const href = landingPlanHref(tierIndex, locale, pricingCurrency)
                 const statusTag = "statusTag" in plan ? plan.statusTag : undefined
                 const { primary, suffix } = formatLandingTierPrice(pricingCurrency, tierIndex)
+                /** KO + KRW: stack suffix under the figure so ₩0 matches taller tiers (long amounts wrap; short ₩0 was inline with KRW). */
+                const stackKoKrwPrice = locale === "ko" && pricingCurrency === "krw"
                 return (
                   <RevealSection key={href} className="h-full">
                     <div className="card-treasure h-full rounded-2xl">
@@ -441,9 +468,12 @@ function LandingPageInner() {
                         <p
                           dir="ltr"
                           lang={locale === "ja" ? "ja" : "en"}
-                          className={`font-[var(--font-serif)] text-3xl md:text-4xl text-[color:var(--landing-text-hero)] tabular-nums tracking-[0.02em] ${locSerif}`.trim()}
+                          className={`font-[var(--font-serif)] text-3xl md:text-4xl text-[color:var(--landing-text-hero)] tabular-nums tracking-[0.02em] ${
+                            stackKoKrwPrice ? "flex flex-col items-center gap-1" : ""
+                          } ${locSerif}`.trim()}
                         >
-                          <span className="inline-block">{primary}</span>{" "}
+                          <span className={stackKoKrwPrice ? "" : "inline-block"}>{primary}</span>
+                          {!stackKoKrwPrice ? " " : null}
                           <span className="text-lg font-normal text-white/35 md:text-xl">{suffix}</span>
                         </p>
                         <p className={`mt-4 font-[var(--font-sans)] text-sm text-[#a3a3a3] leading-snug ${locSans}`.trim()}>

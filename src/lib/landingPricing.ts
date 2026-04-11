@@ -32,7 +32,7 @@ const GRID_FOOTNOTE_EN: Record<PricingCurrencyId, string> = {
 
 const GRID_FOOTNOTE_KO: Record<PricingCurrencyId, string> = {
   usd: "가격은 미국 달러(USD) 기준입니다.",
-  krw: "가격은 대한민국 원(KRW) 기준입니다.",
+  krw: "모든 가격은 원화(KRW) 기준입니다.",
   jpy: "가격은 일본 엔(JPY) 기준입니다.",
   sar: "가격은 사우디 리얄(SAR) 기준입니다.",
 }
@@ -40,7 +40,7 @@ const GRID_FOOTNOTE_KO: Record<PricingCurrencyId, string> = {
 const GRID_FOOTNOTE_JA: Record<PricingCurrencyId, string> = {
   usd: "表示は米ドル（USD）です。",
   krw: "表示は韓国ウォン（KRW）です。",
-  jpy: "表示は日本円（JPY）です。",
+  jpy: "表示価格はすべて日本円（JPY）です。",
   sar: "表示はサウジアラビア リヤル（SAR）です。",
 }
 
@@ -49,6 +49,27 @@ const GRID_FOOTNOTE_AR: Record<PricingCurrencyId, string> = {
   krw: "جميع الأسعار بالوون الكوري (KRW).",
   jpy: "جميع الأسعار بالين الياباني (JPY).",
   sar: "جميع الأسعار بالريال السعودي (SAR).",
+}
+
+const GRID_FOOTNOTE_ZH: Record<PricingCurrencyId, string> = {
+  usd: "所有價格均以美金（USD）計價。",
+  krw: "所示金額均以韓元（KRW）為單位。",
+  jpy: "所示金額均以日圓（JPY）為單位。",
+  sar: "所示金額均以沙特里亞爾（SAR）為單位。",
+}
+
+const GRID_FOOTNOTE_ES: Record<PricingCurrencyId, string> = {
+  usd: "Todos los precios están expresados en dólares estadounidenses (USD).",
+  krw: "Los importes se muestran en won surcoreano (KRW).",
+  jpy: "Los importes se muestran en yen japonés (JPY).",
+  sar: "Los importes se muestran en riyal saudí (SAR).",
+}
+
+const GRID_FOOTNOTE_FR: Record<PricingCurrencyId, string> = {
+  usd: "Tous les prix sont indiqués en dollars américains (USD).",
+  krw: "Les montants sont affichés en won coréen (KRW).",
+  jpy: "Les montants sont affichés en yen japonais (JPY).",
+  sar: "Les montants sont affichés en riyal saoudien (SAR).",
 }
 
 /** Landing pricing grid footnote line (dynamic by selected currency + UI language). */
@@ -60,10 +81,13 @@ export function getLandingGridFootnote(locale: LandingLocale, currency: PricingC
       return GRID_FOOTNOTE_JA[currency]
     case "ar":
       return GRID_FOOTNOTE_AR[currency]
-    case "en":
-    case "es":
-    case "fr":
     case "zh":
+      return GRID_FOOTNOTE_ZH[currency]
+    case "es":
+      return GRID_FOOTNOTE_ES[currency]
+    case "fr":
+      return GRID_FOOTNOTE_FR[currency]
+    case "en":
     default:
       return GRID_FOOTNOTE_EN[currency]
   }

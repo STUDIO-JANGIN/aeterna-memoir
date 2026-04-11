@@ -2,8 +2,9 @@ import type { LandingLocale } from "@/lib/landingTranslations"
 
 /**
  * Landing page (/) only: `md+` utility classes in globals.css swap to script-appropriate families.
- * Latin locales (en, fr, es): Playfair titles + Cormorant Garamond body via `html[data-locale]`.
- * KO: Noto Serif KR + Pretendard · JA: Shippori Mincho + Noto Sans JP · zh: Noto TC · ar: Amiri.
+ * Latin: en Playfair + Inter; fr Playfair + Inter; es Inter for titles + body.
+ * KO: Noto Serif KR + Pretendard. zh: Noto Serif TC (titles) + Noto Sans TC (body). JA: modern sans in “serif” slot.
+ * ar: Amiri.
  */
 export function getLandingLocaleFontClasses(locale: LandingLocale): {
   serif: string

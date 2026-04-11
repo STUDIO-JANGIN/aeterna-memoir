@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import type { LandingLocale } from "@/lib/landingTranslations"
 import { getLandingConnectMoments } from "@/lib/landingConnectMoments"
+import { getLandingMockupStrings } from "@/lib/landingMockupStrings"
 
 /** Bezel + screen shell; screen uses 9:19.5 aspect (modern iPhone). */
 export function IPhoneShell({
@@ -66,7 +67,9 @@ function QrGrid() {
 }
 
 /** Step 1: mirrors /create: progress header, “Who are we honoring?”, two choice cards, Continue. */
-export function StepScreenCreate() {
+export function StepScreenCreate({ locale }: { locale: LandingLocale }) {
+  const m = getLandingMockupStrings(locale)
+  const ctaUpper = locale !== "ja" && locale !== "ar" && locale !== "zh" && locale !== "es" && locale !== "fr"
   return (
     <div className="absolute inset-0 flex flex-col bg-[#0a0a0a] text-[#f4f1ea]">
       <header className="flex shrink-0 items-center gap-1.5 px-2 pt-2.5 pb-1">
@@ -80,31 +83,31 @@ export function StepScreenCreate() {
       </header>
       <div className="flex min-h-0 flex-1 flex-col px-2.5 pt-3 text-center">
         <h2 className="font-[var(--font-serif)] text-[11px] font-normal leading-snug tracking-tight text-[#f4f1ea]">
-          Who are we honoring?
+          {m.createTitle}
         </h2>
-        <p className="mt-1 text-[7px] leading-relaxed text-white/40">A quiet space for someone you love.</p>
+        <p className="mt-1 text-[7px] leading-relaxed text-white/40">{m.createSubtitle}</p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <div className="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-white/[0.03] py-2">
             <svg viewBox="0 0 24 24" className="h-5 w-5 text-[var(--aeterna-gold)]" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden>
               <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" />
               <path d="M5 19l1-3M19 19l-1-3" strokeLinecap="round" />
             </svg>
-            <span className="text-[7px] text-white/75">Someone dear</span>
+            <span className="text-[7px] text-white/75">{m.createPerson}</span>
           </div>
           <div className="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-white/[0.03] py-2">
             <span className="text-base leading-none" aria-hidden>
               🐾
             </span>
-            <span className="text-[7px] text-white/75">A companion</span>
+            <span className="text-[7px] text-white/75">{m.createPet}</span>
           </div>
         </div>
-        <p className="mt-2.5 px-1 text-[6px] leading-relaxed text-white/35">
-          For those who left footprints on our hearts (People & Pets)
-        </p>
+        <p className="mt-2.5 px-1 text-[6px] leading-relaxed text-white/35">{m.createCategoryNote}</p>
       </div>
       <div className="shrink-0 px-2.5 pb-3 pt-1">
-        <div className="flex h-8 items-center justify-center rounded-2xl bg-[var(--aeterna-gold)] text-[7px] font-semibold uppercase tracking-[0.14em] text-[#0a0a0a]">
-          Continue the Story
+        <div
+          className={`flex h-8 items-center justify-center rounded-2xl bg-[var(--aeterna-gold)] text-[7px] font-semibold tracking-[0.14em] text-[#0a0a0a] ${ctaUpper ? "uppercase" : ""}`}
+        >
+          {m.createContinue}
         </div>
       </div>
     </div>
@@ -112,18 +115,22 @@ export function StepScreenCreate() {
 }
 
 /** Step 2: memorial share: profile header + large scannable QR (landing). */
-export function StepScreenMemorialShare() {
+export function StepScreenMemorialShare({ locale }: { locale: LandingLocale }) {
+  const m = getLandingMockupStrings(locale)
+  const scanUpper = locale !== "ja" && locale !== "ar" && locale !== "zh" && locale !== "es" && locale !== "fr"
   return (
     <div className="absolute inset-0 flex flex-col bg-[#050712] text-white">
       <div className="flex shrink-0 items-center gap-2 border-b border-white/[0.06] px-2 py-2">
         <div className="h-7 w-7 shrink-0 rounded-full bg-gradient-to-br from-white/20 to-white/5 ring-1 ring-white/10" />
         <div className="min-w-0 text-left">
-          <p className="truncate font-[var(--font-serif)] text-[8px] text-[var(--once-text-primary)]">In loving memory</p>
-          <p className="text-[6px] text-[var(--once-text-secondary)]">Share photos & stories</p>
+          <p className="truncate font-[var(--font-serif)] text-[8px] text-[var(--once-text-primary)]">{m.memorialInLoving}</p>
+          <p className="text-[6px] text-[var(--once-text-secondary)]">{m.memorialSharePrompt}</p>
         </div>
       </div>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-3 pb-3 pt-1">
-        <p className="text-center text-[6px] uppercase tracking-[0.24em] text-white/45">Scan to contribute</p>
+        <p className={`text-center text-[6px] text-white/45 ${scanUpper ? "uppercase tracking-[0.24em]" : "tracking-[0.02em]"}`}>
+          {m.scanToContribute}
+        </p>
         <div className="relative w-[45%] max-w-[110px] overflow-hidden rounded-lg bg-white p-1.5 shadow-lg ring-1 ring-black/20">
           <div className="origin-center">
             <QrGrid />
@@ -133,14 +140,12 @@ export function StepScreenMemorialShare() {
             aria-hidden
           />
         </div>
-        <p className="max-w-[14rem] text-center text-[7px] leading-[1.55] tracking-[0.02em] text-white/50">
-          Scan or share link · no app
-        </p>
+        <p className="max-w-[14rem] text-center text-[7px] leading-[1.55] tracking-[0.02em] text-white/50">{m.scanNoApp}</p>
         <div
-          className="flex min-h-[30px] w-full max-w-[min(100%,11rem)] cursor-default items-center justify-center rounded-xl bg-[var(--aeterna-gold)] px-4 py-2 text-center text-[7px] font-semibold uppercase tracking-[0.14em] text-[#0a0a0a] shadow-[0_10px_28px_-6px_rgba(197,160,89,0.55)] ring-1 ring-black/15"
+          className={`flex min-h-[30px] w-full max-w-[min(100%,11rem)] cursor-default items-center justify-center rounded-xl bg-[var(--aeterna-gold)] px-4 py-2 text-center text-[7px] font-semibold text-[#0a0a0a] shadow-[0_10px_28px_-6px_rgba(197,160,89,0.55)] ring-1 ring-black/15 ${scanUpper ? "uppercase tracking-[0.14em]" : "tracking-[0.06em]"}`}
           role="presentation"
         >
-          Copy link
+          {m.copyLink}
         </div>
       </div>
     </div>
@@ -177,11 +182,12 @@ export function StepScreenShareMemory() {
 /** Memorial grid with hearts (vote counts vary per card). Locale selects Connect & Relive tile imagery. */
 export function StepScreenConnectVote({ locale }: { locale: LandingLocale }) {
   const moments = getLandingConnectMoments(locale)
+  const m = getLandingMockupStrings(locale)
   return (
     <div className="absolute inset-0 flex flex-col bg-[#050712] text-white">
       <div className="shrink-0 border-b border-white/[0.06] px-2 py-2">
-        <p className="text-center font-[var(--font-serif)] text-[8px] text-[#e8e4dc]">Memories</p>
-        <p className="text-center text-[6px] text-white/40">Heart the moments that matter</p>
+        <p className="text-center font-[var(--font-serif)] text-[8px] text-[#e8e4dc]">{m.connectGridTitle}</p>
+        <p className="text-center text-[6px] text-white/40">{m.connectHeartMoments}</p>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-2 gap-px overflow-y-auto bg-[#030303]/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {moments.map((moment, i) => (
@@ -210,7 +216,7 @@ export function StepScreenConnectVote({ locale }: { locale: LandingLocale }) {
         ))}
       </div>
       <div className="shrink-0 border-t border-white/[0.06] px-2 py-1.5 text-center">
-        <p className="text-[6px] text-white/45">Community favorites rise to the top</p>
+        <p className="text-[6px] text-white/45">{m.connectCommunityFooter}</p>
       </div>
     </div>
   )
@@ -265,4 +271,3 @@ export function StepScreenFilmTribute() {
   )
 }
 
-export const stepScreenByIndex = [StepScreenCreate, StepScreenMemorialShare, StepScreenFilmTribute] as const

@@ -166,418 +166,424 @@ const EN: LandingStrings = {
 }
 
 const KO: LandingStrings = {
-  nav: { howItWorks: "이용 방법", pricing: "요금", faq: "자주 묻는 질문" },
+  nav: { howItWorks: "이용 안내", pricing: "요금", faq: "자주 묻는 질문" },
   hero: {
-    title1: "가족의 기억을 품은",
-    title2: "디지털 기념 공간",
-    body: "지나간 날을 정갈하게 모시고, 남은 가족이 함께 이어 가는 곳입니다. QR이나 링크로 친지가 모이고, 앱 없이 사진과 이야기를 남깁니다. 과한 슬픔보다 평온한 안식과 ‘가족의 끈’을 담은 한 타임라인입니다.",
-    tagline: "그리움은 남기고, 온기는 이어집니다.",
-    ctaCreate: "지금 기념관 만들기",
-    ctaMyMemorial: "내 기념관",
+    title1: "영원한 기억을 위한 디지털 추모관",
+    title2: "",
+    body: "사랑하는 가족과 반려동물을 위해, 시간이 흘러도 변치 않을 품격 있는 안식처를 마련하세요. 앱 설치의 번거로움 없이 QR 코드와 링크만으로 소중한 이들과 사진과 이야기를 나눌 수 있습니다. 방문자들이 추억에 공감하고 마음을 더하는 이 공간은, 고인의 삶을 기리는 가장 따뜻하고 성스러운 타임라인이 됩니다.",
+    tagline: "발자취, 추모, 그리고 보존이 어우러진 단 하나의 성소.",
+    ctaCreate: "지금 추모 공간 만들기",
+    ctaMyMemorial: "나의 추모 공간",
     heroPortraitAlt:
       "따뜻하게 미소 지으며 정면을 바라보시는 동아시아 할머니의 초상.",
     heroSecondaryAlt:
       "집에서 함께한 반려견과 반려묘 — 가족 이야기의 한 부분으로 남는 장면.",
   },
   howItWorks: {
-    kicker: "이용 방법",
-    title: "만들기 · 나누기 · 모으기",
+    kicker: "이용 안내",
+    title: "기록하고 · 나누며 · 함께 기리다",
     subtitle:
-      "세 가지 축: 사람과 반려동물을 위한 디지털 기념관, QR·링크로 앱 없이 접속, 방문객이 하트와 댓글로 남기는 공동 추모.",
+      "세 가지 핵심 가치: 사람과 반려동물을 위한 디지털 추모관; 앱 없이 QR과 링크로 접속하는 간편함; 방문자들이 마음을 더해 소중한 순간들을 상단에 머물게 하는 커뮤니티 추모 시스템.",
     steps: [
       {
-        title: "디지털 기념관 만들기",
-        description: "몇 초 만에 사랑하는 이와 반려동물을 위한 품격 있는 공간을 만듭니다.",
+        title: "디지털 추모관 만들기",
+        description: "소중한 사람 혹은 반려동물을 위한 품격 있는 추모 공간을 단 몇 초 만에 완성합니다.",
       },
       {
-        title: "스캔 · 공유",
+        title: "스캔하고 공유하기",
         description:
-          "장례식장에 QR을 두거나 링크를 보내세요. 방문객이 즉시 사진과 이야기를 올립니다. 앱이 필요 없습니다.",
+          "추모식 현장에 QR 코드를 비치하거나 링크를 보내세요. 앱 설치 없이 누구나 즉시 사진과 이야기를 남길 수 있습니다.",
       },
       {
-        title: "연결 · 되새김",
+        title: "추억으로 연결되다",
         description:
-          "가장 마음에 드는 추억에 하트를 누르고, 사랑받은 이야기가 위로 올라옵니다.",
+          "커뮤니티가 소중한 기억에 마음(Heart)을 더하면, 가장 많은 사랑을 받은 이야기들이 상단에 노출되어 생생하게 살아납니다.",
       },
     ],
   },
   pricing: {
     kicker: "요금",
-    title: "소중한 보존. 일회성.",
+    title: "숭고한 보존. 단 한 번의 예우로.",
     subtitle:
-      "첫 7일은 추모를 모으는 무료 기간입니다. 언제든지 업그레이드해 영구히 보존하세요.",
+      "첫 7일은 추억을 모으기 위한 무료 기간입니다. 언제든 평생 소장 모델로 전환하여 추모관을 영원히 보존하세요.",
     currencyDisclaimer:
-      "첫 방문 시 지역, 이후에는 선택한 언어에 맞춰 통화가 표시됩니다. 결제 전에 아래에서 변경할 수 있어요.",
+      "첫 방문 시에는 지역에 따라, 이후에는 선택하신 언어에 맞춰 표시 통화가 결정됩니다. 결제 전에 아래에서 변경할 수 있습니다.",
     comingSoon: "곧 출시",
     plans: [
       {
-        tierName: "Sacred Window",
-        value: "7일간 추모를 모읍니다. 부드러운 시작.",
+        tierName: "기억의 창 (Sacred Window)",
+        value: "추억을 모으기 위한 7일간의 여정. 평온하고 부드러운 시작.",
         cta: "시작하기",
       },
       {
-        tierName: "Eternal Legacy",
-        value: "모든 사진과 이야기를 영구 보존합니다. 만료 없음.",
+        tierName: "영원한 유산 (Eternal Legacy)",
+        value: "모든 사진과 기록을 유효기간 없이 영구히 보존합니다.",
         cta: "선택",
       },
       {
-        tierName: "The Eternal Film",
-        value: "Legacy의 모든 것 + 1분 AI 추모 영상 우선 이용.",
+        tierName: "영원한 필름 (Coming Soon)",
+        value:
+          "Legacy의 모든 혜택과 더불어, AI가 제작하는 1분 추모 필름 우선 이용권을 제공합니다.",
         cta: "선택",
-        statusTag: "곧 출시",
+        statusTag: "",
       },
     ],
   },
   faq: {
     kicker: "자주 묻는 질문",
-    title: "부드럽게 답합니다",
-    subtitle: "정갈하고 따뜻한 마음으로, 가족 중심의 추모를 돕습니다.",
+    title: "질문에 정중히 답합니다",
+    subtitle: "정중하고 따뜻한 마음으로, 가족 곁에서 추모를 돕습니다.",
     items: [
       {
-        q: "Aeterna란 무엇인가요?",
-        a: "Aeterna는 사랑하는 이들의 기억을 담는 디지털 보석함입니다. 사람과 반려동물 모두를 위한 공간으로, 사진첩 속에 묻히지 않고 미소와 목소리, 이야기가 오래 남도록 합니다.",
+        q: "Aeterna는 무엇인가요?",
+        a: "Aeterna는 사랑하는 사람과 반려동물의 기억을 담는 디지털 보물상자입니다. 휴대폰 갤러리나 먼지 쌓인 앨범 속에서 잊혀가는 그들의 미소, 목소리, 그리고 이야기를 영원히 살아 숨 쉬게 하는 특별한 공간입니다.",
       },
       {
-        q: "왜 만드셨나요?",
-        a: "창업자가 아버지를 잃은 뒤, 함께 삶을 기념할 아름다운 디지털 공간이 부족함을 느꼈습니다. 추모가 사랑의 축제가 되도록 Aeterna를 만들었습니다.",
+        q: "이 서비스를 시작한 이유는 무엇인가요?",
+        a: "창업자는 아버지를 떠나보낸 후, 고인의 삶을 함께 기릴 수 있는 품격 있는 디지털 공간이 없다는 것을 깨달았습니다. 누구도 슬픔 속에서 고립되지 않도록, 추모 공간을 사랑의 찬란한 축제로 바꾸기 위해 Aeterna를 만들었습니다.",
       },
       {
-        q: "기념관은 어떻게 시작하나요?",
-        a: "씨앗을 심듯 간단합니다. 먼저 사랑하는 이의 프로필을 만들고, 가족과 친지에게 링크나 QR 코드를 공유하세요. 앱 설치나 복잡한 로그인 없이 사랑을 나눌 수 있습니다.",
+        q: "추모 공간은 어떻게 만드나요?",
+        a: "씨앗을 심는 것만큼 간단합니다. 먼저 고인의 프로필을 생성하고, 가족 및 지인들과 링크나 QR 코드를 공유하세요. 복잡한 로그인이나 앱 설치 없이, 오직 사랑을 나누는 데만 집중할 수 있습니다.",
       },
       {
-        q: "친구와 가족은 어떻게 참여하나요?",
-        a: "링크를 받으면 바로 사진을 올리고, 좋아요와 따뜻한 댓글을 남길 수 있습니다. 모두가 자신의 추억을 가져와 이야기를 키워가는 것과 같습니다.",
+        q: "가족과 친구들은 어떻게 참여하나요?",
+        a: "링크를 받는 즉시 사진을 올리거나, '마음(Heart)'을 남기고, 따뜻한 댓글을 적을 수 있습니다. 모두가 각자의 기억을 가져와 하나의 큰 이야기를 완성하는 '함께하는 포옹'과 같습니다.",
       },
       {
-        q: "실제 추모 행사에 쓸 수 있나요?",
-        a: "네. 고유 QR 코드가 있는 아름다운 PDF 초대장을 만들 수 있습니다. 행사장에 인쇄해 두거나 디지털로 보내세요. 방문객이 휴대폰으로 스캔해 실시간으로 사진과 메시지를 남길 수 있습니다.",
+        q: "오프라인 추모식에서도 사용할 수 있나요?",
+        a: "네. 고유 QR 코드가 담긴 아름다운 PDF 초청장을 만들 수 있습니다. 이를 출력해 장례식이나 추모 공간에 비치하세요. 방문객들은 휴대폰으로 스캔하여 실시간으로 사진과 메시지를 남길 수 있습니다.",
       },
       {
-        q: "안전하고 비공개인가요?",
-        a: "그렇습니다. 초대한 사람만 들어올 수 있는 비밀의 정원과 같습니다. 추억은 상품이 아니라, 고인을 진심으로 알았던 이들만을 위한 소중한 보물입니다.",
+        q: "안전하고 프라이빗한가요?",
+        a: "물론입니다. 비밀의 정원처럼 당신이 초대한 분들만 입장할 수 있습니다. 여러분의 추억은 광고를 위한 데이터가 아닙니다. 고인을 진심으로 아끼는 이들만을 위해 안전하고 경건하게 보호되는 성스러운 보물입니다.",
       },
       {
-        q: "앞으로는 어떻게 되나요?",
-        a: "기억은 움직이고 말해야 한다고 믿습니다. 앞으로 가장 사랑받은 사진들을 아름다운 AI 추모 영상으로 엮어, 세대를 넘어 이야기가 살아 있도록 돕겠습니다.",
+        q: "장기적으로는 어떻게 관리되나요?",
+        a: "우리는 기억이 정체되지 않고 생동감 있게 전달되어야 한다고 믿습니다. 향후에는 가장 사랑받은 사진들을 모아 AI 추모 필름(인생 영화)을 제작해 드립니다. 이를 통해 고인의 이야기가 다음 세대에게도 찬란하게 전해지도록 돕겠습니다.",
       },
     ],
   },
-  footer: "라이프 셀레브레이션 전문가 및 케어 제공자용 · hoon@aya.yale.edu",
+  footer: "추모 전문 서비스 및 의료/돌봄 제공자 협업 문의 · hoon@aya.yale.edu",
 }
 
 const JA: LandingStrings = {
-  nav: { howItWorks: "使い方", pricing: "料金", faq: "よくある質問" },
+  nav: { howItWorks: "ご利用案内", pricing: "料金・プラン", faq: "よくある質問" },
   hero: {
-    title1: "心を込めて偲ぶ、",
-    title2: "尊き追憶の聖域",
-    body: "礼儀と余白を大切にした、極めてシンプルなデジタル空間です。QRやリンクで家族が静かに集まり、アプリ不要で写真と言の葉を綴れます。お盆のように灯りを分かち合うように、思い出はそっと並びます。",
-    tagline: "不完全さのなかにある美しさを、そっと残す。",
-    ctaCreate: "いつでも追悼ページを作る",
-    ctaMyMemorial: "マイ追悼",
+    title1: "永遠の記憶を刻む、デジタルの聖所",
+    title2: "",
+    body: "大切な家族やペットのために、歳月が流れても色褪せない品格ある安らぎの場を。アプリのインストールは不要です。QRコードやリンクを通じて、大切な方々と写真や物語を分かち合えます。訪れる方々が共感し、想いを寄せるこの場所は、故人の歩みを称える最も温かく神聖なタイムラインとなります。",
+    tagline: "絆、追悼、そして永遠の保存が共鳴する、唯一無二の聖域。",
+    ctaCreate: "今すぐ追悼空間を作成する",
+    ctaMyMemorial: "マイ・メモリアル",
     heroPortraitAlt:
       "温かく微笑み、こちらをまっすぐ見つめる東アジアのご高齢の女性のポートレート。",
     heroSecondaryAlt:
       "犬や猫など、家族の記憶とともに歩んだペットたち。",
   },
   howItWorks: {
-    kicker: "使い方",
-    title: "作成 · 共有 · 集める",
+    kicker: "ご利用案内",
+    title: "記し · 分かち合い · 共に祈る",
     subtitle:
-      "ミニマルな三本柱：デジタルな祈りの場、QRやリンクでアプリ不要、訪問者がそっと心を残すコミュニティ追悼。",
+      "3つの核心的価値：人と言葉を越えた絆のためのデジタル追悼空間。アプリ不要のQR・リンク接続。そして、訪れる人々が想いを重ね、大切な瞬間を鮮やかに保つコミュニティ追悼システム。",
     steps: [
       {
-        title: "デジタルな祈りの場を作る",
-        description: "数秒で、愛する人やペットのための品格ある空間を用意できます。",
+        title: "デジタル追悼空間の作成",
+        description: "大切な方やペットのために、品格ある追悼の場をわずか数秒で建立できます。",
       },
       {
-        title: "スキャン · 共有",
+        title: "スキャンと共有",
         description:
-          "式場にQRを置くかリンクを送ります。ゲストはすぐに写真とエピソードを投稿。アプリは不要です。",
+          "葬儀会場にQRコードを掲示するか、リンクを共有してください。アプリなしで、誰もが即座に写真や物語を綴ることができます。",
       },
       {
-        title: "つながる · 蘇る",
+        title: "想い出でつながる",
         description:
-          "コミュニティが心に響く思い出にハートを押し、愛されたストーリーが上へ。",
+          "コミュニティが大切な記憶に想いを寄せると、多くの愛を受けた物語が上位に留まり、感動が鮮やかに蘇ります。",
       },
     ],
   },
   pricing: {
     kicker: "料金",
-    title: "尊い保存。一度きりのお支払い。",
+    title: "崇高な保存を、一度限りの真心で。",
     subtitle:
-      "最初の7日間は思い出を集める無料の窓です。いつでもアップグレードして永遠に保存できます。",
+      "最初の7日間は、想い出を集めるための無料期間です。いつでもプランをアップグレードし、この聖所を永久に保存できます。",
     currencyDisclaimer:
-      "初回は地域、以降は選択した言語に合わせて表示通貨が決まります。お支払い前に下記で変更できます。",
+      "初回アクセス時は地域に基づき、以降は選択した言語に合わせて表示通貨が決まります。お支払い前に下記で変更できます。",
     comingSoon: "近日公開",
     plans: [
       {
-        tierName: "Sacred Window",
-        value: "7日間で思い出を集めます。穏やかな始まり。",
+        tierName: "記憶の窓 (Sacred Window)",
+        value: "想い出を紡ぎ始めるための7日間。穏やかで優しい始まりの時。",
         cta: "始める",
       },
       {
-        tierName: "Eternal Legacy",
-        value: "写真とストーリーを永久保存。期限なし。",
+        tierName: "永遠の遺産 (Eternal Legacy)",
+        value: "すべての写真と物語を、期限なく永久に保存いたします。",
         cta: "選ぶ",
       },
       {
-        tierName: "The Eternal Film",
-        value: "レガシーのすべてに加え、1分のAI追悼映像を優先的に。",
+        tierName: "永遠のフィルム (Coming Soon)",
+        value:
+          "永遠の遺産プランの全特典に加え、AIが制作する1分間の追悼フィルムへの優先アクセスをご提供します。",
         cta: "選ぶ",
-        statusTag: "近日公開",
+        statusTag: "",
       },
     ],
   },
   faq: {
     kicker: "よくある質問",
     title: "丁寧にお答えします",
-    subtitle: "米国、オーストラリアなど、世界中のご家族への丁寧なケア。",
+    subtitle: "日本および世界各地のご家族へ、真心を込めてご案内いたします。",
     items: [
       {
-        q: "Aeternaとは？",
-        a: "Aeternaは、愛する人の記憶をしまうデジタルの宝箱です。人もペットも、笑顔や声、物語がアルバムの奥ではなく、ここに永く残る場所です。",
+        q: "Aeternaとは何ですか？",
+        a: "Aeterna（アエテルナ）は、大切な方やペットとの記憶を収める「デジタルの宝箱」です。スマートフォンのフォルダや埃を被ったアルバムの中で埋もれてしまう笑顔、声、そして物語を、永遠に鮮やかに保つための特別な場所です。",
       },
       {
-        q: "なぜ作ったのですか？",
-        a: "創業者が父を亡くした後、共に人生を祝う美しいデジタル空間がないと感じました。追悼が愛の祝祭になるようにAeternaを作りました。",
+        q: "なぜこのサービスを始めたのですか？",
+        a: "創設者は、父を亡くした際、故人の歩みを品格を持って称え合えるデジタルな場がないことに気づきました。誰もが悲しみの中で孤立することなく、「追悼」を「愛の輝かしい祝祭」へと変えるためにAeternaを設立しました。",
       },
       {
-        q: "追悼ページはどう始めますか？",
-        a: "種をまくように簡単です。まず愛する人のプロフィールを作り、家族や友人にリンクまたはQRコードを共有します。アプリのダウンロードや複雑なログインは不要です。",
+        q: "追悼空間はどうやって作りますか？",
+        a: "種をまくのと同じくらい簡単です。まず故人のプロフィールを作成し、家族や知人にリンクやQRコードを共有してください。複雑なログインやアプリのダウンロードは不要で、ただ愛を分かち合うことだけに集中できます。",
       },
       {
-        q: "友人や家族はどう参加しますか？",
-        a: "リンクを受け取れば、すぐに写真をアップし、「いいね」や温かいコメントを残せます。みんなが思い出を持ち寄って物語を育てるようなものです。",
+        q: "家族や友人はどのように参加できますか？",
+        a: "リンクを受け取った瞬間から、写真をアップロードしたり、想いを寄せたり、心温まるコメントを残したりできます。それは、全員がそれぞれの思い出を持ち寄り、一つの大きな物語を完成させる「全員での抱擁」のようなものです。",
       },
       {
-        q: "対面の式にも使えますか？",
-        a: "はい。固有のQRコード付きの美しいPDF招待状を作れます。印刷して式場に置くか、デジタルで送ってください。ゲストはスマホでスキャンし、リアルタイムで写真やメッセージを残せます。",
+        q: "物理的な葬儀でも利用できますか？",
+        a: "はい。独自のQRコードが記載された美しい案内状（PDF）を作成できます。これを印刷して式場や祭壇に供えてください。参列者様はご自身のスマートフォンでスキャンするだけで、リアルタイムに写真やメッセージを寄せることができます。",
       },
       {
-        q: "安全でプライベートですか？",
-        a: "はい。あなたが招いた人だけが入れる秘密の庭のようなものです。思い出は商品ではなく、亡くなった方を本当に知っていた人だけのための宝物です。",
+        q: "安全性とプライバシーは？",
+        a: "もちろんです。秘密の花園のように、あなたが招待した方々だけが入場できます。皆様の想い出は広告データではありません。故人を心から慈しむ方々のために、安全かつ神聖に守られる宝物です。",
       },
       {
-        q: "将来はどうなりますか？",
-        a: "記憶は動き、語るべきだと信じています。これから、最も愛された写真を美しいAI追悼映画にし、世代を超えて物語が輝き続けるようにします。",
+        q: "長期的な管理はどうなりますか？",
+        a: "私たちは、記憶は停滞せず、生き生きと伝えられるべきだと信じています。将来的には、最も愛された写真を集めて「AI追悼フィルム」を制作します。これにより、故人の物語が次の世代にも鮮やかに伝わるようお手伝いいたします。",
       },
     ],
   },
-  footer: "Celebration of life のプロフェッショナル・ケア提供者向け · hoon@aya.yale.edu",
+  footer: "追悼専門サービスおよび医療・ケア提供者の提携に関するお問い合わせ · hoon@aya.yale.edu",
 }
 
 const FR: LandingStrings = {
   nav: { howItWorks: "Fonctionnement", pricing: "Tarifs", faq: "FAQ" },
   hero: {
-    title1: "Un sanctuaire numérique pour",
-    title2: "une mémoire sacrée",
-    body: "Un lieu durable pour les êtres chers et les compagnons, préservé avec dignité. Partagez par QR ou lien : pas d’application ; les proches ajoutent photos et récits depuis leur téléphone. Un fil mémorial doux où l’on cœur et commente chaque souvenir.",
-    tagline: "Traces, souvenir et préservation en un seul lieu.",
-    ctaCreate: "Créer un mémorial",
-    ctaMyMemorial: "Mon mémorial",
+    title1: "Un sanctuaire numérique pour la mémoire sacrée",
+    title2: "",
+    body:
+      "Un espace pérenne pour les êtres chers et les compagnons de vie, préservé avec dignité. Partagez instantanément via un QR code ou un lien : sans application, sans contrainte. Les proches ajoutent photos et souvenirs depuis n'importe quel téléphone. Un fil commémoratif apaisant où chaque souvenir reçoit un hommage, telle une ligne du temps sacrée de leur héritage.",
+    tagline: "Empreintes, recueillement et éternité en un seul lieu sacré.",
+    ctaCreate: "Créer un sanctuaire maintenant",
+    ctaMyMemorial: "Mes sanctuaires",
     heroPortraitAlt:
       "Portrait d’un aîné sur une page commémorative — pour évoquer vos propres parents et grands-parents.",
     heroSecondaryAlt: "Compagnons à quatre pattes et animaux de famille au cœur du récit.",
   },
   howItWorks: {
     kicker: "Fonctionnement",
-    title: "Créer · Partager · Rassembler",
+    title: "Créer · Partager · Recueillir (Create · Share · Gather)",
     subtitle:
-      "Trois piliers : un sanctuaire numérique pour humains et animaux ; accès sans friction par QR ou lien, sans application ; mémorial communautaire avec cœurs et commentaires.",
+      "Trois piliers : un sanctuaire numérique pour humains et animaux ; un accès fluide par QR ou lien sans application ; et un mémorial communautaire où les cœurs et les commentaires font vivre les moments les plus précieux.",
     steps: [
       {
         title: "Créer un sanctuaire numérique",
         description:
-          "Créez en quelques secondes un espace digne pour votre proche ou votre animal.",
+          "Bâtissez en quelques secondes un espace de mémoire digne pour votre proche ou votre fidèle compagnon.",
       },
       {
-        title: "Scanner · Partager",
+        title: "Scanner et partager",
         description:
-          "Posez un QR à la cérémonie ou envoyez un lien. Les invités publient photos et textes tout de suite. Aucune application requise.",
+          "Disposez un QR code lors de la cérémonie ou partagez un lien. Les proches publient photos et récits instantanément. Aucune application requise.",
       },
       {
-        title: "Relier · Revivre",
+        title: "Relier et revivre",
         description:
-          "La communauté cœur les souvenirs préférés, et les plus aimés remontent.",
+          "La communauté rend hommage aux souvenirs, et les récits les plus chers s'élèvent naturellement en tête de page.",
       },
     ],
   },
   pricing: {
     kicker: "Tarifs",
-    title: "Préservation sacrée. Paiement unique.",
+    title: "Préservation sacrée. Un hommage unique.",
     subtitle:
-      "Les 7 premiers jours sont une fenêtre gratuite pour recueillir les souvenirs. Passez à un plan supérieur quand vous voulez pour préserver le sanctuaire pour toujours.",
+      "Les 7 premiers jours sont une fenêtre gratuite pour rassembler les souvenirs. Passez à la préservation éternelle à tout moment.",
     currencyDisclaimer:
-      "La devise suit votre région (première visite) ou la langue choisie. Vous pouvez la modifier ci-dessous avant le paiement.",
-    comingSoon: "Bientôt",
+      "La devise affichée dépend de votre région lors de la première visite ou de la langue sélectionnée ; vous pouvez la modifier ci-dessous avant le paiement (y compris en euros selon votre région).",
+    comingSoon: "Bientôt disponible",
     plans: [
       {
-        tierName: "Sacred Window",
-        value: "7 jours pour rassembler les souvenirs. Un début doux.",
+        tierName: "Fenêtre de Mémoire (Sacred Window)",
+        value: "7 jours pour réunir les premiers souvenirs. Un début doux et serein.",
         cta: "Commencer",
       },
       {
-        tierName: "Eternal Legacy",
-        value: "Chaque photo et récit conservés pour toujours. Sans expiration.",
+        tierName: "Héritage Éternel (Eternal Legacy)",
+        value: "Préservez chaque photo et chaque récit pour toujours. Sans date d'expiration.",
         cta: "Choisir",
       },
       {
-        tierName: "The Eternal Film",
-        value: "Tout Legacy, plus un accès prioritaire à votre film hommage IA d’une minute.",
+        tierName: "Le Film Éternel (Bientôt disponible)",
+        value:
+          "Tous les avantages d'Héritage Éternel, avec un accès prioritaire à votre film hommage d'une minute conçu par IA.",
         cta: "Choisir",
-        statusTag: "Bientôt",
+        statusTag: "",
       },
     ],
   },
   faq: {
     kicker: "FAQ",
-    title: "Des réponses, avec douceur",
-    subtitle: "Un soin artisanal pour les familles aux États-Unis, en Australie et au-delà.",
+    title: "Réponses en toute sérénité",
+    subtitle: "Un accompagnement respectueux pour les familles et les proches.",
     items: [
       {
-        q: "Qu’est-ce qu’Aeterna ?",
-        a: "Aeterna est un coffret numérique pour les souvenirs de ceux que nous aimons, humains et animaux. Un lieu où sourires, voix et histoires demeurent, au lieu de se perdre dans une galerie ou un album poussiéreux.",
+        q: "Qu'est-ce qu'Aeterna ?",
+        a: "Aeterna est un coffret à trésors numérique pour les souvenirs de ceux que nous aimons, qu'il s'agisse de personnes ou d'animaux. C'est un lieu privilégié où leurs sourires, leurs voix et leurs histoires vivent éternellement, au lieu de se perdre dans la galerie d'un téléphone ou un vieil album poussiéreux.",
       },
       {
-        q: "Pourquoi ce projet ?",
-        a: "Notre fondateur a lancé Aeterna après la perte de son père. Il manquait d’un bel espace partagé pour célébrer une vie en ligne. Aeterna veut que personne ne soit seul dans le deuil, et qu’un sanctuaire devienne une célébration vivante de l’amour.",
+        q: "Pourquoi avoir lancé ce projet ?",
+        a: "Notre fondateur a créé Aeterna après avoir perdu son père. Il a réalisé qu'il n'existait aucun bel espace partagé pour célébrer une vie numériquement avec élégance. Il a conçu Aeterna pour que personne ne se sente seul dans son deuil, transformant le concept de « sanctuaire » en une célébration vivante de l'amour.",
       },
       {
-        q: "Comment commencer un mémorial ?",
-        a: "Comme planter une graine : créez d’abord un profil, puis partagez un lien ou un QR avec la famille et les amis. Pas d’application à télécharger ni de connexion compliquée.",
+        q: "Comment créer un mémorial ?",
+        a: "C'est aussi simple que de planter une graine. D'abord, créez le profil de votre proche. Ensuite, partagez le lien ou le QR code avec votre entourage. Aucun compte complexe ni application à télécharger : juste un chemin direct vers le partage.",
       },
       {
-        q: "Comment la famille et les amis participent-ils ?",
-        a: "Avec le lien, ils peuvent publier des photos, des « j’aime » ou un commentaire chaleureux. Comme une étreinte collective où chacun apporte sa mémoire préférée.",
+        q: "Comment les proches peuvent-ils participer ?",
+        a: "Dès qu'ils reçoivent le lien, ils peuvent instantanément publier des photos, laisser des mentions « j'aime » ou partager un commentaire chaleureux. C'est comme une étreinte collective où chacun apporte son souvenir préféré pour faire grandir l'histoire.",
       },
       {
-        q: "Puis-je l’utiliser pour une cérémonie en présentiel ?",
-        a: "Oui. Créez une invitation PDF avec un QR unique. Imprimez-la pour la cérémonie ou envoyez-la par message. Les invités scannent avec leur téléphone et contribuent en direct.",
+        q: "Puis-je l'utiliser lors d'une cérémonie physique ?",
+        a: "Oui. Vous pouvez générer une élégante invitation PDF avec un QR code unique. Imprimez-la et déposez-la sur le lieu de la cérémonie. Les visiteurs n'auront qu'à la scanner avec leur téléphone pour contribuer en temps réel.",
       },
       {
-        q: "Est-ce sûr et privé ?",
-        a: "Absolument. Comme un jardin secret : seules les personnes invitées entrent. Vos souvenirs ne sont pas une marchandise publique ; ce sont des trésors pour ceux qui ont vraiment connu la personne.",
+        q: "Est-ce sécurisé et privé ?",
+        a: "Absolument. Comme un jardin secret, seules les personnes que vous invitez peuvent y accéder. Vos souvenirs ne sont pas des produits publics ; ce sont des trésors sacrés, protégés pour ceux qui ont réellement connu le défunt.",
       },
       {
-        q: "Et à long terme ?",
-        a: "Nous croyons que les souvenirs doivent bouger et parler. À l’avenir, nous transformerons les photos les plus aimées en un beau film hommage IA : un film vivant d’une vie, pour les générations futures.",
+        q: "Que se passe-t-il sur le long terme ?",
+        a: "Nous pensons que les souvenirs doivent rester vivants. À l'avenir, nous vous aiderons à transformer les photos les plus marquantes en un film hommage par IA : une œuvre cinématographique d'une vie bien remplie, pour que l'histoire reste vibrante pour les générations futures.",
       },
     ],
   },
-  footer: "Pour les professionnels de célébration de vie et les soignants · hoon@aya.yale.edu",
+  footer: "Pour les professionnels du funéraire et les soignants · hoon@aya.yale.edu",
 }
 
 const ES: LandingStrings = {
-  nav: { howItWorks: "Cómo funciona", pricing: "Precios", faq: "Preguntas" },
+  nav: { howItWorks: "Cómo funciona", pricing: "Tarifas", faq: "Preguntas frecuentes" },
   hero: {
-    title1: "Un santuario digital para",
-    title2: "la memoria sagrada",
-    body: "Un espacio duradero para personas y mascotas, preservado con dignidad. Comparte por QR o enlace: sin app; familiares y amigos añaden fotos e historias desde el móvil. Un feed conmovedor donde se puede dar corazón y comentar cada recuerdo.",
-    tagline: "Huellas, recuerdo y preservación en un solo lugar.",
-    ctaCreate: "Crear un memorial ahora",
-    ctaMyMemorial: "Mi memorial",
+    title1: "Un santuario digital para el recuerdo sagrado",
+    title2: "",
+    body:
+      "Un espacio perdurable para personas y mascotas, preservado con la máxima dignidad. Comparta al instante mediante código QR o enlace: sin aplicaciones, sin fricciones; los invitados añaden fotos e historias desde cualquier teléfono. Un muro conmemorativo donde los visitantes dejan corazones y comentan cada recuerdo, creando una línea de tiempo sagrada de su legado.",
+    tagline: "Huellas, recuerdos y preservación en un solo lugar sagrado.",
+    ctaCreate: "Crear un espacio de memoria ahora",
+    ctaMyMemorial: "Mi espacio",
     heroPortraitAlt:
-      "Retrato de una persona mayor en una página conmemorativa — evoca a tus propios familiares.",
+      "Retrato de una persona mayor en una página conmemorativa — evoca a sus propios familiares.",
     heroSecondaryAlt: "Mascotas y compañeros como parte de la historia familiar.",
   },
   howItWorks: {
     kicker: "Cómo funciona",
-    title: "Crear · Compartir · Reunir",
+    title: "Crear · Compartir · Reunir (Create · Share · Gather)",
     subtitle:
-      "Tres pilares: un santuario digital para personas y mascotas; acceso sin fricción por QR o enlace, sin app; y un memorial comunitario con corazones y comentarios.",
+      "Tres pilares: un santuario digital para humanos y mascotas; acceso sin fricciones mediante QR o enlace sin necesidad de apps; y un memorial comunitario donde los visitantes interactúan para que los momentos más importantes permanezcan siempre presentes.",
     steps: [
       {
-        title: "Crea un santuario digital",
+        title: "Crear un santuario digital",
         description:
-          "En segundos, un espacio digno para tu ser querido o mascota.",
+          "Construya un espacio conmemorativo digno para su ser querido o mascota en cuestión de segundos.",
       },
       {
-        title: "Escanear · Compartir",
+        title: "Escanear y compartir",
         description:
-          "Coloca un QR en el servicio o comparte un enlace. Los invitados suben fotos e historias al instante. No se necesita app.",
+          "Coloque un código QR en el servicio o comparta un enlace. Los invitados suben fotos e historias al instante. No se requiere aplicación.",
       },
       {
-        title: "Conectar · Revivir",
+        title: "Conectar y revivir",
         description:
-          "La comunidad da corazón a los recuerdos favoritos y los más queridos suben.",
+          "La comunidad reacciona a sus recuerdos favoritos, y las historias más queridas destacan en la parte superior.",
       },
     ],
   },
   pricing: {
-    kicker: "Precios",
+    kicker: "Tarifas",
     title: "Preservación sagrada. Pago único.",
     subtitle:
-      "Los primeros 7 días son una ventana gratuita para reunir recuerdos. Mejora cuando quieras para conservar el santuario para siempre.",
+      "Los primeros 7 días son una ventana gratuita para reunir recuerdos. Mejore su plan en cualquier momento para preservar el santuario por siempre.",
     currencyDisclaimer:
-      "La moneda sigue tu región (primera visita) o el idioma elegido. Puedes cambiarla antes de pagar.",
+      "La moneda mostrada depende de su región en la primera visita o del idioma seleccionado; puede cambiarla abajo antes de pagar.",
     comingSoon: "Próximamente",
     plans: [
       {
-        tierName: "Sacred Window",
-        value: "7 días para reunir recuerdos. Un comienzo sereno.",
+        tierName: "Ventana del Recuerdo (Sacred Window)",
+        value: "7 días para reunir recuerdos. Un comienzo suave y lleno de paz.",
         cta: "Empezar",
       },
       {
-        tierName: "Eternal Legacy",
-        value: "Cada foto e historia conservada para siempre. Sin caducidad.",
+        tierName: "Legado Eterno (Eternal Legacy)",
+        value: "Mantenga cada foto e historia preservada para siempre. Sin fecha de expiración.",
         cta: "Elegir",
       },
       {
-        tierName: "The Eternal Film",
-        value: "Todo Legacy, más acceso prioritario a tu película homenaje con IA de 1 minuto.",
+        tierName: "La Película Eterna (Próximamente)",
+        value:
+          "Todo lo incluido en Legado Eterno, además de acceso prioritario a su película tributo de 1 minuto creada con IA.",
         cta: "Elegir",
-        statusTag: "Próximamente",
+        statusTag: "",
       },
     ],
   },
   faq: {
-    kicker: "Preguntas",
-    title: "Respuestas, con calma",
-    subtitle: "Cuidado artesanal para familias en EE. UU., Australia y más allá.",
+    kicker: "Preguntas frecuentes",
+    title: "Preguntas respondidas con ternura",
+    subtitle: "Un acompañamiento respetuoso para familias en todo el mundo.",
     items: [
       {
         q: "¿Qué es Aeterna?",
-        a: "Aeterna es un cofre digital para los recuerdos de quienes amamos: personas y mascotas. Un lugar donde sus sonrisas, voces e historias permanecen, en lugar de perderse en la galería del teléfono o en un álbum polvoriento.",
+        a: "Aeterna es una caja de tesoros digitales para los recuerdos de quienes amamos: tanto personas como mascotas. Es un lugar especial donde sus sonrisas, voces e historias viven para siempre, en lugar de perderse en la galería de un teléfono o en un álbum empolvado.",
       },
       {
-        q: "¿Por qué lo crearon?",
-        a: "Nuestro fundador lanzó Aeterna tras perder a su padre. No había un espacio compartido y hermoso para celebrar una vida en línea. Aeterna existe para que nadie esté solo en el duelo, convirtiendo un «santuario» en una celebración viva del amor.",
+        q: "¿Por qué empezaron este proyecto?",
+        a: "Nuestro fundador creó Aeterna tras perder a su padre. Se dio cuenta de que no existía un espacio digital hermoso para celebrar una vida junto a otros. Creó Aeterna para asegurar que nadie tenga que sentirse solo en su recuerdo, convirtiendo un «altar» en una celebración viva del amor.",
       },
       {
-        q: "¿Cómo empiezo un memorial?",
-        a: "Tan simple como plantar una semilla: primero creas un perfil para tu ser querido; luego compartes un enlace o un código QR con familia y amigos. No hay app que descargar ni inicio de sesión complicado.",
+        q: "¿Cómo puede iniciar un memorial?",
+        a: "Es tan sencillo como plantar una semilla. Primero, cree un perfil para su ser querido. Segundo, comparta un enlace o código QR con familiares y amigos. No hay que descargar aplicaciones ni realizar registros complicados: solo un camino directo para compartir amor.",
       },
       {
-        q: "¿Cómo ayudan amigos y familia?",
-        a: "Con el enlace pueden subir fotos al instante, dar «me gusta» o dejar un comentario cálido. Es como un abrazo grupal donde cada uno aporta su recuerdo favorito.",
+        q: "¿Cómo ayudan los amigos y la familia?",
+        a: "Una vez que reciben el enlace, pueden subir fotos al instante, dejar un «me gusta» o compartir un comentario conmovedor. Es como un abrazo grupal donde cada uno trae su recuerdo favorito para ayudar a que la historia crezca.",
       },
       {
-        q: "¿Puedo usarlo en un servicio presencial?",
-        a: "Sí. Puedes crear una invitación PDF hermosa con un QR único. Imprímela en el servicio o envíala por mensaje. Los visitantes escanean con el móvil y contribuyen fotos y mensajes en tiempo real.",
+        q: "¿Puede usarlo en un servicio físico?",
+        a: "Sí. Puede crear una hermosa invitación en PDF con un código QR único. Imprímalo y colóquelo en el servicio conmemorativo o envíelo digitalmente. Los visitantes solo tienen que escanearlo con sus teléfonos para contribuir con sus fotos y mensajes en tiempo real.",
       },
       {
         q: "¿Es seguro y privado?",
-        a: "Por supuesto. Como un jardín secreto: solo entran quienes invitas. Tus recuerdos no son mercancía pública; son tesoros sagrados para quienes realmente conocieron a la persona.",
+        a: "Absolutamente. Como un jardín secreto, solo las personas que invite pueden entrar. Sus recuerdos no son productos para el público; son tesoros sagrados mantenidos de forma segura y privada para quienes realmente conocieron al fallecido.",
       },
       {
         q: "¿Qué pasa a largo plazo?",
-        a: "Creemos que los recuerdos deben moverse y hablar. En el futuro ayudaremos a convertir las fotos más queridas en una hermosa película homenaje con IA: una película viva de una vida bien vivida, para las generaciones venideras.",
+        a: "Creemos que los recuerdos deben moverse y hablar. En el futuro, le ayudaremos a convertir las fotos más queridas en una hermosa película tributo con IA: una película viva de una vida bien vivida, para que la historia permanezca vibrante para las generaciones venideras.",
       },
     ],
   },
-  footer: "Para profesionales de celebración de vida y cuidadores · hoon@aya.yale.edu",
+  footer: "Para profesionales de servicios conmemorativos y proveedores de cuidados · hoon@aya.yale.edu",
 }
 
 const AR: LandingStrings = {
-  nav: { howItWorks: "كيف يعمل", pricing: "الأسعار", faq: "الأسئلة الشائعة" },
+  nav: { howItWorks: "كيف يعمل", pricing: "الباقات والأسعار", faq: "الأسئلة الشائعة" },
   hero: {
-    title1: "ضريح رقمي لـ",
-    title2: "ذاكرة تليق بالعائلة",
-    body: "مساحة دائمة بوقار للبشر وللحيوانات الأليفة. شارِك فورًا عبر الرمز أو الرابط دون تطبيق؛ تجتمع العائلة الكبيرة — أبناء وبنات وأحفاد — فيرفعون الصور والقصص من أي هاتف. تغذية تذكارية هادئة: إعجاب وتعليق باحترام عميق، لا مبالغة في إظهار الحزن بل اعتراف بالجميل الذي كان.",
-    tagline: "بين سواد الليل والذهب: ذكرى تُجَلّل الماضي وتربط الأجيال.",
-    ctaCreate: "أنشئ نصبًا تذكاريًا الآن",
-    ctaMyMemorial: "نصبي التذكاري",
+    title1: "ضريح رقمي للذكرى المقدسة",
+    title2: "",
+    body: "مساحة باقية للأحبة والحيوانات الأليفة، تُحفظ بكل إجلال. شاركها فوراً عبر رمز QR أو رابط مباشر: بلا تطبيقات، بلا تعقيد؛ يضيف الضيوف الصور والقصص من أي هاتف. سجل ذكريات هادئ يفيض بالمشاعر، حيث يتفاعل الزوار مع كل ذكرى، ليكون جدولاً زمنياً مقدساً لإرثهم.",
+    tagline: "الأثر، والذكرى، والخلود.. في مكان واحد مقدس.",
+    ctaCreate: "أنشئ ضريحاً الآن",
+    ctaMyMemorial: "أضرحتي",
     heroPortraitAlt:
       "صورة مقرّبة لسيدة سعودية مسنّة ترتدي حجابًا يغطي الشعر دون نقاب، تبتسم بحرارة وترفع النظر مباشرة نحو المشاهد.",
     heroSecondaryAlt:
@@ -585,186 +591,189 @@ const AR: LandingStrings = {
   },
   howItWorks: {
     kicker: "كيف يعمل",
-    title: "أنشئ · شارِك · اجمع",
+    title: "أنشئ · شارك · اجتمع",
     subtitle:
-      "ثلاث ركائز: ضريح رقمي للبشر وللحيوانات؛ وصول سلس عبر الرمز أو الرابط دون تطبيق؛ ونصب تذكاري جماعي حيث يضع الزوار القلب والتعليقات.",
+      "ثلاث ركائز: ضريح رقمي للبشر والحيوانات الأليفة؛ وصول سهل عبر رمز QR أو رابط بدون تطبيق؛ وذكرى مجتمعية يتفاعل معها الزوار، لتبقى اللحظات الأغلى حاضرة دائماً.",
     steps: [
       {
-        title: "أنشئ ضريحًا رقميًا",
-        description: "ابنِ في ثوانٍ مكانًا لائقًا لمن تحب أو لرفيقك الأليف.",
+        title: "إنشاء ضريح رقمي",
+        description: "ابنِ مساحة تذكارية تليق بأحبائك أو حيوانك الأليف في ثوانٍ معدودة.",
       },
       {
-        title: "امسح · شارِك",
+        title: "امسح وشارك",
         description:
-          "ضع رمزًا في الخدمة أو أرسل رابطًا. يحمّل الضيوف الصور والقصص فورًا. لا حاجة لتطبيق.",
+          "ضع رمز QR في مراسم التأبين أو شارك رابطاً. يرفع الضيوف الصور والقصص فوراً وبكل سهولة.",
       },
       {
-        title: "تواصل · أعد العيش",
+        title: "تواصل واستعد الذكريات",
         description:
-          "المجتمع يضع القلب على الذكريات المفضلة، وتصعد الأكثر حبًا.",
+          "يتفاعل المجتمع مع الذكريات المفضلة، لتتصدر القصص الأكثر تأثيراً المشهد.",
       },
     ],
   },
   pricing: {
-    kicker: "الأسعار",
-    title: "حفظ مقدّس. دفعة واحدة.",
+    kicker: "الباقات والأسعار",
+    title: "حفظ مقدس.. لمرة واحدة فقط.",
     subtitle:
-      "الأيام السبعة الأولى نافذة مجانية لجمع الذكريات. ترقَّ في أي وقت للحفظ للأبد.",
+      "أول 7 أيام هي نافذة مجانية لجمع الذكريات. يمكنك الترقية في أي وقت لحفظ الضريح للأبد.",
     currencyDisclaimer:
-      "العملة تستند إلى منطقتك (أول زيارة) أو لغتك المختارة. يمكنك تغييرها قبل الدفع.",
-    comingSoon: "قريبًا",
+      "تُحدَّد عملة العرض بحسب منطقتك عند أول زيارة أو بحسب اللغة التي اخترتها. يمكنك تغييرها أدناه قبل إتمام الدفع.",
+    comingSoon: "قريباً",
     plans: [
       {
-        tierName: "Sacred Window",
-        value: "7 أيام لجمع الذكريات. بداية لطيفة.",
+        tierName: "نافذة الذكرى (Sacred Window)",
+        value: "7 أيام لجمع الذكريات. بداية هادئة ومفعمة بالسلام.",
         cta: "ابدأ",
       },
       {
-        tierName: "Eternal Legacy",
-        value: "احتفظ بكل صورة وقصة للأبد. دون انتهاء.",
+        tierName: "الإرث الأبدي (Eternal Legacy)",
+        value: "حفظ دائم لكل الصور والقصص للأبد، بدون تاريخ انتهاء.",
         cta: "اختر",
       },
       {
-        tierName: "The Eternal Film",
-        value: "كل ما في Legacy، بالإضافة إلى أولوية لفيلم تكريم بالذكاء الاصطناعي لمدة دقيقة.",
+        tierName: "الفيلم الخالد (قريباً)",
+        value:
+          "كل مزايا «الإرث الأبدي»، بالإضافة إلى أولوية الوصول إلى فيلمك التكريمي المنتج بالذكاء الاصطناعي.",
         cta: "اختر",
-        statusTag: "قريبًا",
+        statusTag: "",
       },
     ],
   },
   faq: {
     kicker: "الأسئلة الشائعة",
     title: "إجابات برفق",
-    subtitle: "عناية محترمة للعائلات الكبيرة — في الولايات المتحدة والعالم العربي وما بعدهما.",
+    subtitle: "عناية فاخرة للعائلات في العالم العربي وما وراءه.",
     items: [
       {
         q: "ما هو Aeterna؟",
-        a: "Aeterna صندوق رقمي لذكريات من نحب: البشر والحيوانات الأليفة. مكان خاص تبقى فيه الابتسامات والأصوات والقصص، بدلًا من أن تضيع في ألبوم الهاتف أو صندوق غبار.",
+        a: "هو صندوق كنز رقمي لذكريات من نحب. مكان خاص تعيش فيه ابتساماتهم وأصواتهم وقصصهم للأبد، بدلاً من أن تضيع في ذاكرة الهاتف أو الألبومات المتربة.",
       },
       {
-        q: "لماذا بدأتم هذا؟",
-        a: "بدأ مؤسسنا Aeterna بعد فقدان والده. أدرك أنه لا يوجد فضاء جميل ومشترك للاحتفال بحياة رقميًا. صُمم Aeterna لكيلا يشعر أحد وحيدًا في ذكراه، محولًا «الضريح» إلى احتفال حي بالحب.",
+        q: "لماذا بدأتم هذا المشروع؟",
+        a: "أسس صاحب المشروع Aeterna بعد فقدان والده. أدرك حينها عدم وجود مساحة رقمية جميلة لمشاركة الاحتفاء بالحياة مع الآخرين، فأنشأ Aeterna لضمان ألا يشعر أحد بالوحدة في ذكراه، محولاً «الضريح» إلى احتفال حي بالحب.",
       },
       {
-        q: "كيف أبدأ نصبًا تذكاريًا؟",
-        a: "ببساطة كزرع بذرة: أنشئ أولًا ملفًا لمن تحب، ثم شارِك رابطًا أو رمز استجابة سريعة مع العائلة والأصدقاء. لا تطبيق للتحميل ولا تسجيل معقد.",
+        q: "كيف أبدأ إنشاء الضريح؟",
+        a: "الأمر بسيط كزرع بذرة. أولاً، تنشئ ملفاً تعريفياً لمن تحب. ثانياً، تشارك الرابط أو رمز QR مع العائلة والأصدقاء. لا يوجد تطبيق لتحميله ولا تسجيل دخول معقد، فقط طريق مباشر لمشاركة الحب.",
       },
       {
-        q: "كيف يساعد الأصدقاء والعائلة؟",
-        a: "بمجرد استلام الرابط يمكنهم رفع الصور فورًا، أو الإعجاب، أو ترك تعليق دافئ. كعناق جماعي يحضر فيه الجميع ذكراهم المفضلة.",
+        q: "كيف يشارك الأصدقاء والعائلة؟",
+        a: "بمجرد استلام الرابط، يمكنهم فوراً رفع الصور أو ترك «إعجابات» أو مشاركة تعليقات دافئة. إنه يشبه عناقاً جماعياً حيث يحضر الجميع ذكرياتهم المفضلة لتنمو القصة.",
       },
       {
-        q: "هل يمكن استخدامه في خدمة فعلية؟",
-        a: "نعم. يمكنك إنشاء دعوة PDF جميلة برمز استجابة سريعة فريد. اطبعها في الخدمة أو أرسلها رقميًا. يمسح الزوار بالهاتف ويساهمون بالصور والرسائل في الوقت الفعلي.",
+        q: "هل يمكنني استخدامه في مراسم التأبين الواقعية؟",
+        a: "نعم. يمكنك إنشاء دعوة PDF جميلة برمز QR فريد. اطبعه وضعه في مراسم التأبين أو أرسله رقمياً. يمكن للزوار ببساطة مسحه بهواتفهم للمساهمة بصورهم ورسائلهم في الوقت الفعلي.",
       },
       {
         q: "هل هو آمن وخاص؟",
-        a: "بالتأكيد. كحديقة سرية: فقط من تدعوهم يدخلون. ذكرياتك ليست سلعة للعامة؛ إنها كنوز مقدسة لمن عرف المتوفى حقًا.",
+        a: "بكل تأكيد. مثل حديقة سرية، لا يمكن إلا لمن تدعوهم الدخول. ذكرياتكم ليست منتجات للعامة؛ بل هي كنوز مقدسة تُحفظ بخصوصية وأمان لمن عرفوا الفقيد حقاً.",
       },
       {
-        q: "ماذا على المدى الطويل؟",
-        a: "نؤمن أن الذكريات يجب أن تتحرك وتتكلم. في المستقبل سنساعدك على تحويل أكثر الصور حبًا إلى فيلم تكريم بالذكاء الاصطناعي: فيلم حي لحياة عاشت بشكل جيد، لتبقى القصة حية للأجيال.",
+        q: "ماذا يحدث على المدى الطويل؟",
+        a: "نؤمن بأن الذكريات يجب أن تتحرك وتتحدث. في المستقبل، سنساعدكم على تحويل الصور الأكثر تأثيراً إلى فيلم تكريمي بالذكاء الاصطناعي: فيلم حي لحياة عيشت بجمال، لتبقى القصة نابضة بالحياة للأجيال القادمة.",
       },
     ],
   },
-  footer: "للمهنيين في احتفالات الحياة ومقدمي الرعاية · hoon@aya.yale.edu",
+  footer: "للمحترفين في تنظيم مراسم التأبين ومقدمي الرعاية · hoon@aya.yale.edu",
 }
 
-/** Traditional Chinese (HK/TW) — classical, elegant diction; tier names follow EN product keys. */
+/** Traditional Chinese (HK/TW) — 典雅書面；重視傳承與追思 */
 const ZH: LandingStrings = {
-  nav: { howItWorks: "使用方式", pricing: "方案", faq: "常見問題" },
+  nav: { howItWorks: "運作方式", pricing: "方案費用", faq: "常見問題" },
   hero: {
-    title1: "安放思念的",
-    title2: "數位聖所",
+    title1: "永恆記憶的數位殿堂",
+    title2: "",
     body:
-      "為摯愛與毛孩而設，以敬謹之心長久保存。藉 QR 或連結即可分享，無需下載應用程式；親友於手機上獻上相片與故事。溫柔的追思之流，訪客可為每一段回憶獻上心與言，彷彿一條承載遺產的神聖時間軸。",
-    tagline: "足跡、追念與保存，同在一方靜謐聖所。",
-    ctaCreate: "建立紀念頁",
-    ctaMyMemorial: "我的紀念頁",
+      "為您心愛的家人與寵物，打造一座跨越時光、充滿尊嚴的永恆安息地。無需下載應用程式，僅需透過 QR Code 或專屬連結，即可與親友即時分享照片與故事。這裡是一處溫柔的追思空間，讓訪客在每一份回憶中留下心意與評論，共同編織出一段神聖的生命傳承。",
+    tagline: "讓足跡、思念與永恆的守護，在此神聖交匯。",
+    ctaCreate: "立即建立追思空間",
+    ctaMyMemorial: "我的追思空間",
     heroPortraitAlt: "溫和微笑、凝望觀者的東亞長者肖像。",
     heroSecondaryAlt: "寵物與同伴，家庭敘事中的一頁。",
   },
   howItWorks: {
-    kicker: "使用方式",
-    title: "建立 · 分享 · 匯聚",
+    kicker: "運作方式",
+    title: "記錄 · 分享 · 凝聚 (Create · Share · Gather)",
     subtitle:
-      "三根柱石：為人與寵物而設的數位聖所；以 QR 或連結暢達無阻、無需應用程式；訪客以讚與留言共築社群紀念牆。",
+      "三大核心：為至親與寵物建立的數位殿堂；無需 App、透過 QR Code 即可輕鬆存取的零門檻體驗；以及讓親友共同參與、讓珍貴瞬間永駐心間的追思社群。",
     steps: [
       {
-        title: "建立數位聖所",
-        description: "片刻之間，為摯愛或毛孩闢一方莊重空間。",
+        title: "建立數位殿堂",
+        description: "僅需數秒，即可為您的摯愛或寵物打造一個莊嚴的追思空間。",
       },
       {
-        title: "掃描 · 分享",
-        description: "於儀式現場置放 QR 或寄出連結。訪客即時獻上相片與故事，無須安裝應用程式。",
+        title: "掃描與分享",
+        description: "在告別式現場放置 QR Code 或分享連結。親友可立即上傳照片與故事，無需下載任何程式。",
       },
       {
-        title: "相繫 · 重溫",
-        description: "眾人為心儀的回憶獻上心，最受珍視的敘事自然浮升。",
+        title: "連結與重溫",
+        description:
+          "親友可為珍貴的回憶留下「心意」，讓最受動容的故事流傳於空間頂端。",
       },
     ],
   },
   pricing: {
-    kicker: "方案",
-    title: "敬謹保存。一次付清。",
-    subtitle: "首七日為免費之窗，匯聚回憶。日後隨時升級，使聖所永存。",
-    currencyDisclaimer: "幣別依您所在區域（首次造訪）或所選語言而定；結帳前可於下方調整。",
+    kicker: "方案費用",
+    title: "神聖守護，一次性的永恆禮讚。",
+    subtitle: "前 7 天為免費收集回憶的視窗。您可以隨時升級，永久保存這座殿堂。",
+    currencyDisclaimer:
+      "首次造訪時依地區、之後依您選擇的語言決定顯示幣別；結帳前可於下方變更，亦可手動切換為港幣、台幣等。",
     comingSoon: "即將推出",
     plans: [
       {
-        tierName: "Sacred Window",
-        value: "七日之內，匯聚回憶。溫柔的起始。",
+        tierName: "記憶之窗 (Sacred Window)",
+        value: "開啟為期 7 天的回憶收集。一個溫柔且平和的開端。",
         cta: "開始",
       },
       {
-        tierName: "Eternal Legacy",
-        value: "每一幀影像、每一段敘事，皆永久保存，無有期限。",
+        tierName: "永恆傳承 (Eternal Legacy)",
+        value: "永久保存每一張照片與故事，永不過期。",
         cta: "選擇",
       },
       {
-        tierName: "The Eternal Film",
-        value: "含「永恆遺產」之全部，並優先預覽一分鐘 AI 致敬影片。",
+        tierName: "永恆影卷 (Coming Soon)",
+        value: "包含「永恆傳承」所有功能，並享有優先製作 1 分鐘 AI 追思影片的權利。",
         cta: "選擇",
-        statusTag: "即將推出",
+        statusTag: "",
       },
     ],
   },
   faq: {
     kicker: "常見問題",
-    title: "以柔靜之語，為您解惑",
-    subtitle: "願以匠心照護，陪伴各地家庭。",
+    title: "溫柔的解答",
+    subtitle: "願以敬謹之心，陪伴每一脈傳承與追思。",
     items: [
       {
-        q: "Aeterna 是什麼？",
-        a: "Aeterna 是安放所愛回憶的數位寶匣——無論是人或毛孩。在此，笑顏、聲音與故事得以長存，不致埋沒於相簿深處或塵封冊頁。",
+        q: "什麼是 Aeterna？",
+        a: "Aeterna 是存放摯愛回憶的數位寶盒。這是一個專屬的空間，讓他們的笑容、聲音與故事得以永恆長存，不再遺失在手機相簿或封塵的相冊中。",
       },
       {
-        q: "為何創立？",
-        a: "創辦人在喪父之後，深感缺少一方美好而共有的數位空間，以禮赞生命。願 Aeterna 使追思不孤單，使「聖所」成為愛的延續與慶典。",
+        q: "為什麼創立這個平台？",
+        a: "我們的創辦人在失去父親後創立了 Aeterna。他意識到目前缺乏一個優雅且能讓親友共同慶賀生命的數位空間。他創立 Aeterna，是為了確保沒有人在追思的路上感到孤單，將「祭壇」化為一場愛的生動慶典。",
       },
       {
-        q: "如何開始紀念頁？",
-        a: "如植一顆種子：先為摯愛立一檔案，再以連結或 QR 邀請親友。無須下載應用程式，亦無繁瑣登入，唯有直達思念的路徑。",
+        q: "如何開始建立追思空間？",
+        a: "就像播下一顆種子一樣簡單。首先，為您的摯愛建立檔案；接著，與親友分享連結或 QR Code。無需下載應用程式，也無需複雜的登入過程，直接開啟分享愛的渠道。",
       },
       {
         q: "親友如何參與？",
-        a: "收到連結後，即可上傳相片、獻上讚或留下暖語。彷彿眾人環抱，各自獻上最珍視的一段回憶，使敘事滋長。",
+        a: "收到連結後，他們可以立即上傳照片、點下「心意」或留下暖心的評論。這就像是一場集體的擁抱，每個人都帶來自己最珍藏的回憶，讓故事更加完整。",
       },
       {
-        q: "實體儀式可用嗎？",
-        a: "可以。可製作附唯一 QR 的雅緻 PDF 邀函，印製於現場或以訊息寄送。訪客以手機掃描，即可即時獻上相片與話語。",
+        q: "可以在實體告別式使用嗎？",
+        a: "可以。您可以建立帶有專屬 QR Code 的精美 PDF 邀請函。將其列印並放置在告別式現場，或以數位方式傳送。訪客只需用手機掃描，即可即時貢獻照片與訊息。",
       },
       {
-        q: "是否安全、私密？",
-        a: "然。如秘園深處，唯受邀者可入。回憶非商品，乃獻予真正識得亡者之人的聖物。",
+        q: "平台安全且隱私嗎？",
+        a: "絕對安全。如同私人花園，只有您邀請的人才能進入。您的回憶不是公開的商品，而是為真正了解逝者的人所守護的神聖寶藏。",
       },
       {
-        q: "長遠而言？",
-        a: "我們相信回憶應當流動、應當被訴說。日後將助您把最受珍視的影像，織成 AI 致敬影片——使生命故事在世代之間依然鮮明。",
+        q: "長期而言會如何運作？",
+        a: "我們相信回憶應該是鮮活且流動的。未來，我們將協助您將最受觸動的照片轉化為精美的 AI 追思影片：一段關於精彩人生的動態電影，讓故事在世代間生生不息。",
       },
     ],
   },
-  footer: "獻予生命禮赞專業與照護者 · hoon@aya.yale.edu",
+  footer: "生命禮儀專業人士與護理機構合作洽詢 · hoon@aya.yale.edu",
 }
 
 export const LANDING_COPY: Record<LandingLocale, LandingStrings> = {

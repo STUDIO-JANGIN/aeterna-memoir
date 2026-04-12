@@ -123,15 +123,16 @@ function LandingPageInner() {
   const isCjkHeroLocale = locale === "ko" || locale === "ja" || locale === "zh"
   /** Gulf footage: zoom out so faces aren’t tight; light horizontal nudge */
   const isArHeroLocale = locale === "ar"
+  /** Mobile: avoid horizontal translate + sub-1 scale — they reveal bg-landing as a “black” edge; use scale + object-position only. */
   const heroVideoObjectClass = isCjkHeroLocale
-    ? "object-[26%_11%] md:object-[22%_10%] lg:object-[20%_10%] max-md:object-[28%_7%]"
+    ? "object-[26%_11%] md:object-[22%_10%] lg:object-[20%_10%] max-md:object-[26%_7%]"
     : isArHeroLocale
-      ? "object-[44%_12%] md:object-[45%_11%] lg:object-[44%_11%] max-md:object-[42%_8%]"
+      ? "object-[44%_12%] md:object-[45%_11%] lg:object-[44%_11%] max-md:object-[44%_9%]"
       : "object-[center_10%] max-md:object-[center_6%]"
   const heroVideoTransformClass = isCjkHeroLocale
-    ? "-translate-x-[6%] md:-translate-x-[7%] lg:-translate-x-[8%] scale-[1.06] md:scale-[1.07] origin-[32%_48%]"
+    ? "max-md:translate-x-0 max-md:scale-[1.13] max-md:origin-[30%_46%] md:-translate-x-[7%] md:scale-[1.07] lg:-translate-x-[8%] md:origin-[32%_48%]"
     : isArHeroLocale
-      ? "scale-[0.86] md:scale-[0.88] lg:scale-[0.89] origin-[46%_36%] translate-x-[1.5%] md:translate-x-[2%]"
+      ? "max-md:translate-x-0 max-md:scale-100 max-md:origin-[46%_38%] md:scale-[0.88] lg:scale-[0.89] origin-[46%_36%] md:translate-x-[2%]"
       : ""
 
   /** After client navigation from other routes (e.g. memorial “upgrade” → /#pricing), scroll to pricing. */
@@ -223,7 +224,7 @@ function LandingPageInner() {
           <img
             src={LANDING_BACKGROUND_POSTER_URL}
             alt=""
-            className={`absolute inset-0 h-full w-full object-cover opacity-[0.12] ${heroVideoObjectClass}`}
+            className={`absolute inset-0 h-full w-full object-cover opacity-[0.12] ${heroVideoObjectClass} ${heroVideoTransformClass}`}
             fetchPriority="high"
           />
         </div>

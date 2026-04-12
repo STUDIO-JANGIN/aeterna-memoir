@@ -9,7 +9,6 @@ import { supabase } from "@/lib/supabase/browser"
 import { deleteMemorialAction } from "@/app/actions/deleteMemorial"
 import { listMyMemorialsAction, type MyMemorialSummary } from "@/app/actions/listMyMemorials"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
-import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
 
 type Phase = "loading" | "empty" | "choose" | "error"
 
@@ -147,7 +146,6 @@ export default function MyMemorialPage() {
     >
       {showSignOut ? (
         <div className="fixed top-0 right-0 z-[100] flex justify-end gap-2 p-4 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))]">
-          <LandingLanguageSwitcher />
           <button
             type="button"
             onClick={() => void handleSignOut()}

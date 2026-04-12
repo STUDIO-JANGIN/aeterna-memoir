@@ -33,6 +33,7 @@ import {
 } from "@/lib/landingPricing"
 import { getAppPricingFootnote, interpolate, type AppStrings } from "@/lib/appTranslations"
 import { isLandingLocale } from "@/lib/landingTranslations"
+import { getLandingHeroTitleTrackingClass, getLandingLocaleFontClasses } from "@/lib/landingLocaleFonts"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
@@ -225,6 +226,9 @@ const stepPresence = artisanPresence
 
 function CreateEventForm() {
   const { app: a, locale, setLocale } = useLandingLocale()
+  /** Match landing (/) hero typography on md+; CJK uses keep-all + balanced lines so desktop ≠ awkward wraps. */
+  const { serif: wizardDisplaySerif } = getLandingLocaleFontClasses(locale)
+  const wizardHeroTitleTracking = getLandingHeroTitleTrackingClass(locale)
   const { user, ready: authReady, refresh: refreshAuthUser } = useSupabaseUser()
   const signedIn = Boolean(user?.id)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -1354,8 +1358,14 @@ function CreateEventForm() {
       >
         {memorialType === null ? (
           <div className="w-full text-center">
-            <h1 className="text-landing-hero mb-3 px-2">{a.createWizard.whoHonoringTitle}</h1>
-            <p className="mb-12 text-base leading-relaxed text-white/45">{a.createWizard.whoHonoringSubtitle}</p>
+            <h1
+              className={`text-landing-hero mb-3 max-w-[min(100%,26rem)] px-2 text-balance break-keep text-center ${wizardDisplaySerif} ${wizardHeroTitleTracking}`.trim()}
+            >
+              {a.createWizard.whoHonoringTitle}
+            </h1>
+            <p className="mb-12 max-w-md mx-auto text-base leading-relaxed text-white/45 text-pretty">
+              {a.createWizard.whoHonoringSubtitle}
+            </p>
             <div className="mx-auto grid max-w-md grid-cols-2 gap-4">
               <button
                 type="button"

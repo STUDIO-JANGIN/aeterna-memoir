@@ -208,8 +208,8 @@ export default function MyMemorialPage() {
                 className="flex items-stretch border-b border-white/[0.08] last:border-b-0"
               >
                 <Link
-                  href={`/p/${encodeURIComponent(m.slug)}/admin`}
-                  className="min-w-0 flex-1 px-5 py-4 sm:px-6 text-[var(--landing-text-hero)] hover:bg-white/[0.04] transition-colors"
+                  href={`/p/${encodeURIComponent(m.slug)}`}
+                  className="min-w-0 flex-1 px-5 py-4 sm:px-6 text-left text-[var(--landing-text-hero)] hover:bg-white/[0.04] transition-colors"
                 >
                   <span className="font-[var(--font-serif)] text-lg block truncate">
                     {m.name?.trim() || "Memorial"}
@@ -218,7 +218,13 @@ export default function MyMemorialPage() {
                     /p/{m.slug}
                   </span>
                 </Link>
-                <div className="flex items-center shrink-0 pr-3 sm:pr-4">
+                <div className="flex items-center gap-1 shrink-0 pr-2 sm:pr-3">
+                  <Link
+                    href={`/p/${encodeURIComponent(m.slug)}/admin`}
+                    className="inline-flex min-h-[40px] items-center rounded-full border border-white/15 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--aeterna-gold)] hover:bg-white/[0.06] transition-colors"
+                  >
+                    Admin
+                  </Link>
                   <button
                     type="button"
                     onClick={() => {

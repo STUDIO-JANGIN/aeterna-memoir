@@ -196,17 +196,20 @@ export function landingPlanHref(
 }
 
 /**
- * Live-mode master Price IDs (multi-currency in Stripe Dashboard).
- * Override per env for test mode or legacy per-currency prices.
+ * Live-mode master Price IDs (Aeterna Memoir — multi-currency in Stripe Dashboard).
+ *
+ * Important: We no longer prefer `STRIPE_PRICE_ID_PLUS` / `STRIPE_PRICE_ID_PREMIUM` from env, because those
+ * are often left over from older sandboxes (e.g. other products) and would override these defaults.
+ * For Stripe **test** mode only, set `STRIPE_PRICE_ID_PLUS_TEST` / `STRIPE_PRICE_ID_PREMIUM_TEST`.
  */
 export const STRIPE_DEFAULT_PRICE_ID_PLUS = "price_1TLQapRx4nwbdr0ovMVg8fdj"
 export const STRIPE_DEFAULT_PRICE_ID_PREMIUM = "price_1TLQR9Rx4nwbdr0oo0wMzgVu"
 
-/** Resolve Stripe Price ID for checkout (master multi-currency price preferred). */
+/** Resolve Stripe Price ID for Plus (Eternal Legacy) checkout. */
 export function resolveStripePriceIdPlus(currency: PricingCurrencyId): string | undefined {
-  const explicit =
-    process.env.STRIPE_PRICE_ID_PLUS?.trim() || process.env.STRIPE_PRICE_ID_PLUS_MASTER?.trim()
-  if (explicit) return explicit
+  const testOnly = process.env.STRIPE_PRICE_ID_PLUS_TEST?.trim()
+  if (testOnly) return testOnly
+
   const map: Record<PricingCurrencyId, string | undefined> = {
     usd: process.env.STRIPE_PRICE_ID_PLUS_USD?.trim(),
     krw: process.env.STRIPE_PRICE_ID_PLUS_KRW?.trim(),
@@ -215,6 +218,7 @@ export function resolveStripePriceIdPlus(currency: PricingCurrencyId): string | 
   }
   const regional = map[currency]?.trim()
   if (regional) return regional
+
   return STRIPE_DEFAULT_PRICE_ID_PLUS
 }
 
@@ -230,9 +234,9 @@ export function getCreateFlowPricingFootnote(currency: PricingCurrencyId): strin
 }
 
 export function resolveStripePriceIdPremium(currency: PricingCurrencyId): string | undefined {
-  const explicit =
-    process.env.STRIPE_PRICE_ID_PREMIUM?.trim() || process.env.STRIPE_PRICE_ID_PREMIUM_MASTER?.trim()
-  if (explicit) return explicit
+  const testOnly = process.env.STRIPE_PRICE_ID_PREMIUM_TEST?.trim()
+  if (testOnly) return testOnly
+
   const map: Record<PricingCurrencyId, string | undefined> = {
     usd: process.env.STRIPE_PRICE_ID_PREMIUM_USD?.trim(),
     krw: process.env.STRIPE_PRICE_ID_PREMIUM_KRW?.trim(),
@@ -241,5 +245,6 @@ export function resolveStripePriceIdPremium(currency: PricingCurrencyId): string
   }
   const regional = map[currency]?.trim()
   if (regional) return regional
+
   return STRIPE_DEFAULT_PRICE_ID_PREMIUM
 }

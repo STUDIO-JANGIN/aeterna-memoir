@@ -340,7 +340,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     adminForbiddenHandledRef.current = true
     setShowAdminForbiddenToast(true)
     const hide = window.setTimeout(() => setShowAdminForbiddenToast(false), 6000)
-    router.replace(`/p/${slug}`, { scroll: false })
+    router.replace(`/p/${encodeURIComponent(slug)}`, { scroll: false })
     return () => window.clearTimeout(hide)
   }, [slug, router])
 
@@ -360,7 +360,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         }
         setShowDonationThankYou(true)
         const t = setTimeout(() => setShowDonationThankYou(false), 4000)
-        router.replace(`/p/${slug}`, { scroll: false })
+        router.replace(`/p/${encodeURIComponent(slug)}`, { scroll: false })
         return () => clearTimeout(t)
       }
     }
@@ -1226,7 +1226,7 @@ export default function GuestFeedPage({ params }: PageProps) {
               </motion.button>
               {isOwner ? (
                 <Link
-                  href={`/p/${slug}/admin`}
+                  href={`/p/${encodeURIComponent(slug)}/admin`}
                   className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)]"
                 >
                   {tx.memorial.admin}

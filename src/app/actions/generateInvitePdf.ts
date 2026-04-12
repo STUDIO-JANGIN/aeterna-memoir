@@ -10,6 +10,19 @@ export type GenerateInvitePdfResult =
   | { ok: true; url: string }
   | { ok: false; error: string }
 
+/**
+ * Standard PDF fonts (Helvetica, etc.) use WinAnsi — newlines, tabs, and most non‑Latin-1
+ * characters cannot be encoded. Strip control chars; normalize line breaks to spaces for single-line draws.
+ */
+function pdfSafeSingleLine(s: string): string {
+  return s
+    .replace(/\r\n|\r|\n/g, " ")
+    .replace(/\t/g, " ")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 function formatDisplayDate(s: string | null | undefined): string {
   if (!s || s.trim() === "" || s === "—") return "—"
   const t = s.trim()
@@ -24,7 +37,7 @@ function formatDisplayDate(s: string | null | undefined): string {
 }
 
 function wrapText(font: PDFFont, text: string, fontSize: number, maxWidth: number): string[] {
-  const words = text.trim().split(/\s+/)
+  const words = pdfSafeSingleLine(text).split(/\s+/)
   if (!words[0]) return []
   const lines: string[] = []
   let current = ""
@@ -93,23 +106,33 @@ export async function generateInvitePdfAction(slug: string): Promise<GenerateInv
       borderWidth: 1.2,
     })
 
-    const title = event.name ? `In Loving Memory of\n${event.name}` : "In Loving Memory"
     const titleFontSize = 20
-    const titleWidth = fontTitle.widthOfTextAtSize(title, titleFontSize)
-    const titleX = (width - titleWidth) / 2
-
-    page.drawText(title, {
-      x: titleX,
-      y: height - 140,
+    const titleLine1 = "In Loving Memory of"
+    const nameSafe = event.name ? pdfSafeSingleLine(String(event.name)) : ""
+    let titleY = height - 130
+    const w1 = fontTitle.widthOfTextAtSize(titleLine1, titleFontSize)
+    page.drawText(titleLine1, {
+      x: (width - w1) / 2,
+      y: titleY,
       size: titleFontSize,
       font: fontTitle,
       color: rgb(0.96, 0.91, 0.8),
-      lineHeight: 24,
     })
+    titleY -= 26
+    if (nameSafe) {
+      const w2 = fontTitle.widthOfTextAtSize(nameSafe, titleFontSize)
+      page.drawText(nameSafe, {
+        x: (width - w2) / 2,
+        y: titleY,
+        size: titleFontSize,
+        font: fontTitle,
+        color: rgb(0.96, 0.91, 0.8),
+      })
+    }
 
-    const birth = formatDisplayDate(event.birth_date as string | null)
-    const death = formatDisplayDate(event.death_date as string | null)
-    const dateLine = `${birth}  —  ${death}`
+    const birth = pdfSafeSingleLine(formatDisplayDate(event.birth_date as string | null))
+    const death = pdfSafeSingleLine(formatDisplayDate(event.death_date as string | null))
+    const dateLine = pdfSafeSingleLine(`${birth}  —  ${death}`)
     const bodyFontSize = 11
     const marginX = 80
     const textMaxW = width - marginX * 2
@@ -125,7 +148,7 @@ export async function generateInvitePdfAction(slug: string): Promise<GenerateInv
     bodyY -= 22
 
     const bioRaw = (event.invitation_bio as string | null)?.trim()
-    if (bioRaw) {
+    if (bioRaw && pdfSafeSingleLine(bioRaw)) {
       const lineY = bodyY - 6
       page.drawLine({
         start: { x: marginX, y: lineY },
@@ -137,9 +160,11 @@ export async function generateInvitePdfAction(slug: string): Promise<GenerateInv
       bodyY = lineY - 18
 
       const bioSize = 10.5
-      const bioLines = wrapText(fontBodyItalic, bioRaw, bioSize, textMaxW)
+      const bioLines = wrapText(fontBodyItalic, pdfSafeSingleLine(bioRaw), bioSize, textMaxW)
       for (const ln of bioLines) {
-        page.drawText(ln, {
+        const safeLn = pdfSafeSingleLine(ln)
+        if (!safeLn) continue
+        page.drawText(safeLn, {
           x: marginX,
           y: bodyY,
           size: bioSize,
@@ -153,17 +178,25 @@ export async function generateInvitePdfAction(slug: string): Promise<GenerateInv
 
     const lines: string[] = []
     if (event.ceremony_time) {
-      lines.push(`Ceremony: ${event.ceremony_time}`)
+      lines.push(pdfSafeSingleLine(`Ceremony: ${event.ceremony_time}`))
     }
     if (event.location) {
-      lines.push(`Location: ${event.location}`)
+      lines.push(pdfSafeSingleLine(`Location: ${event.location}`))
     }
-    lines.push("")
     lines.push("We warmly invite you to join us in remembering a beloved life,")
     lines.push("sharing stories, and saying goodbye with grace and tenderness.")
 
+    if (event.ceremony_time || event.location) {
+      bodyY -= 18
+    }
+
     for (const line of lines) {
-      page.drawText(line, {
+      const safe = pdfSafeSingleLine(line)
+      if (!safe) {
+        bodyY -= 18
+        continue
+      }
+      page.drawText(safe, {
         x: marginX,
         y: bodyY,
         size: bodyFontSize,
@@ -179,7 +212,7 @@ export async function generateInvitePdfAction(slug: string): Promise<GenerateInv
     const qrX = width - qrSize - 90
     const qrY = 130
 
-    page.drawText("Scan to open the memorial album", {
+    page.drawText(pdfSafeSingleLine("Scan to open the memorial album"), {
       x: qrX - 10,
       y: qrY + qrSize + 20,
       size: 9,

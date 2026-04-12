@@ -119,20 +119,21 @@ function LandingPageInner() {
   /** Desktop: script-appropriate Noto* on md+ (see globals `.landing-*-md`); mobile keeps default stack. */
   const { serif: locSerif, sans: locSans } = getLandingLocaleFontClasses(locale)
   const heroTitleTracking = getLandingHeroTitleTrackingClass(locale)
-  /** Pan KO/JA/ZH hero footage further left so both elders’ faces clear the stacked iPhone mockups */
+  /** Pan KO/JA/ZH hero footage left via object-position so faces clear mockups — do not use translate-x on md+ (it exposes bg-landing as a black strip on the right). */
   const isCjkHeroLocale = locale === "ko" || locale === "ja" || locale === "zh"
-  /** Gulf footage: zoom out so faces aren’t tight; light horizontal nudge */
+  /** Gulf / Arabic hero: never use sub-1 scale or x-translate on md+ — they letterbox and show bg-landing as black edges. */
   const isArHeroLocale = locale === "ar"
   /** Mobile: avoid horizontal translate + sub-1 scale — they reveal bg-landing as a “black” edge; use scale + object-position only. */
   const heroVideoObjectClass = isCjkHeroLocale
-    ? "object-[26%_11%] md:object-[22%_10%] lg:object-[20%_10%] max-md:object-[26%_7%]"
+    ? "object-[26%_11%] md:object-[20%_10%] lg:object-[18%_10%] max-md:object-[26%_7%]"
     : isArHeroLocale
       ? "object-[44%_12%] md:object-[45%_11%] lg:object-[44%_11%] max-md:object-[44%_9%]"
       : "object-[center_10%] max-md:object-[center_6%]"
+  /** CJK: no x-translate on md+ — slight scale-up keeps object-cover flush with overflow-hidden. */
   const heroVideoTransformClass = isCjkHeroLocale
-    ? "max-md:translate-x-0 max-md:scale-[1.13] max-md:origin-[30%_46%] md:-translate-x-[7%] md:scale-[1.07] lg:-translate-x-[8%] md:origin-[32%_48%]"
+    ? "max-md:translate-x-0 max-md:scale-[1.13] max-md:origin-[30%_46%] md:scale-[1.1] lg:scale-[1.11] md:origin-[30%_48%]"
     : isArHeroLocale
-      ? "max-md:translate-x-0 max-md:scale-100 max-md:origin-[46%_38%] md:scale-[0.88] lg:scale-[0.89] origin-[46%_36%] md:translate-x-[2%]"
+      ? "max-md:translate-x-0 max-md:scale-100 max-md:origin-[46%_38%] md:scale-[1.06] lg:scale-[1.07] md:origin-[46%_38%]"
       : ""
 
   /** After client navigation from other routes (e.g. memorial “upgrade” → /#pricing), scroll to pricing. */

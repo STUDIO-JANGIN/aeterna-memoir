@@ -130,7 +130,7 @@ const EN: LandingStrings = {
   faq: {
     kicker: "FAQ",
     title: "Questions, gently answered",
-    subtitle: "Artisan care for families across the US, Australia, and beyond.",
+    subtitle: "Artisan care for families across the globe.",
     items: [
       {
         q: "What is Aeterna?",
@@ -232,7 +232,7 @@ const KO: LandingStrings = {
   faq: {
     kicker: "자주 묻는 질문",
     title: "질문에 정중히 답합니다",
-    subtitle: "정중하고 따뜻한 마음으로, 가족 곁에서 추모를 돕습니다.",
+    subtitle: "전 세계 모든 가족을 위한 장인의 정성 어린 손길.",
     items: [
       {
         q: "Aeterna는 무엇인가요?",
@@ -334,7 +334,7 @@ const JA: LandingStrings = {
   faq: {
     kicker: "よくある質問",
     title: "丁寧にお答えします",
-    subtitle: "日本および世界各地のご家族へ、真心を込めてご案内いたします。",
+    subtitle: "世界中のご家族へ、職人の心で寄り添うケアを。",
     items: [
       {
         q: "Aeternaとは何ですか？",
@@ -437,7 +437,7 @@ const FR: LandingStrings = {
   faq: {
     kicker: "FAQ",
     title: "Réponses en toute sérénité",
-    subtitle: "Un accompagnement respectueux pour les familles et les proches.",
+    subtitle: "Un accompagnement artisanal pour les familles du monde entier.",
     items: [
       {
         q: "Qu'est-ce qu'Aeterna ?",
@@ -540,7 +540,7 @@ const ES: LandingStrings = {
   faq: {
     kicker: "Preguntas frecuentes",
     title: "Preguntas respondidas con ternura",
-    subtitle: "Un acompañamiento respetuoso para familias en todo el mundo.",
+    subtitle: "Cuidado artesanal para familias de todo el mundo.",
     items: [
       {
         q: "¿Qué es Aeterna?",
@@ -642,7 +642,7 @@ const AR: LandingStrings = {
   faq: {
     kicker: "الأسئلة الشائعة",
     title: "إجابات برفق",
-    subtitle: "عناية فاخرة للعائلات في العالم العربي وما وراءه.",
+    subtitle: "رعاية متقنة للعائلات في جميع أنحاء العالم.",
     items: [
       {
         q: "ما هو Aeterna؟",
@@ -741,7 +741,7 @@ const ZH: LandingStrings = {
   faq: {
     kicker: "常見問題",
     title: "溫柔的解答",
-    subtitle: "願以敬謹之心，陪伴每一脈傳承與追思。",
+    subtitle: "為全球家庭提供匠心守護與關懷。",
     items: [
       {
         q: "什麼是 Aeterna？",

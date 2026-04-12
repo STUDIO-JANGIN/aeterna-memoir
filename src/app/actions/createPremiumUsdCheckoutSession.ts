@@ -4,6 +4,7 @@ import Stripe from "stripe"
 import { PAYMENT_METHOD_TYPES } from "@/lib/checkout"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { STRIPE_PREMIUM_PRODUCT_AI_FILM } from "@/lib/notifyPremiumFilmPurchase"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 const stripe =
@@ -59,6 +60,7 @@ export async function createPremiumUsdCheckoutSessionAction(
         slug,
         purpose: "premium_film",
         tier: "premium",
+        premium_product: STRIPE_PREMIUM_PRODUCT_AI_FILM,
       },
       success_url: `${origin}/p/${encodeURIComponent(slug)}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/p/${encodeURIComponent(slug)}/admin`,

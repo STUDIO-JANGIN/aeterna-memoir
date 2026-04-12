@@ -2,6 +2,7 @@
 
 import Stripe from "stripe"
 import { PAYMENT_METHOD_TYPES } from "@/lib/checkout"
+import { STRIPE_PREMIUM_PRODUCT_FINAL_WARNING } from "@/lib/notifyPremiumFilmPurchase"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
@@ -44,7 +45,7 @@ export async function createFinalWarningCheckoutSessionAction(
             product_data: {
               name: "Aeterna — preserve every memory forever (Final Warning)",
               description:
-                "Pay now before deletion and preserve every memory safely. Includes AI tribute film access and high-resolution downloads.",
+                "Pay now before deletion and preserve every memory safely. Includes five ~10s AI tribute clips and high-resolution downloads.",
               images: [],
             },
           },
@@ -57,6 +58,7 @@ export async function createFinalWarningCheckoutSessionAction(
         slug,
         purpose: "premium_film",
         tier: "premium",
+        premium_product: STRIPE_PREMIUM_PRODUCT_FINAL_WARNING,
       },
       success_url: `${origin}/p/${encodeURIComponent(slug)}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/p/${encodeURIComponent(slug)}/admin`,

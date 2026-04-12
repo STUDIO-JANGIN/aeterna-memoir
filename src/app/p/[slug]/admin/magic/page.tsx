@@ -11,7 +11,7 @@ type PageProps = {
 // Sample cinematic film URL (can be set via env var)
 const SAMPLE_MAGIC_VIDEO_URL = process.env.NEXT_PUBLIC_MAGIC_SAMPLE_VIDEO_URL || ""
 
-const MAX_CREDITS = 3
+const MAX_CREDITS = 5
 
 export default function MagicFilmStudioPage({ params }: PageProps) {
   const resolvedParams = use(params)
@@ -54,8 +54,8 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
               Magic Film Studio
             </h1>
             <p className="mt-3 text-landing-body max-w-xl">
-              Curate different moments of your loved one into up to 3 cinematic AI tribute films.
-              Choose carefully and use your remaining film credits with intention.
+              Curate moments into five ~10s “moving picture” tribute clips — warm, intimate, like meeting them again in
+              light. Each clip uses one credit; you have five with Premium.
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -112,13 +112,13 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
                     Sample magic film
                   </h2>
                   <p className="mt-1 text-xs text-[var(--landing-text-body)] max-w-xl">
-                    This is a sample in a style similar to Premium outputs. Select 12–15 photos and a mood to create up to
-                    3 cinematic tribute films.
+                    Style reference for Premium: five separate ~10s “moving picture” clips (Luma Ray 2), warm and intimate —
+                    like photographs that gently come alive.
                   </p>
                 </div>
                 <div className="text-right">
                   <span className="inline-flex items-center rounded-full border border-white/[0.1] px-2 py-0.5 text-[10px] text-[var(--landing-text-muted)]">
-                    1-minute sample film
+                    ~10s sample clip style
                   </span>
                 </div>
               </div>
@@ -147,8 +147,8 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
                       Upgrade to Premium to create films like this for your family.
                     </p>
                     <p className="text-xs text-[var(--landing-text-body)] mb-3 max-w-sm">
-                      Gather 12–15 photos, then use the Premium upgrade button on the admin page. You can create up to
-                      3 distinct films.
+                      Gather 15–20 photos (10–25 supported), then on the admin page generate five ~10s tribute clips — one
+                      credit per clip, five credits included with Premium.
                     </p>
                     <Link
                       href={slug ? `/p/${slug}/admin` : "/"}
@@ -180,8 +180,7 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
                     Premium film credits
                   </h2>
                   <p className="text-xs text-[var(--aeterna-gold-muted)] mb-4">
-                    Premium includes 3 film credits. Each full 1-minute render uses 1 credit, and you can track your
-                    remaining balance below.
+                    Premium includes 5 tribute-clip credits. Each ~10s clip uses one credit. Track remaining clips below.
                   </p>
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
@@ -203,7 +202,7 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
                       })}
                     </div>
                     <div className="text-right text-xs">
-                      <p className="text-[var(--landing-text-body)]">Remaining film credits</p>
+                      <p className="text-[var(--landing-text-body)]">Remaining clip credits</p>
                       <p className="mt-0.5 text-lg font-heading text-[var(--aeterna-gold)] tabular-nums">
                         {remainingCredits}
                       </p>
@@ -222,11 +221,11 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
                       </span>
                       <div>
                         <p className="font-semibold text-[var(--landing-text-hero)] mb-0.5">
-                          Select 12–15 photos with stars (★)
+                          Select photos with the video icon
                         </p>
                         <p>
-                          In the admin page&apos;s &quot;AI Tribute Film Studio&quot; section, star the photos you want in the film.
-                          Only selected photos will be used.
+                          In the admin page&apos;s &quot;AI Tribute Film Studio&quot; section, tap the video badge on each photo you
+                          want in the film. Only selected photos will be used.
                         </p>
                         <Link
                           href={`/p/${slug}/admin#ai-lab`}
@@ -255,11 +254,11 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
                       </span>
                       <div>
                         <p className="font-semibold text-[var(--landing-text-hero)] mb-0.5">
-                          Request a 1-minute full render
+                          Generate each ~10s tribute clip
                         </p>
                         <p>
-                          Click the &quot;Start 1-minute full render&quot; button at the bottom of the admin page. One Premium
-                          credit is deducted per request, and completed films appear in admin automatically.
+                          On the admin page, use &quot;Generate next tribute clip&quot;. One credit per clip; completed clips
+                          appear in the admin studio and on the public memorial.
                         </p>
                       </div>
                     </li>

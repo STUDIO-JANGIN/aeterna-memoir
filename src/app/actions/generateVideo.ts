@@ -3,10 +3,9 @@
 import { revalidatePath } from "next/cache"
 import { createLumaVideoJob } from "@/lib/ai/luma-client"
 import { getAppBaseUrl } from "@/lib/appUrl"
+import { buildMemorialTributeFilmPrompt } from "@/lib/memorialFilmPrompt"
+import { notifyAdmin } from "@/lib/notifyAdmin"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
-
-const DEFAULT_PROMPT =
-  "A peaceful and cinematic tribute video, slow motion, soft lighting"
 
 export type GenerateVideoResult =
   | { ok: true; message: string }
@@ -55,9 +54,13 @@ export async function generateVideoAction(slug: string): Promise<GenerateVideoRe
   const appOrigin = getAppBaseUrl()
   const webhookUrl = `${appOrigin}/api/ai/luma-webhook`
 
+  const prompt = buildMemorialTributeFilmPrompt(
+    typeof event.name === "string" ? event.name : null
+  )
+
   const jobResult = await createLumaVideoJob({
     imageUrls,
-    prompt: DEFAULT_PROMPT,
+    prompt,
     webhookUrl,
     eventId: event.id,
     slug,
@@ -65,7 +68,18 @@ export async function generateVideoAction(slug: string): Promise<GenerateVideoRe
 
   if (!jobResult.ok) {
     console.error("[generateVideo] Luma job creation failed:", jobResult.error)
-    return { ok: false, error: "We couldn’t start AI video generation. Please try again shortly." }
+    await notifyAdmin(`🚨 [generateVideo] Luma job failed: ${jobResult.error}`, {
+      slug,
+      eventId: event.id,
+      source: "generateVideoAction",
+    })
+    const isMissingKey = jobResult.error.includes("LUMA_API_KEY")
+    return {
+      ok: false,
+      error: isMissingKey
+        ? "AI video isn’t configured on the server yet (missing API key). Please contact support."
+        : "We couldn’t start AI video generation. Please try again shortly.",
+    }
   }
 
   const { error: updateErr } = await supabase
@@ -75,8 +89,18 @@ export async function generateVideoAction(slug: string): Promise<GenerateVideoRe
 
   if (updateErr) {
     console.error("[generateVideo] DB update error:", updateErr)
+    await notifyAdmin(`🚨 [generateVideo] DB update failed: ${updateErr.message}`, {
+      slug,
+      eventId: event.id,
+    })
     return { ok: false, error: "Failed to update the event status." }
   }
+
+  await notifyAdmin(`🎬 [generateVideo] Luma job started (likes-based)`, {
+    slug,
+    eventId: event.id,
+    imageCount: imageUrls.length,
+  })
 
   revalidatePath(`/p/${slug}`)
   revalidatePath(`/p/${slug}/admin`)

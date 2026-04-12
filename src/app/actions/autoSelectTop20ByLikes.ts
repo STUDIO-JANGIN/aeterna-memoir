@@ -1,5 +1,6 @@
 "use server"
 
+import { eventRowIsPaidMemorial } from "@/lib/paidMemorialDeadlines"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { revalidatePath } from "next/cache"
 
@@ -19,7 +20,7 @@ export async function autoSelectTop20ByLikesAction(
   const supabase = getSupabaseAdmin()
   const { data: event, error: eventErr } = await supabase
     .from("events")
-    .select("id, collection_end_at")
+    .select("id, collection_end_at, is_paid, tier, is_premium")
     .eq("slug", slug.trim())
     .maybeSingle()
 
@@ -27,12 +28,15 @@ export async function autoSelectTop20ByLikesAction(
     return { ok: false, error: "Event not found." }
   }
 
+  const paid = eventRowIsPaidMemorial(event)
   const deadlineAt = event.collection_end_at
-  if (!deadlineAt) {
-    return { ok: false, error: "Event has no deadline." }
-  }
-  if (new Date(deadlineAt).getTime() > Date.now()) {
-    return { ok: false, error: "Event not yet expired." }
+  if (!paid) {
+    if (!deadlineAt) {
+      return { ok: false, error: "Event has no deadline." }
+    }
+    if (new Date(deadlineAt).getTime() > Date.now()) {
+      return { ok: false, error: "Event not yet expired." }
+    }
   }
 
   const { data: approved, error: listErr } = await supabase

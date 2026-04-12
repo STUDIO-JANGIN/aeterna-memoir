@@ -10,6 +10,7 @@ import {
   stripeCurrencyCode,
   TIER_STRIPE_UNITS,
 } from "@/lib/landingPricing"
+import { STRIPE_PREMIUM_PRODUCT_AI_FILM } from "@/lib/notifyPremiumFilmPurchase"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 const stripe =
@@ -68,9 +69,9 @@ export async function createPremiumTierCheckoutSessionAction(
             currency: curr,
             unit_amount: unitAmount,
             product_data: {
-              name: "Aeterna Premium — cinematic tribute album",
+              name: "Aeterna Premium — five tribute clips (~10s each)",
               description:
-                "Keep your loved one’s story alive through cinematic AI tribute films. Includes all Plus features, 3 AI film credits, high-resolution downloads, and lifetime storage.",
+                "Keep your loved one’s story alive with five warm AI tribute clips (~10s each, Luma Ray 2). Includes all Plus features, 5 clip credits, high-resolution downloads, and lifetime storage.",
               images: [],
             },
           },
@@ -82,12 +83,14 @@ export async function createPremiumTierCheckoutSessionAction(
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
+      ...(stripePriceId ? { currency: curr } : {}),
       metadata: {
         eventId,
         memorialId: eventId,
         slug,
         purpose: "premium_film",
         tier: "premium",
+        premium_product: STRIPE_PREMIUM_PRODUCT_AI_FILM,
         pricing_currency: currency,
       },
       success_url: `${origin}/p/${encodeURIComponent(slug)}/success?session_id={CHECKOUT_SESSION_ID}`,

@@ -3,6 +3,7 @@
 import Stripe from "stripe"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { STRIPE_PREMIUM_PRODUCT_AI_FILM } from "@/lib/notifyPremiumFilmPurchase"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 // Keep this pinned to "2026-02-25.clover" per Stripe requirements.
@@ -49,7 +50,14 @@ export async function createCheckoutSessionAction(
           quantity: 1,
         },
       ],
-      metadata: { eventId, memorialId: eventId, slug, purpose: "premium_film", tier: "premium" },
+      metadata: {
+        eventId,
+        memorialId: eventId,
+        slug,
+        purpose: "premium_film",
+        tier: "premium",
+        premium_product: STRIPE_PREMIUM_PRODUCT_AI_FILM,
+      },
       success_url: `${origin}/p/${encodeURIComponent(slug)}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/p/${encodeURIComponent(slug)}`,
     })

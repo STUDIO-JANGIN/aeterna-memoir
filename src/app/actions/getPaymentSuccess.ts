@@ -81,7 +81,7 @@ export async function getPaymentSuccessAction(
             is_paid: true,
             tier: "premium",
             is_premium: true,
-            video_credits: 3,
+            video_credits: 5,
             ...deadlines,
           })
           .eq("id", eventId)
@@ -96,9 +96,16 @@ export async function getPaymentSuccessAction(
           })
           .eq("id", eventId)
       } else {
+        // Legacy sessions without tier metadata: treat as Premium so DB matches current checkout defaults.
         await supabase
           .from("events")
-          .update({ is_paid: true, ...deadlines })
+          .update({
+            is_paid: true,
+            tier: "premium",
+            is_premium: true,
+            video_credits: 5,
+            ...deadlines,
+          })
           .eq("id", eventId)
       }
 
@@ -115,7 +122,8 @@ export async function getPaymentSuccessAction(
         }
         const downloadUrl =
           (event.full_film_url ?? event.preview_film_url ?? event.film_url ?? "") || ""
-        const tier = (session.metadata?.tier as string | undefined) ?? null
+        const rawTier = (session.metadata?.tier as string | undefined)?.trim()
+        const tier = rawTier || "premium"
         return {
           ok: true,
           downloadUrl,

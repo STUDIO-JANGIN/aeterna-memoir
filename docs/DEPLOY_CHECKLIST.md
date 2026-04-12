@@ -23,6 +23,17 @@
 
 The app exchanges the OAuth `code` at `/auth/callback` (see `src/app/auth/callback/route.ts`) then redirects to `/create` (or `/create?plan=…`).
 
+## Luma AI tribute film & Slack (required for Premium video + owner alerts)
+
+1. **Vercel → Environment Variables** — add at least:
+   - `LUMA_API_KEY`
+   - `LUMA_WEBHOOK_SECRET` (optional but recommended; must match what Luma sends as `x-luma-signature`)
+   - `SLACK_WEBHOOK_URL` (or `SLACK_AETERNA_ALERT_WEBHOOK_URL`)
+2. **Do not rely on Supabase Secrets alone** for these three: the Next.js app reads `process.env` from Vercel (see `docs/SECRETS_AND_ALERTS.md`).
+3. Optional: `LUMA_VIDEO_RESOLUTION` (default `1080p`), `LUMA_VIDEO_DURATION` (default `9s`).
+
+Redeploy after changing variables.
+
 ## 0. Environment Variables (Optional - Landing Background Video)
 
 If you add the following to `.env.local`, the landing page background uses a video. Without it, a calm nature-image placeholder is used.

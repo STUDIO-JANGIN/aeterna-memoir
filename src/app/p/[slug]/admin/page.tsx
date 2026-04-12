@@ -2,7 +2,7 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { Star } from "lucide-react"
+import { Video } from "lucide-react"
 import {
   MemorialTrialCountdown,
   type MemorialTrialBannerCopy,
@@ -26,11 +26,15 @@ import { generatePreviewVideo } from "@/lib/generatePreviewVideo"
 import { getMemorialFundTotalBySlugAction } from "@/app/actions/getMemorialFundTotal"
 import { generateInvitePdfAction } from "@/app/actions/generateInvitePdf"
 import { supabase } from "@/lib/supabase/browser"
+import {
+  normalizeTributeSlots,
+  TRIBUTE_CLIP_COUNT,
+  TRIBUTE_FILM_MAX_PHOTOS,
+  TRIBUTE_FILM_MIN_PHOTOS,
+} from "@/lib/tributeFilmConfig"
 
-const MAX_SELECTED = 15
-/** Luma tribute film: selected approved photos */
-const MIN_FILM_PHOTOS = 5
-const MAX_FILM_PHOTOS = 10
+const MIN_FILM_PHOTOS = TRIBUTE_FILM_MIN_PHOTOS
+const MAX_FILM_PHOTOS = TRIBUTE_FILM_MAX_PHOTOS
 const PAYMENT_ENABLED = process.env.NEXT_PUBLIC_PAYMENT_ENABLED === "true"
 
 type PageProps = {
@@ -40,7 +44,7 @@ type PageProps = {
 export default function AdminPhotoSelectPage({ params }: PageProps) {
   const resolvedParams = use(params)
   const slug = typeof resolvedParams?.slug === "string" ? resolvedParams.slug.trim() : ""
-  const { app: tx } = useLandingLocale()
+  const { app: tx, locale } = useLandingLocale()
   const memorialTrialBannerCopy = useMemo<MemorialTrialBannerCopy>(
     () => ({
       preserveLegacyHeader: tx.memorial.preserveLegacyHeader,
@@ -157,13 +161,13 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     return () => clearTimeout(t)
   }, [adminToast])
 
+  const tributeSlots = useMemo(() => normalizeTributeSlots(event?.tribute_film_urls), [event?.tribute_film_urls])
+  const allTributeClipsComplete = tributeSlots.every((u) => u != null && String(u).length > 0)
+  const clipCreditsRemaining = typeof event?.video_credits === "number" ? event.video_credits : 0
+
   const filmProcessing =
     currentTier === "premium" &&
-    !event?.full_film_url &&
-    event?.video_status !== "failed" &&
-    (!!event?.full_film_requested_at ||
-      event?.video_status === "processing" ||
-      event?.video_status === "generating")
+    (event?.video_status === "processing" || event?.video_status === "generating")
 
   useEffect(() => {
     if (!filmProcessing || !slug) return
@@ -193,7 +197,8 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     try {
       const result = await generateInvitePdfAction(slug)
       if (result.ok) {
-        if (typeof window !== "undefined") window.open(result.url, "_blank", "noopener,noreferrer")
+        const openUrl = result.urls?.[locale] ?? result.url
+        if (typeof window !== "undefined") window.open(openUrl, "_blank", "noopener,noreferrer")
       } else {
         setAdminToast(result.error)
       }
@@ -205,7 +210,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   }
 
   const handleFilmPhotoToggle = async (story: AdminStory) => {
-    if (!story.image_url || filmProcessing || event?.full_film_url) return
+    if (!story.image_url || filmProcessing || allTributeClipsComplete) return
     const isSel = story.is_selected === true
     setFilmSelectionHint(null)
     setGenerateFilmError(null)
@@ -215,7 +220,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
       return
     }
     if (selectedCount >= MAX_FILM_PHOTOS) {
-      setFilmSelectionHint(`You can choose up to ${MAX_FILM_PHOTOS} photos for the film.`)
+      setFilmSelectionHint(tx.memorial.adminPremiumMaxPhotosHint(MAX_FILM_PHOTOS))
       return
     }
     await setStorySelectedAction(story.id, true)
@@ -240,9 +245,15 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   }
 
   const handleGenerateFilm = async () => {
-    if (!slug || filmProcessing || event?.full_film_url) return
+    if (!slug || filmProcessing || allTributeClipsComplete) return
+    if (clipCreditsRemaining <= 0) {
+      setGenerateFilmError(tx.memorial.adminPremiumNoClipCredits)
+      return
+    }
     if (selectedCount < MIN_FILM_PHOTOS || selectedCount > MAX_FILM_PHOTOS) {
-      setGenerateFilmError(`Select between ${MIN_FILM_PHOTOS} and ${MAX_FILM_PHOTOS} approved photos.`)
+      setGenerateFilmError(
+        tx.memorial.adminPremiumFilmSelectRangeError(MIN_FILM_PHOTOS, MAX_FILM_PHOTOS),
+      )
       return
     }
     setGenerateFilmLoading(true)
@@ -342,16 +353,24 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
         </header>
 
         <div className="card-landing-airy p-6 md:p-10 mb-10 md:mb-12">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/[0.08]">
-            <span className="text-landing-label">{tx.memorial.adminCurrentPlan}</span>
-            <span className="inline-flex items-center justify-center min-h-[36px] px-4 py-1.5 bg-[var(--aeterna-gold)]/12 text-[var(--aeterna-gold)] text-[10px] font-medium rounded-full uppercase tracking-[0.2em] ring-1 ring-[var(--aeterna-gold)]/35">
-              {tierLabel}
-            </span>
-          </div>
+          {currentTier === "premium" ? (
+            <p className="text-landing-body mb-8 max-w-2xl leading-relaxed">
+              {tx.memorial.adminPremiumStatusLine(stories.length)}
+            </p>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/[0.08]">
+                <span className="text-landing-label">{tx.memorial.adminCurrentPlan}</span>
+                <span className="inline-flex items-center justify-center min-h-[36px] px-4 py-1.5 bg-[var(--aeterna-gold)]/12 text-[var(--aeterna-gold)] text-[10px] font-medium rounded-full uppercase tracking-[0.2em] ring-1 ring-[var(--aeterna-gold)]/35">
+                  {tierLabel}
+                </span>
+              </div>
 
-          <p className="text-landing-body mb-8 max-w-2xl leading-relaxed">
-            {tx.memorial.adminContributionsCollected(stories.length)}
-          </p>
+              <p className="text-landing-body mb-8 max-w-2xl leading-relaxed">
+                {tx.memorial.adminContributionsCollected(stories.length)}
+              </p>
+            </>
+          )}
 
           {currentTier === "free" && (
             <div
@@ -389,30 +408,48 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
             aria-labelledby="ai-tribute-heading"
           >
             <div className="mb-8 pb-6 border-b border-white/[0.08]">
-              <p className="text-landing-label mb-2">Premium</p>
+              <p className="text-landing-label mb-2">{tx.memorial.adminTierLabelPremium}</p>
               <h2
                 id="ai-tribute-heading"
                 className="font-[var(--font-serif)] text-2xl md:text-[1.75rem] font-normal tracking-[-0.02em] text-[var(--landing-text-title)]"
               >
-                Create Your AI Cinematic Tribute
+                {tx.memorial.adminPremiumAiTitle}
               </h2>
               <p className="text-landing-body mt-3 max-w-2xl leading-relaxed">
-                Choose {MIN_FILM_PHOTOS}–{MAX_FILM_PHOTOS} approved photos. Our AI weaves them into a gentle, cinematic memorial film powered by Luma.
+                {tx.memorial.adminPremiumAiDescription(MIN_FILM_PHOTOS, MAX_FILM_PHOTOS)}
+              </p>
+              <p className="text-landing-body mt-4 text-[var(--aeterna-gold)] font-medium tabular-nums">
+                {tx.memorial.adminPremiumClipsRemaining(clipCreditsRemaining, TRIBUTE_CLIP_COUNT)}
+              </p>
+              <p className="text-sm text-[var(--landing-text-muted)] mt-2 max-w-2xl leading-relaxed">
+                {tx.memorial.adminPremiumPhotoPickGuidance}
               </p>
             </div>
 
-            {event.full_film_url ? (
-              <div className="space-y-6">
-                <p className="text-landing-body">Your tribute is live on the memorial and ready to share.</p>
-                <div className="rounded-2xl overflow-hidden border border-white/[0.08] ring-1 ring-[var(--aeterna-gold)]/20 shadow-[var(--landing-shadow-deep)] bg-[#030303]/50">
-                  <video
-                    src={event.full_film_url}
-                    controls
-                    playsInline
-                    className="w-full max-h-[min(56vh,520px)] object-contain bg-[#030303]"
-                  >
-                    Your browser does not support video playback.
-                  </video>
+            {tributeSlots.some((u) => u != null && String(u).length > 0) ? (
+              <div className="space-y-6 mb-8">
+                <p className="text-landing-label">{tx.memorial.adminPremiumCompletedClipsLabel}</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {tributeSlots.map((url, i) =>
+                    url != null && String(url).length > 0 ? (
+                      <div
+                        key={`clip-${i}`}
+                        className="rounded-2xl overflow-hidden border border-white/[0.08] ring-1 ring-[var(--aeterna-gold)]/15 bg-[#030303]/50"
+                      >
+                        <video
+                          src={String(url)}
+                          controls
+                          playsInline
+                          className="w-full max-h-[min(40vh,360px)] object-contain bg-[#030303]"
+                        >
+                          {tx.memorial.videoUnsupported}
+                        </video>
+                        <p className="text-center text-[11px] text-[var(--landing-text-muted)] py-2 tracking-wide uppercase">
+                          {tx.memorial.adminPremiumClipLabel(i + 1, TRIBUTE_CLIP_COUNT)}
+                        </p>
+                      </div>
+                    ) : null
+                  )}
                 </div>
                 <Link
                   href={`/p/${slug}`}
@@ -420,40 +457,42 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                   rel="noopener noreferrer"
                   className="btn-landing-gold inline-flex min-h-[52px] w-full max-w-md mx-auto justify-center text-center"
                 >
-                  Preview on memorial
+                  {tx.memorial.adminPremiumPreviewOnMemorialCta}
                 </Link>
               </div>
-            ) : filmProcessing || generateFilmLoading ? (
+            ) : null}
+
+            {filmProcessing || generateFilmLoading ? (
               <div className="space-y-6 max-w-xl">
                 <p className="font-[var(--font-serif)] text-lg text-[var(--landing-text-hero)] leading-relaxed">
-                  Our AI is crafting your masterpiece… this may take 1–2 minutes.
+                  {tx.memorial.adminPremiumFilmCraftingTitle}
                 </p>
                 <p className="text-landing-body leading-relaxed">
-                  You can leave this page — we&apos;ll update the memorial when the film is ready. This page refreshes automatically.
+                  {tx.memorial.adminPremiumFilmCraftingSubtitle}
                 </p>
                 <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden ring-1 ring-white/[0.06]">
                   <div className="h-full w-[38%] rounded-full bg-gradient-to-r from-[var(--aeterna-gold)] via-[var(--aeterna-gold-light)] to-[var(--aeterna-gold)] animate-[goldLoad_2.5s_ease-in-out_infinite]" />
                 </div>
               </div>
             ) : event.video_status === "failed" ? (
-              <p className="text-sm text-[var(--aeterna-gold-muted)]">
-                Something went wrong during rendering. Please contact support — we can restore your film credit and help you retry.
-              </p>
+              <p className="text-sm text-[var(--aeterna-gold-muted)]">{tx.memorial.adminPremiumFilmFailed}</p>
+            ) : allTributeClipsComplete ? (
+              <p className="text-landing-body max-w-2xl leading-relaxed">{tx.memorial.adminPremiumAllClipsComplete}</p>
             ) : (
               <div className="space-y-8">
                 {approvedRaw.filter((s) => s.image_url).length === 0 ? (
                   <p className="text-landing-body text-[var(--landing-text-muted)] leading-relaxed">
-                    Approve guest photos in the Memories section below, then return here to build your film.
+                    {tx.memorial.adminPremiumApprovePhotosFirst}
                   </p>
                 ) : (
                   <>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <p className="text-landing-label">Selected for film</p>
-                      <p className="text-landing-body tabular-nums">
-                        <span className="text-[var(--aeterna-gold)] font-medium">{selectedCount}</span> / {MAX_FILM_PHOTOS}{" "}
-                        <span className="text-[var(--landing-text-muted)]">(min {MIN_FILM_PHOTOS})</span>
-                      </p>
-                    </div>
+                    <p className="text-landing-body tabular-nums">
+                      {tx.memorial.adminPremiumFilmSelectionSummary(
+                        selectedCount,
+                        MAX_FILM_PHOTOS,
+                        MIN_FILM_PHOTOS,
+                      )}
+                    </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
                       {approvedRaw
                         .filter((s) => s.image_url)
@@ -464,6 +503,12 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                               key={story.id}
                               type="button"
                               onClick={() => void handleFilmPhotoToggle(story)}
+                              aria-pressed={selected}
+                              aria-label={
+                                selected
+                                  ? tx.memorial.adminPremiumRemoveFromFilmAria
+                                  : tx.memorial.adminPremiumIncludeInFilmAria
+                              }
                               className={`relative aspect-square rounded-2xl overflow-hidden border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--aeterna-gold)] bg-app-soft-surface ${
                                 selected
                                   ? "ring-2 ring-[var(--aeterna-gold)] border-[var(--aeterna-gold)]/60 shadow-[0_0_32px_-8px_rgba(197,160,89,0.45)]"
@@ -478,7 +523,11 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                                     : "bg-[#030303]/50 text-white/90 border border-white/20"
                                 }`}
                               >
-                                <Star className={`h-4 w-4 ${selected ? "fill-[#0a0a0a]" : ""}`} strokeWidth={1.75} />
+                                <Video
+                                  className="h-4 w-4 shrink-0"
+                                  strokeWidth={selected ? 2.25 : 1.75}
+                                  aria-hidden
+                                />
                               </span>
                             </button>
                           )
@@ -498,16 +547,17 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                         onClick={() => void handleGenerateFilm()}
                         disabled={
                           generateFilmLoading ||
+                          clipCreditsRemaining <= 0 ||
                           selectedCount < MIN_FILM_PHOTOS ||
                           selectedCount > MAX_FILM_PHOTOS
                         }
                         className="btn-landing-gold min-h-[56px] w-full max-w-md px-8 text-[11px] tracking-[0.18em] disabled:opacity-40 disabled:pointer-events-none shadow-[0_16px_48px_-12px_rgba(197,160,89,0.4)]"
                       >
-                        Generate AI Tribute Film
+                        {tx.memorial.adminPremiumGenerateFilmCta}
                       </button>
                       {selectedCount < MIN_FILM_PHOTOS && (
                         <p className="text-center text-[var(--landing-text-muted)] text-sm">
-                          Select at least {MIN_FILM_PHOTOS} photos to continue.
+                          {tx.memorial.adminPremiumSelectMinGuide(MIN_FILM_PHOTOS)}
                         </p>
                       )}
                     </div>
@@ -515,6 +565,9 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                 )}
               </div>
             )}
+            <p className="text-center text-[11px] text-[var(--landing-text-muted)] pt-6 mt-2 border-t border-white/[0.06]">
+              {tx.memorial.adminPremiumFooterTagline}
+            </p>
           </section>
         )}
 

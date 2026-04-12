@@ -85,6 +85,7 @@ export async function createPlusCheckoutSessionAction(
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
+      ...(stripePriceId ? { currency: curr } : {}),
       metadata: {
         eventId,
         memorialId: eventId,

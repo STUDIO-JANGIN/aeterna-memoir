@@ -1,5 +1,14 @@
 const LUMA_API_KEY = process.env.LUMA_API_KEY
-const LUMA_API_BASE_URL = process.env.LUMA_API_BASE_URL || "https://api.lumalabs.ai"
+/** Base path must include `/dream-machine/v1` — see https://docs.lumalabs.ai/docs/video-generation */
+const LUMA_API_BASE_URL =
+  process.env.LUMA_API_BASE_URL || "https://api.lumalabs.ai/dream-machine/v1"
+
+/** e.g. 720p | 1080p — set in Vercel / `.env.local` (not read from Supabase Secrets by Next.js). */
+const LUMA_VIDEO_RESOLUTION = process.env.LUMA_VIDEO_RESOLUTION?.trim() || "1080p"
+/** Premium tribute clips use 10s; override via env if Luma adds options. */
+const LUMA_VIDEO_DURATION = process.env.LUMA_VIDEO_DURATION?.trim() || "10s"
+/** Ray 2 (quality); see https://docs.lumalabs.ai/docs/video-generation */
+const LUMA_VIDEO_MODEL = process.env.LUMA_VIDEO_MODEL?.trim() || "ray-2"
 
 export type LumaVideoStatus = "queued" | "processing" | "completed" | "failed" | "unknown"
 
@@ -7,8 +16,8 @@ export type CreateLumaVideoJobOptions = {
   imageUrls: string[]
   prompt: string
   /**
-   * Webhook URL where Luma sends callbacks.
-   * Example: `${APP_URL}/api/ai/luma-webhook`
+   * Webhook URL where Luma POSTs the Generation object (see docs).
+   * We append `?eventId=&slug=&slot=` because the API does not support arbitrary metadata on the request.
    */
   webhookUrl?: string
   /**
@@ -17,6 +26,8 @@ export type CreateLumaVideoJobOptions = {
   eventId?: string
   /** Passed through for /p/[slug] identification. */
   slug?: string
+  /** Which tribute clip (0–4) this generation fills — required for multi-clip Premium flow. */
+  slot?: number
 }
 
 export type CreateLumaVideoJobResult =
@@ -35,6 +46,7 @@ async function lumaFetch(path: string, init: RequestInit): Promise<Response> {
   const url = `${LUMA_API_BASE_URL.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`
   const headers: HeadersInit = {
     Authorization: `Bearer ${LUMA_API_KEY}`,
+    Accept: "application/json",
     "Content-Type": "application/json",
     ...(init.headers || {}),
   }
@@ -42,50 +54,74 @@ async function lumaFetch(path: string, init: RequestInit): Promise<Response> {
   return fetch(url, { ...init, headers })
 }
 
+function parseLumaErrorBody(text: string): string {
+  try {
+    const j = JSON.parse(text) as { detail?: string; message?: string }
+    return j.detail || j.message || text
+  } catch {
+    return text || "Unknown error"
+  }
+}
+
 /**
- * Request a Luma AI video generation job from selected image URLs.
- * Adjust request body as needed for the current Luma API spec.
+ * Dream Machine: image-to-video with multiple keyframes (frame0 … frameN).
+ * @see https://docs.lumalabs.ai/docs/video-generation
  */
 export async function createLumaVideoJob(options: CreateLumaVideoJobOptions): Promise<CreateLumaVideoJobResult> {
-  const { imageUrls, prompt, webhookUrl, eventId, slug } = options
+  const { imageUrls, prompt, webhookUrl, eventId, slug, slot } = options
 
   if (!imageUrls || imageUrls.length === 0) {
     return { ok: false, error: "At least one image URL is required." }
   }
 
-  // Use up to 15 images to balance cost and quality.
   const limitedImages = imageUrls.slice(0, 15)
+  const keyframes: Record<string, { type: "image"; url: string }> = {}
+  limitedImages.forEach((url, i) => {
+    keyframes[`frame${i}`] = { type: "image", url }
+  })
+
+  let callbackUrl = webhookUrl
+  if (webhookUrl && eventId) {
+    const u = new URL(webhookUrl)
+    u.searchParams.set("eventId", eventId)
+    if (slug) u.searchParams.set("slug", slug)
+    if (typeof slot === "number" && slot >= 0) u.searchParams.set("slot", String(slot))
+    callbackUrl = u.toString()
+  }
 
   try {
-    // NOTE: Update body shape based on the current Luma API docs.
-    const res = await lumaFetch("/v1/videos", {
+    const res = await lumaFetch("generations", {
       method: "POST",
       body: JSON.stringify({
-        images: limitedImages,
         prompt,
-        // Fixed model/resolution: ray-flash-2 @ 720p
-        model: "luma/ray-flash-2",
-        resolution: "720p",
-        webhook_url: webhookUrl,
-        metadata: {
-          eventId,
-          slug,
-        },
+        model: LUMA_VIDEO_MODEL,
+        resolution: LUMA_VIDEO_RESOLUTION,
+        duration: LUMA_VIDEO_DURATION,
+        aspect_ratio: "16:9",
+        loop: false,
+        keyframes,
+        ...(callbackUrl ? { callback_url: callbackUrl } : {}),
       }),
     })
 
+    const text = await res.text().catch(() => "")
+
     if (!res.ok) {
-      const text = await res.text().catch(() => "")
       return {
         ok: false,
-        error: text || `Luma API request failed with status ${res.status}`,
+        error: parseLumaErrorBody(text) || `Luma API request failed with status ${res.status}`,
       }
     }
 
-    const json = (await res.json().catch(() => null)) as { id?: string } | null
+    let json: { id?: string } | null = null
+    try {
+      json = JSON.parse(text) as { id?: string }
+    } catch {
+      return { ok: false, error: "Luma API returned invalid JSON." }
+    }
     const jobId = json?.id
     if (!jobId) {
-      return { ok: false, error: "Luma API response missing job id." }
+      return { ok: false, error: "Luma API response missing generation id." }
     }
 
     return { ok: true, jobId }
@@ -98,45 +134,80 @@ export async function createLumaVideoJob(options: CreateLumaVideoJobOptions): Pr
 }
 
 /**
- * Get single job status (for polling/manual refresh).
- * Update endpoint path if Luma API paths change.
+ * Retries Luma calls with 5s spacing (up to 3 attempts) for reliability on rate limits / transient errors.
+ */
+export async function createLumaVideoJobWithRetry(
+  options: CreateLumaVideoJobOptions,
+  { maxAttempts = 3, delayMs = 5000 }: { maxAttempts?: number; delayMs?: number } = {}
+): Promise<CreateLumaVideoJobResult> {
+  let lastError = ""
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const r = await createLumaVideoJob(options)
+    if (r.ok) return r
+    lastError = r.error
+    const likelyPermanent =
+      /LUMA_API_KEY|missing|required|invalid key|401|403|400|at least one image/i.test(r.error)
+    if (likelyPermanent) {
+      return r
+    }
+    if (attempt < maxAttempts) {
+      await sleep(delayMs)
+    }
+  }
+  return { ok: false, error: lastError || "Luma request failed after retries." }
+}
+
+function mapLumaState(raw: string): LumaVideoStatus {
+  const s = raw.toLowerCase()
+  if (s === "queued" || s === "pending") return "queued"
+  if (s === "dreaming" || s === "processing") return "processing"
+  if (s === "completed" || s === "succeeded") return "completed"
+  if (s === "failed" || s === "error") return "failed"
+  return "unknown"
+}
+
+/**
+ * GET /generations/{id}
  */
 export async function getLumaVideoJob(jobId: string): Promise<LumaVideoJobInfo> {
   if (!jobId) return { ok: false, error: "Missing job id." }
 
   try {
-    const res = await lumaFetch(`/v1/videos/${encodeURIComponent(jobId)}`, {
+    const res = await lumaFetch(`generations/${encodeURIComponent(jobId)}`, {
       method: "GET",
     })
 
+    const text = await res.text().catch(() => "")
+
     if (!res.ok) {
-      const text = await res.text().catch(() => "")
       return {
         ok: false,
-        error: text || `Luma status request failed with status ${res.status}`,
+        error: parseLumaErrorBody(text) || `Luma status request failed with status ${res.status}`,
       }
     }
 
-    const json = (await res.json().catch(() => null)) as
-      | { status?: string; video_url?: string | null }
-      | null
+    type LumaGenerationJson = {
+      state?: string
+      status?: string
+      assets?: { video?: string | null }
+      video_url?: string | null
+    }
+    let json: LumaGenerationJson
+    try {
+      json = JSON.parse(text) as LumaGenerationJson
+    } catch {
+      return { ok: false, error: "Luma API returned invalid JSON.", status: "unknown" }
+    }
 
-    const rawStatus = (json?.status || "").toLowerCase()
-    const status: LumaVideoStatus =
-      rawStatus === "queued" || rawStatus === "pending"
-        ? "queued"
-        : rawStatus === "processing"
-          ? "processing"
-          : rawStatus === "completed" || rawStatus === "succeeded"
-            ? "completed"
-            : rawStatus === "failed" || rawStatus === "error"
-              ? "failed"
-              : "unknown"
+    const rawState = json?.state ?? json?.status ?? ""
+    const status = mapLumaState(String(rawState))
+
+    const videoUrl = json?.assets?.video ?? json?.video_url ?? null
 
     return {
       ok: true,
       status,
-      videoUrl: json?.video_url ?? null,
+      videoUrl,
     }
   } catch (err) {
     return {
@@ -191,4 +262,3 @@ export async function waitForLumaVideoCompletion(
     error: "Luma video job did not complete within the expected time window.",
   }
 }
-

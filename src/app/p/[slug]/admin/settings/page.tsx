@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase/browser"
 import { getEventBySlugAction, type AdminEvent } from "@/app/actions/setStorySelected"
 import { updateEventBySlugAction } from "@/app/actions/updateEventBySlug"
 import { generateInvitePdfAction } from "@/app/actions/generateInvitePdf"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { resolveInvitePdfUrl } from "@/lib/resolveInvitePdfUrl"
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -16,6 +18,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
   const resolvedParams = use(params)
   const slug = typeof resolvedParams?.slug === "string" ? resolvedParams.slug.trim() : ""
   const router = useRouter()
+  const { locale } = useLandingLocale()
 
   const [event, setEvent] = useState<AdminEvent | null>(null)
   const [loading, setLoading] = useState(true)
@@ -114,8 +117,9 @@ export default function AdminSettingsPage({ params }: PageProps) {
     try {
       const result = await generateInvitePdfAction(slug)
       if (result.ok) {
+        const openUrl = result.urls?.[locale] ?? result.url
         if (typeof window !== "undefined") {
-          window.open(result.url, "_blank")
+          window.open(openUrl, "_blank")
         }
       } else {
         setInviteError(result.error)
@@ -134,6 +138,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
       </div>
     )
   }
+
+  const invitePdfHref = event
+    ? resolveInvitePdfUrl(event.invite_pdf_urls ?? null, event.invite_pdf_url ?? null, locale)
+    : null
 
   if (!event || error) {
     return (
@@ -344,15 +352,15 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 {inviteError}
               </p>
             )}
-            {event.invite_pdf_url ? (
+            {invitePdfHref ? (
               <p className="text-right">
                 <a
-                  href={event.invite_pdf_url}
+                  href={invitePdfHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)] underline-offset-2 hover:underline"
                 >
-                  Open existing invitation
+                  Open invitation ({locale.toUpperCase()})
                 </a>
               </p>
             ) : null}

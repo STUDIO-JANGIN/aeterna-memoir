@@ -1,8 +1,8 @@
 /**
  * Luma AI client (server-only).
  *
- * - Accepts up to 15 photos and creates a job for a 1-minute cinematic film.
- * - Selecting 12–15 photos before createLumaVideoJob is handled by upper layers (server actions).
+ * - Upper layers select 10–25 approved photos and call createLumaVideoJob per tribute clip (~10s, Luma Ray 2).
+ * - Five clips per memorial are stored separately; photo selection and slot indexing live in server actions.
  * - HTTP request/state polling is delegated to video-engine.
  */
 export type {
@@ -12,6 +12,7 @@ export type {
 
 export {
   createLumaVideoJob,
+  createLumaVideoJobWithRetry,
   getLumaVideoJob,
   waitForLumaVideoCompletion,
 } from "@/lib/ai/video-engine"

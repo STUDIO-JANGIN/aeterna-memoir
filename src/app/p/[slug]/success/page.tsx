@@ -167,12 +167,12 @@ function SuccessContent({ slug }: { slug: string }) {
 
             {tier === "premium" && (
               <p className="mt-4 text-sm text-[#8a8a8a] max-w-md">
-                <span className="text-[var(--aeterna-gold)]">Premium</span> includes your cinematic tribute. When the film is ready, it will appear on the memorial and in your dashboard.
+                <span className="text-[var(--aeterna-gold)]">Premium</span> includes five ~10s AI tribute clips (moving-picture style). As each clip is ready, it appears on the memorial and in your dashboard.
               </p>
             )}
             {tier === "plus" && (
               <p className="mt-4 text-sm text-[#8a8a8a] max-w-md">
-                <span className="text-[var(--aeterna-gold)]">Plus</span> preserves every photo and story permanently. You can upgrade to Premium later if you&apos;d like the AI film.
+                <span className="text-[var(--aeterna-gold)]">Plus</span> preserves every photo and story permanently. You can upgrade to Premium later for the five ~10s tribute clips.
               </p>
             )}
 
@@ -210,7 +210,7 @@ function SuccessContent({ slug }: { slug: string }) {
                 rel="noopener noreferrer"
                 className="mt-8 inline-flex min-h-[48px] items-center justify-center rounded-full border border-[var(--aeterna-gold)]/50 px-8 text-xs tracking-[0.16em] uppercase text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold)]/10 transition-colors"
               >
-                Open film / download
+                Open tribute / download
               </a>
             ) : null}
 

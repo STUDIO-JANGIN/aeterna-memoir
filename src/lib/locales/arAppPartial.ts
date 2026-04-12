@@ -100,7 +100,8 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
     dragHere: "أو اسحبها هنا",
     formStoryTitle: "ما القصة وراء هذه الصورة؟",
     formStoryPh: "رحلة، لحظة هادئة، ابتسامة لا تُنسى…",
-    formStoryPremium: "قد تُختار صورتك لفيلم التكريم دقيقة واحدة.",
+    formStoryPremium:
+      "قد تُختار صورتك لخمس مقاطع تكريم بالذكاء الاصطناعي (~10 ثوانٍ لكل منها)، كصور تتحرك بلطف.",
     formStoryFree: "شكراً لمشاركة كنزك.",
     sending: "جاري الإرسال…",
     shareThisMemory: "شارِك هذه الذكرى",
@@ -145,13 +146,49 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "بلس",
     adminTierLabelPremium: "بريميوم",
     adminContributionsCollected: (count: number) => `تم جمع ${count} من المساهمات الصادقة`,
+    adminPremiumStatusLine: (count: number) =>
+      `الخطة الحالية / مميزة (Premium) / تم جمع ${count} من المساهمات الصادقة`,
+    adminPremiumAiTitle: "تحية «صور متحركة» (خمس فصول)",
+    adminPremiumAiDescription: (min: number, max: number) =>
+      `اختر من ${min} إلى ${max} صورة معتمدة. بريميوم يشمل خمس مقاطع منفصلة (~10 ثوانٍ، Luma Ray 2) — كصور عزيزة تنعم بالحياة برفق، مع تعليقات الزوار وقصة كل صورة. أنشئ مقطعاً في كل مرة؛ كل مقطع يستهلك رصيداً واحداً.`,
+    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
+      `صور في مجموعة التحية: ${selected} / ${max} (الحد الأدنى ${min})`,
+    adminPremiumGenerateFilmCta: "إنشاء مقطع التحية التالي (~10 ثوانٍ)",
+    adminPremiumSelectMinGuide: (min: number) => `اختر ${min} صور على الأقل للمتابعة.`,
+    adminPremiumFooterTagline: "Aeterna Memoir — نحفظ ذكرياتكم الثمينة للأبد.",
+    adminPremiumMaxPhotosHint: (max: number) =>
+      `يمكنك اختيار ما يصل إلى ${max} صور للتحية.`,
+    adminPremiumFilmSelectRangeError: (min: number, max: number) =>
+      `اختر بين ${min} و${max} صور معتمدة.`,
+    adminPremiumTributeLiveBody: "تحيتك متاحة على المزار وجاهزة للمشاركة.",
+    adminPremiumPreviewOnMemorialCta: "معاينة على المزار",
+    adminPremiumFilmCraftingTitle:
+      "ذكاؤنا الاصطناعي ينسج تحيتك… قد يستغرق ذلك دقيقة أو دقيقتين.",
+    adminPremiumFilmCraftingSubtitle:
+      "يمكنك مغادرة هذه الصفحة — سنحدّث المزار عند جاهزية المقطع. تُحدَّث هذه الصفحة تلقائياً.",
+    adminPremiumFilmFailed:
+      "حدث خطأ أثناء المعالجة. يرجى الاتصال بالدعم — يمكننا استعادة رصيد المقطع ومساعدتك على إعادة المحاولة.",
+    adminPremiumApprovePhotosFirst:
+      "وافق أولاً على صور الضيوف في قسم الذكريات أدناه، ثم عد هنا لإنشاء المقاطع.",
+    adminPremiumRemoveFromFilmAria: "إزالة من اختيار تحية الذكاء الاصطناعي",
+    adminPremiumIncludeInFilmAria: "تضمين في اختيار تحية الذكاء الاصطناعي",
+    adminPremiumClipsRemaining: (remaining: number, total: number) =>
+      `يتبقى ${remaining} من ${total} مقاطع تحية للإنشاء`,
+    adminPremiumPhotoPickGuidance:
+      "لأفضل نتيجة عبر المقاطع الخمسة، اختر 15–20 صورة (مطلوب 10–25). تندمج تعليقات الزوار وقصة كل صورة في السرد.",
+    adminPremiumCompletedClipsLabel: "مقاطع التحية الخاصة بك",
+    adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
+      `الفصل ${clipOneIndexed} · ~10 ثوانٍ · ${totalClips} إجمالاً`,
+    adminPremiumAllClipsComplete:
+      "اكتملت الفصول الخمسة. يمكنك إعادة المشاهدة أعلاه أو على المزار العام.",
+    adminPremiumNoClipCredits: "لا يوجد رصيد مقاطع. تواصل مع الدعم إذا احتجت مساعدة.",
     adminPreserveForeverCta: "حفظ للأبد — $19.99",
     adminProcessing: "جاري المعالجة…",
     adminMemoriesSectionTitle: "الذكريات",
     adminTabPending: (count: number) => `قيد الانتظار (${count})`,
     adminTabApproved: (count: number) => `تم الموافقة (${count})`,
     upgradePremiumCta: "الترقية إلى بريميوم",
-    upgradePremiumTail: "لفيلم تكريم في المزارات القادمة.",
+    upgradePremiumTail: "لمقاطع تحية بالذكاء الاصطناعي في المزارات القادمة.",
     recentSupportAria: "دعم حديث",
     donationStatusAria: "حالة الدعم",
     close: "إغلاق",
@@ -266,10 +303,10 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
       premium: {
         title: "الفيلم الخالد",
         tagline:
-          "كل مزايا «الإرث الأبدي»، بالإضافة إلى أولوية الوصول إلى فيلمك التكريمي المنتج بالذكاء الاصطناعي.",
+          "كل مزايا «الإرث الأبدي»، بالإضافة إلى خمس مقاطع تكريم بالذكاء الاصطناعي (~10 ثوانٍ لكل منها)",
         b1: "كل مزايا الإرث الأبدي",
-        b2: "أولوية لفيلم التكريم عند إطلاق الإصدار الثاني — احجز اليوم",
-        tierSub: "إرث أبدي + فيلم تكريم بالذكاء الاصطناعي",
+        b2: "خمس مقاطع كصور متحركة دافئة — أولوية عند إطلاق الإصدار الثاني",
+        tierSub: "5× ~10 ث · إرث أبدي + تكريم بالذكاء الاصطناعي",
       },
     },
   },

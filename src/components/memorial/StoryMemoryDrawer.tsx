@@ -11,6 +11,7 @@ import {
   getStoryCommentsAction,
   type StoryCommentPublic,
 } from "@/app/actions/storyComments"
+import { LegalFormCaption } from "@/components/LegalFormCaption"
 import { coerceIdString, parseUuidString } from "@/lib/uuid"
 
 type Story = {
@@ -481,6 +482,7 @@ export function StoryMemoryDrawer({
                 </button>
               </div>
               {sendError && <p className="mt-2 text-center text-xs text-red-400/90">{sendError}</p>}
+              <LegalFormCaption className="mt-2 px-0.5" />
             </form>
           </div>
       </motion.div>

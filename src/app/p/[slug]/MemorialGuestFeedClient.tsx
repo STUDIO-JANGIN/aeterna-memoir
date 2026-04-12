@@ -25,6 +25,7 @@ import {
   getPublicMemorialPageDataAction,
   getPublicSelectedTeaserStoriesAction,
 } from "@/app/actions/getPublicMemorialPageData"
+import { LegalFormCaption } from "@/components/LegalFormCaption"
 import { StoryMemoryDrawer } from "@/components/memorial/StoryMemoryDrawer"
 import {
   MemorialTrialCountdown,
@@ -35,6 +36,7 @@ import { openWhatsAppWithPrefilledText } from "@/lib/whatsappInvite"
 import { coerceIdString, parseUuidString } from "@/lib/uuid"
 import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
 import { OptimisticImage } from "@/components/Upload"
+import { eventRowIsPaidMemorial, PAID_MEMORIAL_DEADLINE_MS } from "@/lib/paidMemorialDeadlines"
 
 function normalizeStoryIdForHearts(raw: string): string {
   return parseUuidString(raw) ?? coerceIdString(raw)
@@ -56,6 +58,8 @@ type FeedEvent = {
   film_url: string | null
   /** Luma AI full tribute (preferred when set) */
   full_film_url: string | null
+  /** Five ~10s clips when set */
+  tribute_film_urls?: (string | null)[] | null
   creator_email: string | null
   creator_user_id: string | null
   photo_deadline: string | null
@@ -64,21 +68,13 @@ type FeedEvent = {
   tier: string | null
   bank_info: string | null
   invite_pdf_url: string | null
+  invite_pdf_urls?: Record<string, string> | null
   invitation_bio: string | null
-}
-
-/** Eternal Legacy / Eternal Film: collection does not expire (avoid 7-day free-timer UX). */
-const PAID_MEMORIAL_DEADLINE_MS = Date.UTC(2099, 11, 31, 23, 59, 59, 999)
-
-function isPaidMemorialEvent(e: FeedEvent): boolean {
-  const t = (e.tier ?? "").trim().toLowerCase()
-  if (t === "plus" || t === "premium") return true
-  return e.is_premium === true || e.is_paid === true
 }
 
 // Deadline time: prefer expired_at, then collection_end_at, else created_at + 7 days.
 function getDeadlineMs(e: FeedEvent): number {
-  if (isPaidMemorialEvent(e)) return PAID_MEMORIAL_DEADLINE_MS
+  if (eventRowIsPaidMemorial(e)) return PAID_MEMORIAL_DEADLINE_MS
   if (e.expired_at) return new Date(e.expired_at).getTime()
   if (e.collection_end_at) return new Date(e.collection_end_at).getTime()
   const created = e.created_at ? new Date(e.created_at).getTime() : Date.now()
@@ -87,7 +83,7 @@ function getDeadlineMs(e: FeedEvent): number {
 
 // Photo submission deadline: prefer photo_deadline, fallback collection_end_at.
 function getPhotoDeadlineMs(e: FeedEvent): number {
-  if (isPaidMemorialEvent(e)) return PAID_MEMORIAL_DEADLINE_MS
+  if (eventRowIsPaidMemorial(e)) return PAID_MEMORIAL_DEADLINE_MS
   if (e.photo_deadline) return new Date(e.photo_deadline).getTime()
   return getDeadlineMs(e)
 }
@@ -291,14 +287,25 @@ export default function GuestFeedPage({ params }: PageProps) {
   const isClosed = event !== null && remainingMs !== null && remainingMs <= 0
   const isPhotoDeadlinePassed = event !== null && photoDeadlineRemainingMs !== null && photoDeadlineRemainingMs <= 0
   const isExpired = isPhotoDeadlinePassed
-  const isPaidMemorial = event ? isPaidMemorialEvent(event) : false
+  const isPaidMemorial = event ? eventRowIsPaidMemorial(event) : false
   const isPremiumTier = (event?.tier ?? "").trim().toLowerCase() === "premium"
   const showBlurByDeadline = isExpired && !isPaidMemorial
   const TOP_20_VISIBLE = 20
+  const tributeFilmUrlsList =
+    (event?.tribute_film_urls ?? []).filter((u): u is string => typeof u === "string" && u.length > 0)
   const tributeFilmUrl =
-    event?.full_film_url && event.full_film_url.length > 0 ? event.full_film_url : event?.film_url ?? null
+    tributeFilmUrlsList[0] ??
+    (event?.full_film_url && event.full_film_url.length > 0 ? event.full_film_url : null) ??
+    event?.film_url ??
+    null
+  const tributeClipsToPlay =
+    tributeFilmUrlsList.length > 0
+      ? tributeFilmUrlsList
+      : tributeFilmUrl
+        ? [tributeFilmUrl]
+        : []
   // Show cinematic film when URL exists: Premium can view as soon as Luma finishes; others when collection closed.
-  const filmReleased = !!tributeFilmUrl && (isClosed || isPremiumTier)
+  const filmReleased = tributeClipsToPlay.length > 0 && (isClosed || isPremiumTier)
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const u = data.session?.user
@@ -414,6 +421,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         created_at: string | null
         film_url: string | null
         full_film_url: string | null
+        tribute_film_urls?: (string | null)[] | null
         creator_email: string | null
         creator_user_id: string | null
         photo_deadline: string | null
@@ -422,6 +430,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         tier: string | null
         bank_info: string | null
         invite_pdf_url?: string | null
+        invite_pdf_urls?: Record<string, string> | null
         invitation_bio?: string | null
       }, list: Story[]) => {
         setEvent({
@@ -439,6 +448,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           created_at: eventData.created_at ?? null,
           film_url: eventData.film_url ?? null,
           full_film_url: eventData.full_film_url ?? null,
+          tribute_film_urls: eventData.tribute_film_urls ?? null,
           creator_email: eventData.creator_email ?? null,
           creator_user_id: eventData.creator_user_id ?? null,
           photo_deadline: eventData.photo_deadline ?? null,
@@ -447,6 +457,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           tier: eventData.tier ?? null,
           bank_info: eventData.bank_info ?? null,
           invite_pdf_url: eventData.invite_pdf_url ?? null,
+          invite_pdf_urls: eventData.invite_pdf_urls ?? null,
           invitation_bio: eventData.invitation_bio ?? null,
         })
         const storiesNormalized: Story[] = list.map((s) => ({
@@ -780,7 +791,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     }
   }
 
-  const isLocked = isClosed && (!event || !isPaidMemorialEvent(event))
+  const isLocked = isClosed && (!event || !eventRowIsPaidMemorial(event))
   const paywallThreshold = TOP_20_VISIBLE
   const lockedCount = isLocked && stories.length > paywallThreshold ? stories.length - paywallThreshold : 0
   const isBlurredByDeadlineOnly = (index: number) => showBlurByDeadline && index >= TOP_20_VISIBLE
@@ -1064,6 +1075,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   >
                     {afterUploadLoading ? tx.memorial.saving : tx.common.save}
                   </button>
+                  <LegalFormCaption className="mt-2" />
                 </form>
               ) : null}
               {afterUploadError ? (
@@ -1290,15 +1302,20 @@ export default function GuestFeedPage({ params }: PageProps) {
             {/* Video region: w-full, h-[70vh], object-cover */}
             <div className="relative w-full h-[70vh] max-h-[720px] max-w-6xl mx-auto overflow-hidden rounded-lg">
               <div className="absolute inset-0 rounded-lg shadow-[0_0_80px_rgba(197,160,89,0.12)] pointer-events-none" />
-              {tributeFilmUrl ? (
-                <video
-                  src={tributeFilmUrl}
-                  controls
-                  playsInline
-                  className="w-full h-full object-cover rounded-lg"
-                >
-                  {tx.memorial.videoUnsupported}
-                </video>
+              {tributeClipsToPlay.length > 0 ? (
+                <div className="w-full h-full flex flex-col gap-4 overflow-y-auto md:flex-row md:gap-3 md:overflow-hidden">
+                  {tributeClipsToPlay.map((url, i) => (
+                    <video
+                      key={`${url}-${i}`}
+                      src={url}
+                      controls
+                      playsInline
+                      className="w-full md:flex-1 min-h-0 h-[min(50vh,420px)] md:h-full object-cover rounded-lg"
+                    >
+                      {tx.memorial.videoUnsupported}
+                    </video>
+                  ))}
+                </div>
               ) : (
                 <div className="w-full h-full bg-[var(--aeterna-charcoal-muted)] flex items-center justify-center rounded-lg">
                   <span className="text-[var(--aeterna-gold-muted)] text-sm tracking-[0.2em] uppercase">{tx.memorial.filmLabel}</span>
@@ -1406,24 +1423,27 @@ export default function GuestFeedPage({ params }: PageProps) {
                       {tx.memorial.notifyFilmThanks}
                     </p>
                   ) : (
-                    <form onSubmit={handleNotifySubmit} className="flex flex-col sm:flex-row gap-3">
-                      <input
-                        type="email"
-                        name="notify_email"
-                        required
-                        placeholder={tx.memorial.notifyPlaceholder}
-                        className="flex-1 min-h-[44px] px-4 rounded-xl border border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)] text-sm"
-                      />
-                      <motion.button
-                        type="submit"
-                        disabled={notificationLoading}
-                        className="min-h-[44px] px-6 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-[var(--font-serif)] text-sm tracking-[0.12em] uppercase disabled:opacity-60 hover:bg-[var(--aeterna-gold-light)]"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.97 }}
-                        transition={ARTISAN_SPRING}
-                      >
-                        {notificationLoading ? tx.memorial.saving : tx.memorial.notifyMe}
-                      </motion.button>
+                    <form onSubmit={handleNotifySubmit} className="flex flex-col gap-2">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <input
+                          type="email"
+                          name="notify_email"
+                          required
+                          placeholder={tx.memorial.notifyPlaceholder}
+                          className="flex-1 min-h-[44px] px-4 rounded-xl border border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)] text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)] text-sm"
+                        />
+                        <motion.button
+                          type="submit"
+                          disabled={notificationLoading}
+                          className="min-h-[44px] px-6 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-[var(--font-serif)] text-sm tracking-[0.12em] uppercase disabled:opacity-60 hover:bg-[var(--aeterna-gold-light)]"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                          transition={ARTISAN_SPRING}
+                        >
+                          {notificationLoading ? tx.memorial.saving : tx.memorial.notifyMe}
+                        </motion.button>
+                      </div>
+                      <LegalFormCaption />
                     </form>
                   )}
                   {notificationError && (
@@ -1832,7 +1852,9 @@ export default function GuestFeedPage({ params }: PageProps) {
                 </p>
               )}
 
-              <div className="mt-8 flex gap-3">
+              <LegalFormCaption className="mt-6" />
+
+              <div className="mt-6 flex gap-3">
                 {shareStep > 1 ? (
                   <motion.button
                     type="button"

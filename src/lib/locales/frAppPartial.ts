@@ -82,11 +82,11 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     whatsApp: "WhatsApp",
     message: "Message",
     copyLink: "Copier le lien",
-    filmAria: "Film hommage IA",
+    filmAria: "Clips hommage IA",
     videoUnsupported: "Votre navigateur ne lit pas la vidéo.",
-    filmLabel: "Film",
+    filmLabel: "Clips",
     redirectCheckout: "Redirection vers le paiement…",
-    downloadFilm: "Télécharger le film haute définition",
+    downloadFilm: "Télécharger les clips en haute définition",
     unlockMemories: "Libérer tous les souvenirs",
     premium: "Premium",
     locked: "Protégé",
@@ -105,20 +105,21 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     dragHere: "ou glisser ici",
     formStoryTitle: "Quelle histoire se cache derrière cette image ?",
     formStoryPh: "Un voyage, un instant tranquille, un sourire qui demeure…",
-    formStoryPremium: "Votre photo pourrait figurer dans le film hommage d’une minute.",
+    formStoryPremium:
+      "Votre photo pourrait figurer dans l’hommage en cinq clips (~10 s chacun), style « images mouvantes ».",
     formStoryFree: "Merci d’avoir partagé ce trésor.",
     sending: "Envoi…",
     shareThisMemory: "Partager ce souvenir",
     continueTheStoryBtn: "Poursuivre l’histoire",
     restorePremium: "Rouvrir avec Premium",
     collectionClosed: "La collecte des photos est close",
-    filmCraftedTitle: "Le film hommage se compose",
+    filmCraftedTitle: "Vos clips hommage se composent",
     filmCraftedSubtitle: "Vos souvenirs se tissent en un hommage durable",
     collectionClosedGalleryNote:
       "Merci pour les souvenirs déposés ici — la galerie demeure visible ci-dessous.",
     notifyPlaceholder: "Votre e-mail",
-    notifyFilmTitle: "Prévenez-moi lorsque le film est prêt",
-    notifyFilmThanks: "Merci. Nous vous écrirons dès qu’il sera prêt.",
+    notifyFilmTitle: "Prévenez-moi lorsque les clips sont prêts",
+    notifyFilmThanks: "Merci. Nous vous écrirons dès qu’ils seront prêts.",
     noMemoriesYet: "Aucun souvenir partagé pour le moment.",
     preserveLegacyHeader: "Préserver cet héritage",
     trialGatheringTimerLabel: "Temps restant pour recueillir les souvenirs",
@@ -152,13 +153,49 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "Plus",
     adminTierLabelPremium: "Premium",
     adminContributionsCollected: (count: number) => `${count} contributions sincères collectées`,
+    adminPremiumStatusLine: (count: number) =>
+      `Forfait actuel / Premium / ${count} contributions sincères collectées`,
+    adminPremiumAiTitle: "Hommage « images mouvantes » (cinq chapitres)",
+    adminPremiumAiDescription: (min: number, max: number) =>
+      `Choisissez entre ${min} et ${max} photos approuvées. Premium comprend cinq clips séparés d’environ 10 s (Luma Ray 2) — comme des photographies précieuses qui s’animent doucement, tissées avec les commentaires des proches et l’histoire derrière chaque image. Générez un clip à la fois ; chaque clip utilise un crédit.`,
+    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
+      `Photos dans votre sélection hommage : ${selected} / ${max} (minimum ${min})`,
+    adminPremiumGenerateFilmCta: "Générer le prochain clip hommage (~10 s)",
+    adminPremiumSelectMinGuide: (min: number) => `Sélectionnez au moins ${min} photos pour continuer.`,
+    adminPremiumFooterTagline: "Aeterna Memoir — Préserver vos précieux souvenirs.",
+    adminPremiumMaxPhotosHint: (max: number) =>
+      `Vous pouvez choisir jusqu’à ${max} photos pour l’hommage.`,
+    adminPremiumFilmSelectRangeError: (min: number, max: number) =>
+      `Sélectionnez entre ${min} et ${max} photos approuvées.`,
+    adminPremiumTributeLiveBody: "Votre hommage est en ligne sur le mémorial et prêt à être partagé.",
+    adminPremiumPreviewOnMemorialCta: "Aperçu sur le mémorial",
+    adminPremiumFilmCraftingTitle:
+      "Notre IA prépare votre hommage… cela peut prendre 1 à 2 minutes.",
+    adminPremiumFilmCraftingSubtitle:
+      "Vous pouvez quitter cette page — nous mettrons le mémorial à jour lorsque le clip sera prêt. Cette page se rafraîchit automatiquement.",
+    adminPremiumFilmFailed:
+      "Un problème est survenu pendant le rendu. Contactez le support — nous pouvons rétablir votre crédit clip et vous aider à réessayer.",
+    adminPremiumApprovePhotosFirst:
+      "Approuvez d’abord les photos des invités dans la section Souvenirs ci-dessous, puis revenez ici pour créer vos clips.",
+    adminPremiumRemoveFromFilmAria: "Retirer de la sélection hommage IA",
+    adminPremiumIncludeInFilmAria: "Inclure dans la sélection hommage IA",
+    adminPremiumClipsRemaining: (remaining: number, total: number) =>
+      `${remaining} sur ${total} clips hommage restants à générer`,
+    adminPremiumPhotoPickGuidance:
+      "Pour un résultat optimal sur les cinq clips, choisissez 15 à 20 photos (obligatoire : 10–25). Les commentaires des visiteurs et le récit de chaque photo nourrissent la narration.",
+    adminPremiumCompletedClipsLabel: "Vos clips hommage",
+    adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
+      `Chapitre ${clipOneIndexed} · ~10 s · ${totalClips} au total`,
+    adminPremiumAllClipsComplete:
+      "Les cinq chapitres sont prêts. Retrouvez-les ci-dessus ou sur le mémorial public.",
+    adminPremiumNoClipCredits: "Plus de crédits clip. Contactez le support si besoin.",
     adminPreserveForeverCta: "Préserver à jamais — $19.99",
     adminProcessing: "Traitement…",
     adminMemoriesSectionTitle: "Souvenirs",
     adminTabPending: (count: number) => `En attente (${count})`,
     adminTabApproved: (count: number) => `Approuvés (${count})`,
     upgradePremiumCta: "Passer à Premium",
-    upgradePremiumTail: "pour un futur film hommage sur vos sanctuaires.",
+    upgradePremiumTail: "pour des clips hommage IA sur vos futurs sanctuaires.",
     recentSupportAria: "Soutiens récents",
     donationStatusAria: "État du soutien",
     close: "Fermer",
@@ -276,10 +313,10 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
       premium: {
         title: "Le Film Éternel",
         tagline:
-          "Tous les avantages d'Héritage Éternel, avec accès prioritaire au film hommage IA",
+          "Tous les avantages d'Héritage Éternel, avec cinq clips hommage IA (~10 s chacun)",
         b1: "Tout l’héritage éternel",
-        b2: "Priorité pour le film hommage IA d’une minute — bientôt disponible",
-        tierSub: "Bientôt disponible",
+        b2: "Cinq clips « images mouvantes » pour retrouver leur présence — bientôt disponible",
+        tierSub: "5× ~10 s · Bientôt disponible",
       },
     },
   },

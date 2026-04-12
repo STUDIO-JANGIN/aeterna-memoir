@@ -4,6 +4,7 @@ import { useState, useEffect, type ReactNode } from "react"
 import Link from "next/link"
 import { Heart, QrCode, Sparkles } from "lucide-react"
 import { Navbar } from "@/components/Layout/Navbar"
+import { LandingFooter } from "@/components/LandingFooter"
 import { RevealSection } from "@/components/RevealSection"
 import { LandingLanguageSwitcher } from "@/components/landing/LandingLanguageSwitcher"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
@@ -558,9 +559,7 @@ function LandingPageInner() {
           </div>
         </section>
 
-        <footer className="border-t border-white/[0.03] bg-landing px-5 py-14 text-center">
-          <p className={`text-[10px] tracking-[0.22em] uppercase text-[#525252] ${locSans}`.trim()}>{t.footer}</p>
-        </footer>
+        <LandingFooter />
       </div>
     </div>
   )

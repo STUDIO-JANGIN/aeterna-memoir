@@ -35,6 +35,7 @@ import { getAppPricingFootnote, interpolate, type AppStrings } from "@/lib/appTr
 import { isLandingLocale } from "@/lib/landingTranslations"
 import { getLandingHeroTitleTrackingClass, getLandingLocaleFontClasses } from "@/lib/landingLocaleFonts"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { LegalFormCaption } from "@/components/LegalFormCaption"
 import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
 import { raceWithTimeout } from "@/lib/raceWithTimeout"
@@ -121,8 +122,38 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1)
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1)
 const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
 const MINUTES = ["00", "15", "30", "45"]
-/** Memorial service date — past + upcoming years (matches Born/At Rest ghost selects) */
-const CEREMONY_YEARS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR - 2 + i)
+/** Memorial service year — current year and near future only (no past years in the list). */
+const CEREMONY_YEAR_COUNT = 8
+const CEREMONY_YEARS = Array.from({ length: CEREMONY_YEAR_COUNT }, (_, i) => CURRENT_YEAR + i)
+
+function defaultCeremonyDateParts(): { y: string; m: string; d: string } {
+  const n = new Date()
+  return { y: String(n.getFullYear()), m: String(n.getMonth() + 1), d: String(n.getDate()) }
+}
+
+function daysInCalendarMonth(year: number, month1to12: number): number {
+  if (!year || !month1to12) return 31
+  return new Date(year, month1to12, 0).getDate()
+}
+
+function clampCeremonyDay(yStr: string, mStr: string, dStr: string): string {
+  const y = Number(yStr)
+  const m = Number(mStr)
+  const d = Number(dStr)
+  if (!y || !m || !d) return dStr
+  const max = daysInCalendarMonth(y, m)
+  return String(Math.min(d, max))
+}
+
+function normalizeCeremonyYear(yStr: string): string {
+  const y = Number(yStr)
+  if (!y || Number.isNaN(y)) return String(CEREMONY_YEARS[0])
+  const lo = CEREMONY_YEARS[0]
+  const hi = CEREMONY_YEARS[CEREMONY_YEARS.length - 1]
+  if (y < lo) return String(lo)
+  if (y > hi) return String(hi)
+  return String(y)
+}
 
 const inputBase =
   "w-full rounded-[32px] bg-white/[0.04] px-5 py-4 text-lg text-[color:var(--landing-text-hero)] placeholder:text-white/35 shadow-[inset_0_1px_3px_rgba(0,0,0,0.35)] outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus:bg-white/[0.07] focus:shadow-[inset_0_1px_2px_rgba(0,0,0,0.28),0_0_0_1px_rgba(197,160,89,0.25)] focus:ring-0"
@@ -175,7 +206,7 @@ function isCeremonyTimeComplete(
   minute: string,
   period: "AM" | "PM" | "",
 ): boolean {
-  return hour12 !== "" && minute !== "" && period !== ""
+  return typeof hour12 === "number" && minute !== "" && (period === "AM" || period === "PM")
 }
 
 function buildCeremonyDisplay(
@@ -266,13 +297,13 @@ function CreateEventForm() {
   const atRestRevealRef = useRef(false)
 
   const [location, setLocation] = useState("")
-  /** Service date — picked as three fields so we never inject a default year/day on partial input. */
-  const [ceremonyPickY, setCeremonyPickY] = useState("")
-  const [ceremonyPickM, setCeremonyPickM] = useState("")
-  const [ceremonyPickD, setCeremonyPickD] = useState("")
-  const [ceremonyHour12, setCeremonyHour12] = useState<number | "">("")
-  const [ceremonyM, setCeremonyM] = useState("")
-  const [ceremonyPeriod, setCeremonyPeriod] = useState<"AM" | "PM" | "">("")
+  /** Service date — always valid values (no empty/placeholder rows). */
+  const [ceremonyPickY, setCeremonyPickY] = useState(() => defaultCeremonyDateParts().y)
+  const [ceremonyPickM, setCeremonyPickM] = useState(() => defaultCeremonyDateParts().m)
+  const [ceremonyPickD, setCeremonyPickD] = useState(() => defaultCeremonyDateParts().d)
+  const [ceremonyHour12, setCeremonyHour12] = useState(10)
+  const [ceremonyM, setCeremonyM] = useState("00")
+  const [ceremonyPeriod, setCeremonyPeriod] = useState<"AM" | "PM">("AM")
 
   const [fundLink, setFundLink] = useState("")
   /** Printable invitation — words of remembrance */
@@ -366,6 +397,18 @@ function CreateEventForm() {
     const iso = buildDateString(ceremonyPickY, ceremonyPickM, ceremonyPickD)
     return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : ""
   }, [ceremonyPickY, ceremonyPickM, ceremonyPickD])
+
+  const ceremonyDayOptions = useMemo(() => {
+    const y = Number(ceremonyPickY)
+    const m = Number(ceremonyPickM)
+    if (!y || !m) return DAYS
+    const max = daysInCalendarMonth(y, m)
+    return Array.from({ length: max }, (_, i) => i + 1)
+  }, [ceremonyPickY, ceremonyPickM])
+
+  useEffect(() => {
+    setCeremonyPickD((prev) => clampCeremonyDay(ceremonyPickY, ceremonyPickM, prev))
+  }, [ceremonyPickY, ceremonyPickM])
 
   useEffect(() => {
     wizardStepRef.current = wizardStep
@@ -485,18 +528,22 @@ function CreateEventForm() {
         const rawCd = d.ceremonyDate ?? ""
         if (rawCd && /^\d{4}-\d{2}-\d{2}$/.test(rawCd.trim())) {
           const [y, mo, da] = rawCd.trim().split("-")
-          setCeremonyPickY(y)
-          setCeremonyPickM(String(Number(mo)))
-          setCeremonyPickD(String(Number(da)))
+          const yNorm = normalizeCeremonyYear(y)
+          const mNum = Number(mo)
+          const dNum = Number(da)
+          setCeremonyPickY(yNorm)
+          setCeremonyPickM(String(mNum))
+          setCeremonyPickD(clampCeremonyDay(yNorm, String(mNum), String(dNum)))
         } else {
-          setCeremonyPickY("")
-          setCeremonyPickM("")
-          setCeremonyPickD("")
+          const def = defaultCeremonyDateParts()
+          setCeremonyPickY(normalizeCeremonyYear(def.y))
+          setCeremonyPickM(def.m)
+          setCeremonyPickD(def.d)
         }
         if (d.ceremonyHour12 !== null && d.ceremonyHour12 !== undefined && typeof d.ceremonyHour12 === "number") {
           setCeremonyHour12(d.ceremonyHour12)
-          setCeremonyM(d.ceremonyM ?? "")
-          setCeremonyPeriod(d.ceremonyPeriod ?? "")
+          setCeremonyM(d.ceremonyM && d.ceremonyM !== "" ? d.ceremonyM : "00")
+          setCeremonyPeriod(d.ceremonyPeriod === "PM" ? "PM" : "AM")
         } else {
           const legacyH = (draft as { ceremonyH?: number }).ceremonyH
           if (typeof legacyH === "number") {
@@ -504,10 +551,10 @@ function CreateEventForm() {
             setCeremonyHour12(c.hour12)
             setCeremonyPeriod(c.period)
           } else {
-            setCeremonyHour12("")
-            setCeremonyPeriod("")
+            setCeremonyHour12(10)
+            setCeremonyPeriod("AM")
           }
-          setCeremonyM(d.ceremonyM ?? "")
+          setCeremonyM(d.ceremonyM && d.ceremonyM !== "" ? d.ceremonyM : "00")
         }
       }
       setFundLink(draft.fundLink)
@@ -568,7 +615,7 @@ function CreateEventForm() {
       ceremonyDate,
       ceremonyHour12: typeof ceremonyHour12 === "number" ? ceremonyHour12 : null,
       ceremonyM,
-      ceremonyPeriod: ceremonyPeriod === "" ? null : ceremonyPeriod,
+      ceremonyPeriod,
       fundLink,
       invitationBio,
       storagePlan,
@@ -862,12 +909,15 @@ function CreateEventForm() {
     setDeathM("")
     setDeathD("")
     setLocation("")
-    setCeremonyPickY("")
-    setCeremonyPickM("")
-    setCeremonyPickD("")
-    setCeremonyHour12("")
-    setCeremonyM("")
-    setCeremonyPeriod("")
+    {
+      const def = defaultCeremonyDateParts()
+      setCeremonyPickY(normalizeCeremonyYear(def.y))
+      setCeremonyPickM(def.m)
+      setCeremonyPickD(def.d)
+    }
+    setCeremonyHour12(10)
+    setCeremonyM("00")
+    setCeremonyPeriod("AM")
     setFundLink("")
     setInvitationBio("")
     setWillHostMemorialService(null)
@@ -941,7 +991,7 @@ function CreateEventForm() {
       ceremonyDate,
       ceremonyHour12: typeof ceremonyHour12 === "number" ? ceremonyHour12 : null,
       ceremonyM,
-      ceremonyPeriod: ceremonyPeriod === "" ? null : ceremonyPeriod,
+      ceremonyPeriod,
       fundLink,
       invitationBio,
       storagePlan,
@@ -1015,12 +1065,15 @@ function CreateEventForm() {
       setStepSlideDir(1)
       if (willHostMemorialService === false) {
         setLocation("")
-        setCeremonyPickY("")
-        setCeremonyPickM("")
-        setCeremonyPickD("")
-        setCeremonyHour12("")
-        setCeremonyM("")
-        setCeremonyPeriod("")
+        {
+          const def = defaultCeremonyDateParts()
+          setCeremonyPickY(normalizeCeremonyYear(def.y))
+          setCeremonyPickM(def.m)
+          setCeremonyPickD(def.d)
+        }
+        setCeremonyHour12(10)
+        setCeremonyM("00")
+        setCeremonyPeriod("AM")
         setFundLink("")
         const next = 8
         const d = buildCreateDraft(next)
@@ -1533,6 +1586,7 @@ function CreateEventForm() {
                       }
                     }}
                   />
+                  <LegalFormCaption className="mt-8 max-w-md mx-auto" />
                 </div>
               )}
 
@@ -1776,12 +1830,11 @@ function CreateEventForm() {
                           onChange={(e) => {
                             const m = e.target.value
                             setCeremonyPickM(m)
-                            if (m) scrollNeighborIntoView(ceremonyServiceDRef.current)
+                            scrollNeighborIntoView(ceremonyServiceDRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Service month"
                         >
-                          <option value="">MM</option>
                           {MONTHS.map((mo) => (
                             <option key={mo} value={mo}>
                               {mo}
@@ -1794,13 +1847,12 @@ function CreateEventForm() {
                           onChange={(e) => {
                             const d = e.target.value
                             setCeremonyPickD(d)
-                            if (d) scrollNeighborIntoView(ceremonyServiceYRef.current)
+                            scrollNeighborIntoView(ceremonyServiceYRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Service day"
                         >
-                          <option value="">DD</option>
-                          {DAYS.map((day) => (
+                          {ceremonyDayOptions.map((day) => (
                             <option key={day} value={day}>
                               {day}
                             </option>
@@ -1812,12 +1864,11 @@ function CreateEventForm() {
                           onChange={(e) => {
                             const y = e.target.value
                             setCeremonyPickY(y)
-                            if (y) scrollNeighborIntoView(ceremonyHour12Ref.current)
+                            scrollNeighborIntoView(ceremonyHour12Ref.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Service year"
                         >
-                          <option value="">YYYY</option>
                           {CEREMONY_YEARS.map((y) => (
                             <option key={y} value={y}>
                               {y}
@@ -1832,16 +1883,14 @@ function CreateEventForm() {
                       <div className="grid grid-cols-3 gap-4 md:gap-5">
                         <select
                           ref={ceremonyHour12Ref}
-                          value={ceremonyHour12 === "" ? "" : String(ceremonyHour12)}
+                          value={String(ceremonyHour12)}
                           onChange={(e) => {
-                            const raw = e.target.value
-                            setCeremonyHour12(raw === "" ? "" : Number(raw))
+                            setCeremonyHour12(Number(e.target.value))
                             scrollNeighborIntoView(ceremonyMinuteRef.current)
                           }}
                           className={ghostDateSelectClass}
                           aria-label="Service hour"
                         >
-                          <option value="">{a.createWizard.hour}</option>
                           {HOURS_12.map((h) => (
                             <option key={h} value={h}>
                               {h}
@@ -1858,7 +1907,6 @@ function CreateEventForm() {
                           className={ghostDateSelectClass}
                           aria-label="Service minute"
                         >
-                          <option value="">{a.createWizard.min}</option>
                           {MINUTES.map((m) => (
                             <option key={m} value={m}>
                               {m}
@@ -1868,11 +1916,10 @@ function CreateEventForm() {
                         <select
                           ref={ceremonyPeriodRef}
                           value={ceremonyPeriod}
-                          onChange={(e) => setCeremonyPeriod(e.target.value as "AM" | "PM" | "")}
+                          onChange={(e) => setCeremonyPeriod(e.target.value as "AM" | "PM")}
                           className={ghostDateSelectClass}
                           aria-label="AM or PM"
                         >
-                          <option value="">{a.createWizard.amPm}</option>
                           <option value="AM">AM</option>
                           <option value="PM">PM</option>
                         </select>
@@ -1934,32 +1981,35 @@ function CreateEventForm() {
                       <p className="text-sm text-white/45">{a.createWizard.checkingAccount}</p>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={handleContinueWithGoogle}
-                      disabled={googleLoading || signingOut}
-                      className="mx-auto flex min-h-[56px] w-full max-w-sm items-center justify-center gap-3 rounded-[32px] border border-white/10 bg-[#030303]/55 px-6 py-3.5 text-[var(--landing-text-hero)] font-semibold transition-colors duration-300 ease-in-out hover:border-white/25 hover:bg-white/[0.06] disabled:opacity-50"
-                    >
-                      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden>
-                        <path
-                          fill="#4285F4"
-                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                        />
-                        <path
-                          fill="#34A853"
-                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                        />
-                        <path
-                          fill="#FBBC05"
-                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                        />
-                        <path
-                          fill="#EA4335"
-                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                        />
-                      </svg>
-                      {googleLoading ? a.common.redirecting : a.createWizard.continueWithGoogle}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleContinueWithGoogle}
+                        disabled={googleLoading || signingOut}
+                        className="mx-auto flex min-h-[56px] w-full max-w-sm items-center justify-center gap-3 rounded-[32px] border border-white/10 bg-[#030303]/55 px-6 py-3.5 text-[var(--landing-text-hero)] font-semibold transition-colors duration-300 ease-in-out hover:border-white/25 hover:bg-white/[0.06] disabled:opacity-50"
+                      >
+                        <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden>
+                          <path
+                            fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                          />
+                          <path
+                            fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                          />
+                        </svg>
+                        {googleLoading ? a.common.redirecting : a.createWizard.continueWithGoogle}
+                      </button>
+                      <LegalFormCaption className="mt-6 max-w-sm mx-auto" />
+                    </>
                   )}
                 </div>
               )}

@@ -105,7 +105,8 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
     dragHere: "o arrastre aquí",
     formStoryTitle: "¿Qué historia hay tras esta imagen?",
     formStoryPh: "Un viaje, un instante quieto, una sonrisa que perdura…",
-    formStoryPremium: "Su foto podría integrar la película homenaje de un minuto.",
+    formStoryPremium:
+      "Su foto podría integrar los cinco clips homenaje con IA (~10 s cada uno), como fotografías que cobran vida.",
     formStoryFree: "Gracias por compartir este tesoro.",
     sending: "Enviando…",
     shareThisMemory: "Compartir este recuerdo",
@@ -152,13 +153,49 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "Plus",
     adminTierLabelPremium: "Premium",
     adminContributionsCollected: (count: number) => `${count} contribuciones sinceras recolectadas`,
+    adminPremiumStatusLine: (count: number) =>
+      `Plan actual / Premium / ${count} contribuciones sinceras recolectadas`,
+    adminPremiumAiTitle: "Homenaje «fotos vivas» (cinco capítulos)",
+    adminPremiumAiDescription: (min: number, max: number) =>
+      `Elija entre ${min} y ${max} fotos aprobadas. Premium incluye cinco clips separados de ~10 s (Luma Ray 2): recuerdos que se animan con suavidad, entretejidos con los comentarios de los visitantes y la historia de cada foto. Genere un clip a la vez; cada uno usa un crédito.`,
+    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
+      `Fotos en su selección homenaje: ${selected} / ${max} (mínimo ${min})`,
+    adminPremiumGenerateFilmCta: "Generar siguiente clip homenaje (~10 s)",
+    adminPremiumSelectMinGuide: (min: number) => `Seleccione al menos ${min} fotos para continuar.`,
+    adminPremiumFooterTagline: "Aeterna Memoir — Preservando sus recuerdos más preciados.",
+    adminPremiumMaxPhotosHint: (max: number) =>
+      `Puede elegir hasta ${max} fotos para el homenaje.`,
+    adminPremiumFilmSelectRangeError: (min: number, max: number) =>
+      `Seleccione entre ${min} y ${max} fotos aprobadas.`,
+    adminPremiumTributeLiveBody: "Su tributo ya está en el memorial y listo para compartir.",
+    adminPremiumPreviewOnMemorialCta: "Vista previa en el memorial",
+    adminPremiumFilmCraftingTitle:
+      "Nuestra IA está creando su tributo… puede tardar 1 o 2 minutos.",
+    adminPremiumFilmCraftingSubtitle:
+      "Puede salir de esta página — actualizaremos el memorial cuando el clip esté listo. Esta página se actualiza sola.",
+    adminPremiumFilmFailed:
+      "Algo salió mal durante el renderizado. Contacte a soporte: podemos restaurar su crédito de clip y ayudarle a reintentar.",
+    adminPremiumApprovePhotosFirst:
+      "Apruebe primero las fotos de los invitados en Recuerdos abajo y vuelva aquí para generar clips.",
+    adminPremiumRemoveFromFilmAria: "Quitar de la selección homenaje con IA",
+    adminPremiumIncludeInFilmAria: "Incluir en la selección homenaje con IA",
+    adminPremiumClipsRemaining: (remaining: number, total: number) =>
+      `Le quedan ${remaining} de ${total} clips homenaje por generar`,
+    adminPremiumPhotoPickGuidance:
+      "Para un buen resultado en los cinco clips, elija 15–20 fotos (obligatorio: 10–25). Los comentarios y cada historia se integran en la narración.",
+    adminPremiumCompletedClipsLabel: "Sus clips homenaje",
+    adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
+      `Capítulo ${clipOneIndexed} · ~10 s · ${totalClips} en total`,
+    adminPremiumAllClipsComplete:
+      "Los cinco capítulos están listos. Vuelva a verlos arriba o en el memorial público.",
+    adminPremiumNoClipCredits: "No le quedan créditos de clip. Contacte a soporte si necesita ayuda.",
     adminPreserveForeverCta: "Preservar para siempre — $19.99",
     adminProcessing: "Procesando…",
     adminMemoriesSectionTitle: "Recuerdos",
     adminTabPending: (count: number) => `Pendientes (${count})`,
     adminTabApproved: (count: number) => `Aprobados (${count})`,
     upgradePremiumCta: "Pasarse a Premium",
-    upgradePremiumTail: "para una futura película homenaje en sus santuarios.",
+    upgradePremiumTail: "para clips homenaje con IA en futuros memoriales.",
     recentSupportAria: "Apoyos recientes",
     donationStatusAria: "Estado del apoyo",
     close: "Cerrar",
@@ -275,10 +312,10 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
       premium: {
         title: "La Película Eterna",
         tagline:
-          "Todo lo incluido en Legado Eterno, además de acceso prioritario a su película tributo de 1 minuto creada con IA.",
+          "Todo lo incluido en Legado Eterno, además de cinco clips tributo con IA de ~10 s cada uno",
         b1: "Todo Legado Eterno",
-        b2: "Prioridad en el film homenaje al lanzar la V2 — reserve hoy",
-        tierSub: "Legado Eterno + película tributo con IA",
+        b2: "Cinco clips «fotos vivas» para sentir su presencia — prioridad al lanzar la V2",
+        tierSub: "5× ~10 s · Legado Eterno + tributo IA",
       },
     },
   },

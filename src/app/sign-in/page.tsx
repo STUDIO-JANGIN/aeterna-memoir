@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase/browser"
 import { buildOAuthCallbackRedirectUrl } from "@/lib/appUrl"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { LegalFormCaption } from "@/components/LegalFormCaption"
 
 function sanitizeNextPath(param: string | null): string {
   if (!param) return "/my-memorial"
@@ -100,17 +101,18 @@ function SignInContent() {
           onClick={handleContinueWithGoogle}
           disabled={googleLoading}
           dir="ltr"
-          className="btn-landing-google w-full shrink-0 justify-center px-5 disabled:opacity-60"
+          className="btn-landing-google w-full shrink-0 justify-center font-[var(--font-sans)] disabled:opacity-60"
         >
           <GoogleMark className="shrink-0" />
           <span>{googleLoading ? t.signIn.redirecting : t.signIn.continueGoogle}</span>
         </button>
         <Link
           href="/"
-          className="btn-landing-outline-gold w-full shrink-0 min-h-[52px] justify-center no-underline"
+          className="btn-landing-outline-gold-signin-pair w-full shrink-0 justify-center text-center no-underline font-[var(--font-sans)]"
         >
           {t.common.backToHome}
         </Link>
+        <LegalFormCaption className="mt-2 px-1" />
       </div>
       {message ? <p className="mt-6 text-sm text-[var(--aeterna-gold-muted)]">{message}</p> : null}
     </div>

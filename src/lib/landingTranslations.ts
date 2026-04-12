@@ -121,7 +121,8 @@ const EN: LandingStrings = {
       },
       {
         tierName: "The Eternal Film",
-        value: "Everything in Legacy, plus priority access to your 1-minute AI tribute film.",
+        value:
+          "Everything in Legacy, plus five AI tribute clips (~10s each) — moving photographs that bring you close to them again.",
         cta: "Select",
         statusTag: "Coming Soon",
       },
@@ -158,7 +159,7 @@ const EN: LandingStrings = {
       },
       {
         q: "What happens in the long run?",
-        a: "We believe memories should move and speak. In the future, we will help you turn the most-loved photos into a beautiful AI tribute film: a living movie of a life well-lived, so the story stays vibrant for generations to come.",
+        a: "We believe memories should move and speak. Premium helps you turn the most-loved photos into five warm AI tribute clips (~10s each)—moving photographs of a life well-lived—so the story stays vibrant for generations to come.",
       },
     ],
   },
@@ -223,7 +224,7 @@ const KO: LandingStrings = {
       {
         tierName: "영원한 필름",
         value:
-          "Legacy의 모든 혜택과 더불어, AI가 제작하는 1분 추모 필름 우선 이용권을 제공합니다.",
+          "Legacy의 모든 혜택과 더불어, AI 추모 클립 5개(각 약 10초) 우선 이용 — 살아 움직이는 사진처럼 다시 만나는 느낌을 선사합니다.",
         cta: "선택",
         statusTag: "곧 출시",
       },
@@ -260,7 +261,7 @@ const KO: LandingStrings = {
       },
       {
         q: "장기적으로는 어떻게 관리되나요?",
-        a: "우리는 기억이 정체되지 않고 생동감 있게 전달되어야 한다고 믿습니다. 향후에는 가장 사랑받은 사진들을 모아 AI 추모 필름(인생 영화)을 제작해 드립니다. 이를 통해 고인의 이야기가 다음 세대에게도 찬란하게 전해지도록 돕겠습니다.",
+        a: "우리는 기억이 정체되지 않고 생동감 있게 전달되어야 한다고 믿습니다. 프리미엄으로 사랑받은 사진을 바탕으로 AI가 약 10초 길이의 추모 클립 다섯 편을 만듭니다(움직이는 사진처럼 따뜻하게). 고인의 이야기가 다음 세대에게도 이어지도록 돕습니다.",
       },
     ],
   },
@@ -325,7 +326,7 @@ const JA: LandingStrings = {
       {
         tierName: "永遠のフィルム",
         value:
-          "永遠の遺産プランの全特典に加え、AIが制作する1分間の追悼フィルムへの優先アクセスをご提供します。",
+          "永遠の遺産の全特典に加え、AIによる追悼クリップ5本（各約10秒）を優先提供 — 動く写真のようにそばにいるような温かさを。",
         cta: "選ぶ",
         statusTag: "近日公開",
       },
@@ -362,7 +363,7 @@ const JA: LandingStrings = {
       },
       {
         q: "長期的な管理はどうなりますか？",
-        a: "私たちは、記憶は停滞せず、生き生きと伝えられるべきだと信じています。将来的には、最も愛された写真を集めて「AI追悼フィルム」を制作します。これにより、故人の物語が次の世代にも鮮やかに伝わるようお手伝いいたします。",
+        a: "私たちは、記憶は停滞せず、生き生きと伝えられるべきだと信じています。プレミアムでは、大切な写真をもとにそれぞれ約10秒の追悼クリップを5本お届けします（動く写真のように、そばにいるような温かさを）。故人の物語が次の世代にも鮮やかに伝わるようお手伝いします。",
       },
     ],
   },
@@ -428,7 +429,7 @@ const FR: LandingStrings = {
       {
         tierName: "Le Film Éternel",
         value:
-          "Tous les avantages d'Héritage Éternel, avec un accès prioritaire à votre film hommage d'une minute conçu par IA.",
+          "Tous les avantages d'Héritage Éternel, avec cinq clips hommage IA d'environ 10 secondes chacun — comme des photographies qui s'animent pour retrouver leur présence.",
         cta: "Choisir",
         statusTag: "Bientôt disponible",
       },
@@ -465,7 +466,7 @@ const FR: LandingStrings = {
       },
       {
         q: "Que se passe-t-il sur le long terme ?",
-        a: "Nous pensons que les souvenirs doivent rester vivants. À l'avenir, nous vous aiderons à transformer les photos les plus marquantes en un film hommage par IA : une œuvre cinématographique d'une vie bien remplie, pour que l'histoire reste vibrante pour les générations futures.",
+        a: "Nous pensons que les souvenirs doivent rester vivants. Avec Premium, vos photos les plus aimées deviennent cinq clips hommage d’environ 10 secondes — des « images mouvantes » chaleureuses — pour que l’histoire d’une vie demeure vibrante pour les générations futures.",
       },
     ],
   },
@@ -531,7 +532,7 @@ const ES: LandingStrings = {
       {
         tierName: "La Película Eterna",
         value:
-          "Todo lo incluido en Legado Eterno, además de acceso prioritario a su película tributo de 1 minuto creada con IA.",
+          "Todo lo incluido en Legado Eterno, además de cinco clips tributo con IA de ~10 s cada uno — como fotografías que cobran vida para volver a sentir su presencia.",
         cta: "Elegir",
         statusTag: "Próximamente",
       },
@@ -568,7 +569,7 @@ const ES: LandingStrings = {
       },
       {
         q: "¿Qué pasa a largo plazo?",
-        a: "Creemos que los recuerdos deben moverse y hablar. En el futuro, le ayudaremos a convertir las fotos más queridas en una hermosa película tributo con IA: una película viva de una vida bien vivida, para que la historia permanezca vibrante para las generaciones venideras.",
+        a: "Creemos que los recuerdos deben moverse y hablar. Con Premium, sus fotos más queridas se convierten en cinco clips tributo de ~10 s cada uno — como fotografías que cobran vida — para que la historia de una vida siga viva en las generaciones venideras.",
       },
     ],
   },
@@ -633,7 +634,7 @@ const AR: LandingStrings = {
       {
         tierName: "الفيلم الخالد",
         value:
-          "كل مزايا «الإرث الأبدي»، بالإضافة إلى أولوية الوصول إلى فيلمك التكريمي المنتج بالذكاء الاصطناعي.",
+          "كل مزايا «الإرث الأبدي»، بالإضافة إلى خمس مقاطع تكريمية بالذكاء الاصطناعي (~10 ثوانٍ لكل منها) — كصور تتحرك لتشعر بقربهم من جديد.",
         cta: "اختر",
         statusTag: "قريباً",
       },
@@ -670,7 +671,7 @@ const AR: LandingStrings = {
       },
       {
         q: "ماذا يحدث على المدى الطويل؟",
-        a: "نؤمن بأن الذكريات يجب أن تتحرك وتتحدث. في المستقبل، سنساعدكم على تحويل الصور الأكثر تأثيراً إلى فيلم تكريمي بالذكاء الاصطناعي: فيلم حي لحياة عيشت بجمال، لتبقى القصة نابضة بالحياة للأجيال القادمة.",
+        a: "نؤمن بأن الذكريات يجب أن تتحرك وتتحدث. مع بريميوم، نحوّل صوركم الأعزّ إلى خمس مقاطع تكريمية بالذكاء الاصطناعي (~10 ثوانٍ لكل منها) — كصور تتحرك بحرارة — لتبقى قصة الحياة حاضرة للأجيال القادمة.",
       },
     ],
   },
@@ -732,7 +733,7 @@ const ZH: LandingStrings = {
       },
       {
         tierName: "永恆影卷",
-        value: "包含「永恆傳承」所有功能，並享有優先製作 1 分鐘 AI 追思影片的權利。",
+        value: "包含「永恆傳承」所有功能，並享有五段 AI 追思短片（各約 10 秒）優先製作 — 如會動的照片，再次與摯愛相遇。",
         cta: "選擇",
         statusTag: "即將推出",
       },
@@ -769,7 +770,7 @@ const ZH: LandingStrings = {
       },
       {
         q: "長期而言會如何運作？",
-        a: "我們相信回憶應該是鮮活且流動的。未來，我們將協助您將最受觸動的照片轉化為精美的 AI 追思影片：一段關於精彩人生的動態電影，讓故事在世代間生生不息。",
+        a: "我們相信回憶應該是鮮活且流動的。進階方案會將您最珍視的照片化為五段 AI 追思短片（各約 10 秒），如會動的畫面般溫暖，讓生命故事在世代間延續。",
       },
     ],
   },

@@ -195,16 +195,27 @@ export function landingPlanHref(
   return `/create?${params.toString()}`
 }
 
-/** Resolve Stripe Price ID for regional checkout; falls back to legacy single-currency env vars for USD. */
+/**
+ * Live-mode master Price IDs (multi-currency in Stripe Dashboard).
+ * Override per env for test mode or legacy per-currency prices.
+ */
+export const STRIPE_DEFAULT_PRICE_ID_PLUS = "price_1TLQapRx4nwbdr0ovMVg8fdj"
+export const STRIPE_DEFAULT_PRICE_ID_PREMIUM = "price_1TLQR9Rx4nwbdr0oo0wMzgVu"
+
+/** Resolve Stripe Price ID for checkout (master multi-currency price preferred). */
 export function resolveStripePriceIdPlus(currency: PricingCurrencyId): string | undefined {
+  const explicit =
+    process.env.STRIPE_PRICE_ID_PLUS?.trim() || process.env.STRIPE_PRICE_ID_PLUS_MASTER?.trim()
+  if (explicit) return explicit
   const map: Record<PricingCurrencyId, string | undefined> = {
-    usd: process.env.STRIPE_PRICE_ID_PLUS_USD ?? process.env.STRIPE_PRICE_ID_PLUS,
-    krw: process.env.STRIPE_PRICE_ID_PLUS_KRW,
-    jpy: process.env.STRIPE_PRICE_ID_PLUS_JPY,
-    sar: process.env.STRIPE_PRICE_ID_PLUS_SAR,
+    usd: process.env.STRIPE_PRICE_ID_PLUS_USD?.trim(),
+    krw: process.env.STRIPE_PRICE_ID_PLUS_KRW?.trim(),
+    jpy: process.env.STRIPE_PRICE_ID_PLUS_JPY?.trim(),
+    sar: process.env.STRIPE_PRICE_ID_PLUS_SAR?.trim(),
   }
-  const id = map[currency]?.trim()
-  return id || undefined
+  const regional = map[currency]?.trim()
+  if (regional) return regional
+  return STRIPE_DEFAULT_PRICE_ID_PLUS
 }
 
 /** Short legal-ish line on /create plan step (English UI; amounts follow regional checkout). */
@@ -219,12 +230,16 @@ export function getCreateFlowPricingFootnote(currency: PricingCurrencyId): strin
 }
 
 export function resolveStripePriceIdPremium(currency: PricingCurrencyId): string | undefined {
+  const explicit =
+    process.env.STRIPE_PRICE_ID_PREMIUM?.trim() || process.env.STRIPE_PRICE_ID_PREMIUM_MASTER?.trim()
+  if (explicit) return explicit
   const map: Record<PricingCurrencyId, string | undefined> = {
-    usd: process.env.STRIPE_PRICE_ID_PREMIUM_USD ?? process.env.STRIPE_PRICE_ID_PREMIUM,
-    krw: process.env.STRIPE_PRICE_ID_PREMIUM_KRW,
-    jpy: process.env.STRIPE_PRICE_ID_PREMIUM_JPY,
-    sar: process.env.STRIPE_PRICE_ID_PREMIUM_SAR,
+    usd: process.env.STRIPE_PRICE_ID_PREMIUM_USD?.trim(),
+    krw: process.env.STRIPE_PRICE_ID_PREMIUM_KRW?.trim(),
+    jpy: process.env.STRIPE_PRICE_ID_PREMIUM_JPY?.trim(),
+    sar: process.env.STRIPE_PRICE_ID_PREMIUM_SAR?.trim(),
   }
-  const id = map[currency]?.trim()
-  return id || undefined
+  const regional = map[currency]?.trim()
+  if (regional) return regional
+  return STRIPE_DEFAULT_PRICE_ID_PREMIUM
 }

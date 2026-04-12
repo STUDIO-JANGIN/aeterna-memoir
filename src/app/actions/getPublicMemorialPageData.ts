@@ -23,6 +23,8 @@ export type PublicMemorialEvent = {
   created_at: string | null
   film_url: string | null
   full_film_url: string | null
+  /** Up to five ~10s tribute clip URLs (null slots omitted in UI). */
+  tribute_film_urls: (string | null)[] | null
   creator_email: string | null
   creator_user_id: string | null
   photo_deadline: string | null
@@ -31,6 +33,8 @@ export type PublicMemorialEvent = {
   tier: string | null
   bank_info: string | null
   invite_pdf_url: string | null
+  /** Locale → URL; use with {@link resolveInvitePdfUrl} for the active language. */
+  invite_pdf_urls: Record<string, string> | null
   /** Remembrance text from create flow / admin — shown on public memorial. */
   invitation_bio: string | null
 }
@@ -101,6 +105,9 @@ function rowToPublicEvent(row: Record<string, unknown>): PublicMemorialEvent {
     created_at: (row.created_at as string | null) ?? null,
     film_url: (row.film_url as string | null) ?? null,
     full_film_url: (row.full_film_url as string | null) ?? null,
+    tribute_film_urls: Array.isArray(row.tribute_film_urls)
+      ? (row.tribute_film_urls as (string | null)[])
+      : null,
     creator_email: (row.creator_email as string | null) ?? null,
     creator_user_id: (row.creator_user_id as string | null) ?? null,
     photo_deadline: (row.photo_deadline as string | null) ?? null,
@@ -109,6 +116,7 @@ function rowToPublicEvent(row: Record<string, unknown>): PublicMemorialEvent {
     tier: (row.tier as string | null) ?? null,
     bank_info: (row.bank_info as string | null) ?? null,
     invite_pdf_url: (row.invite_pdf_url as string | null) ?? null,
+    invite_pdf_urls: (row.invite_pdf_urls as Record<string, string> | null) ?? null,
     invitation_bio: (row.invitation_bio as string | null) ?? null,
   }
 }

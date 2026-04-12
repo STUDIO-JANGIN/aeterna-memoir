@@ -209,6 +209,30 @@ export type AppStrings = {
     adminTierLabelPlus: string
     adminTierLabelPremium: string
     adminContributionsCollected: (count: number) => string
+    /** Premium (AI film) admin — one-line status; replaces plan row + contribution count */
+    adminPremiumStatusLine: (count: number) => string
+    adminPremiumAiTitle: string
+    adminPremiumAiDescription: (min: number, max: number) => string
+    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) => string
+    adminPremiumGenerateFilmCta: string
+    adminPremiumSelectMinGuide: (min: number) => string
+    adminPremiumFooterTagline: string
+    adminPremiumMaxPhotosHint: (max: number) => string
+    adminPremiumFilmSelectRangeError: (min: number, max: number) => string
+    adminPremiumTributeLiveBody: string
+    adminPremiumPreviewOnMemorialCta: string
+    adminPremiumFilmCraftingTitle: string
+    adminPremiumFilmCraftingSubtitle: string
+    adminPremiumFilmFailed: string
+    adminPremiumApprovePhotosFirst: string
+    adminPremiumRemoveFromFilmAria: string
+    adminPremiumIncludeInFilmAria: string
+    adminPremiumClipsRemaining: (remaining: number, total: number) => string
+    adminPremiumPhotoPickGuidance: string
+    adminPremiumCompletedClipsLabel: string
+    adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) => string
+    adminPremiumAllClipsComplete: string
+    adminPremiumNoClipCredits: string
     adminPreserveForeverCta: string
     adminProcessing: string
     adminMemoriesSectionTitle: string
@@ -494,7 +518,8 @@ const EN: AppStrings = {
     dragHere: "or drag one here",
     formStoryTitle: "Tell us the story behind this photo.",
     formStoryPh: "A favorite trip, a quiet everyday moment, or a smile you'll always remember…",
-    formStoryPremium: "Your photo might be featured in the 1-minute AI tribute film.",
+    formStoryPremium:
+      "Your photo and story may appear in the five-chapter AI tribute (five ~10s clips, moving-picture style).",
     formStoryFree: "Thank you for sharing your precious memory.",
     sending: "Sending…",
     shareThisMemory: "Share this memory",
@@ -541,13 +566,49 @@ const EN: AppStrings = {
     adminTierLabelPremium: "Premium",
     adminContributionsCollected: (count: number) =>
       count === 1 ? "1 Heartfelt Contribution Collected" : `${count} Heartfelt Contributions Collected`,
+    adminPremiumStatusLine: (count: number) =>
+      `Current plan / Premium / ${
+        count === 1 ? "1 heartfelt contribution collected" : `${count} heartfelt contributions collected`
+      }`,
+    adminPremiumAiTitle: "Moving-picture tribute (five chapters)",
+    adminPremiumAiDescription: (min: number, max: number) =>
+      `Select ${min}–${max} approved photos. Premium includes five separate ~10s clips (Luma Ray 2) — like treasured photographs that softly come alive, woven with guest comments and the stories behind each picture. Generate one clip at a time; each uses one credit.`,
+    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
+      `Photos in your tribute pool: ${selected} / ${max} (minimum ${min})`,
+    adminPremiumGenerateFilmCta: "Generate next tribute clip (~10s)",
+    adminPremiumSelectMinGuide: (min: number) => `Select at least ${min} photos to continue.`,
+    adminPremiumFooterTagline: "Aeterna Memoir — preserving your precious memories forever.",
+    adminPremiumMaxPhotosHint: (max: number) => `You can choose up to ${max} photos for the film.`,
+    adminPremiumFilmSelectRangeError: (min: number, max: number) =>
+      `Select between ${min} and ${max} approved photos.`,
+    adminPremiumTributeLiveBody: "Your tribute is live on the memorial and ready to share.",
+    adminPremiumPreviewOnMemorialCta: "Preview on memorial",
+    adminPremiumFilmCraftingTitle: "Our AI is crafting your tribute… this may take 1–2 minutes.",
+    adminPremiumFilmCraftingSubtitle:
+      "You can leave this page — we'll update the memorial when the film is ready. This page refreshes automatically.",
+    adminPremiumFilmFailed:
+      "Something went wrong during rendering. Please contact support — we can restore your clip credit and help you retry.",
+    adminPremiumApprovePhotosFirst:
+      "Approve guest photos in the Memories section below, then return here to build your film.",
+    adminPremiumRemoveFromFilmAria: "Remove from AI tribute film selection",
+    adminPremiumIncludeInFilmAria: "Include in AI tribute film",
+    adminPremiumClipsRemaining: (remaining: number, total: number) =>
+      `${remaining} of ${total} tribute clips left to generate`,
+    adminPremiumPhotoPickGuidance:
+      "For the best result across all five clips, choose 15–20 photos (required: 10–25). Visitor comments and each photo’s story are woven into the narration.",
+    adminPremiumCompletedClipsLabel: "Your tribute clips",
+    adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
+      `Chapter ${clipOneIndexed} · ~10s · ${totalClips} total`,
+    adminPremiumAllClipsComplete:
+      "All five tribute chapters are ready. You can revisit them above or on the public memorial.",
+    adminPremiumNoClipCredits: "No clip credits left. Contact support if you need help.",
     adminPreserveForeverCta: "Preserve Forever — $19.99",
     adminProcessing: "Processing…",
     adminMemoriesSectionTitle: "Memories",
     adminTabPending: (count: number) => `Pending (${count})`,
     adminTabApproved: (count: number) => `Approved (${count})`,
     upgradePremiumCta: "Upgrade to Premium",
-    upgradePremiumTail: "for an AI tribute film on future memorials.",
+    upgradePremiumTail: "for five ~10s AI tribute clips on future memorials.",
     recentSupportAria: "Recent Support",
     donationStatusAria: "Donation status",
     close: "Close",
@@ -662,10 +723,11 @@ const EN: AppStrings = {
       },
       premium: {
         title: "The Eternal Film",
-        tagline: "Eternal Legacy + AI Film Pre-Order",
+        tagline: "Five moving-picture chapters · ~10s each",
         b1: "Everything in Eternal Legacy",
-        b2: "Priority access to your AI tribute film when V2 launches — pre-order today",
-        tierSub: "Eternal Legacy + AI Film Pre-Order",
+        b2:
+          "Five AI tribute clips (~10s each, Luma Ray 2) — like photographs that gently come alive so you can meet them again in warmth and light",
+        tierSub: "5× ~10s clips · moving-picture style",
       },
     },
   },
@@ -820,7 +882,8 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     dragHere: "또는 여기로 끌어 놓기",
     formStoryTitle: "이 사진 뒤의 이야기를 들려주세요.",
     formStoryPh: "여행, 일상의 한 순간, 잊지 못할 미소…",
-    formStoryPremium: "이 사진이 1분 AI 추모 영상에 담길 수 있습니다.",
+    formStoryPremium:
+      "이 사진과 이야기는 다섯 개의 AI 헌정 클립(각 약 10초, 움직이는 사진 스타일)에 담길 수 있습니다.",
     formStoryFree: "소중한 추억을 나눠 주셔서 감사합니다.",
     sending: "보내는 중…",
     shareThisMemory: "이 추억 공유하기",
@@ -866,13 +929,47 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "플러스",
     adminTierLabelPremium: "프리미엄",
     adminContributionsCollected: (count: number) => `${count}개의 소중한 추억이 수집됨`,
+    adminPremiumStatusLine: (count: number) =>
+      `현재 플랜 / 프리미엄 / ${count}개의 소중한 추억이 수집됨`,
+    adminPremiumAiTitle: "움직이는 사진 헌정 (5개 챕터)",
+    adminPremiumAiDescription: (min: number, max: number) =>
+      `승인된 사진 ${min}~${max}장을 선택하세요. 프리미엄은 약 10초짜리 클립 5개(Luma Ray 2)로, 방문자 댓글과 사진별 이야기를 녹여 마법의 사진처럼 따뜻하게 이어집니다. 한 번에 한 클립씩 생성합니다.`,
+    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
+      `헌정 풀에 선택된 사진: ${selected} / ${max} (최소 ${min}장)`,
+    adminPremiumGenerateFilmCta: "다음 헌정 클립 생성 (~10초)",
+    adminPremiumSelectMinGuide: (min: number) => `계속하려면 최소 ${min}장의 사진을 선택해 주세요.`,
+    adminPremiumFooterTagline: "Aeterna Memoir — 당신의 소중한 기억을 영원히 수호합니다.",
+    adminPremiumMaxPhotosHint: (max: number) => `헌정 클립에는 최대 ${max}장까지 선택할 수 있습니다.`,
+    adminPremiumFilmSelectRangeError: (min: number, max: number) =>
+      `승인된 사진 ${min}~${max}장을 선택해 주세요.`,
+    adminPremiumTributeLiveBody: "헌정 영상이 기념관에 공개되어 공유할 수 있습니다.",
+    adminPremiumPreviewOnMemorialCta: "기념관에서 미리보기",
+    adminPremiumFilmCraftingTitle: "AI가 헌정 영상을 제작 중입니다… 1~2분 정도 걸릴 수 있습니다.",
+    adminPremiumFilmCraftingSubtitle:
+      "이 페이지를 나가셔도 됩니다 — 영상이 준비되면 기념관에 반영되며 이 페이지도 자동으로 갱신됩니다.",
+    adminPremiumFilmFailed:
+      "렌더링 중 문제가 발생했습니다. 고객 지원으로 연락 주시면 클립 크레딧 복구와 재시도를 도와드립니다.",
+    adminPremiumApprovePhotosFirst:
+      "아래 추억 섹션에서 게스트 사진을 승인한 뒤, 다시 이곳으로 돌아와 클립을 만드세요.",
+    adminPremiumRemoveFromFilmAria: "AI 헌정 클립 선택에서 제외",
+    adminPremiumIncludeInFilmAria: "AI 헌정 클립에 포함",
+    adminPremiumClipsRemaining: (remaining: number, total: number) =>
+      `생성 가능한 헌정 클립 ${remaining} / ${total}`,
+    adminPremiumPhotoPickGuidance:
+      "다섯 클립 모두를 위해 15~20장을 권장합니다(필수 10~25장). 방문자 댓글과 각 사진의 이야기가 함께 녹아듭니다.",
+    adminPremiumCompletedClipsLabel: "완성된 헌정 클립",
+    adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
+      `챕터 ${clipOneIndexed} · 약 10초 · 총 ${totalClips}개`,
+    adminPremiumAllClipsComplete:
+      "다섯 개의 헌정 챕터가 모두 준비되었습니다. 위에서 다시 보거나 공개 기념관에서 확인하세요.",
+    adminPremiumNoClipCredits: "남은 클립 크레딧이 없습니다. 지원이 필요하면 문의해 주세요.",
     adminPreserveForeverCta: "영원히 보존하기 — $19.99",
     adminProcessing: "처리 중…",
     adminMemoriesSectionTitle: "추억들",
     adminTabPending: (count: number) => `대기 중 (${count})`,
     adminTabApproved: (count: number) => `승인됨 (${count})`,
     upgradePremiumCta: "프리미엄으로 업그레이드",
-    upgradePremiumTail: "향후 기념관의 AI 헌사 영상을 위해.",
+    upgradePremiumTail: "향후 기념관에서 AI 헌정 클립(약 10초×5)을 쓰기 위해.",
     recentSupportAria: "최근 후원",
     donationStatusAria: "후원 현황",
     close: "닫기",
@@ -988,10 +1085,11 @@ const KO_PATCH: DeepPartial<AppStrings> = {
       },
       premium: {
         title: "영원한 필름",
-        tagline: "Legacy의 모든 혜택과 더불어, AI가 제작하는 1분 추모 필름 우선 이용권을 제공합니다.",
+        tagline: "움직이는 사진 5개 챕터 · 각 약 10초",
         b1: "Eternal Legacy의 모든 혜택",
-        b2: "V2 출시 시 AI 추모 영상 우선 이용 — 지금 사전 예약",
-        tierSub: "Legacy + AI 추모 필름 우선 이용",
+        b2:
+          "AI 추모 클립 5개(각 약 10초, Luma Ray 2) — 소중한 사진이 살아 숨 쉬는 듯 따뜻하게 다시 만나는 경험",
+        tierSub: "5×약10초 클립 · 움직이는 사진 스타일",
       },
     },
   },
@@ -1138,7 +1236,8 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     dragHere: "またはここにドラッグ",
     formStoryTitle: "この写真の背景にある物語を聞かせてください。",
     formStoryPh: "旅の思い出、静かな日常、忘れられない笑顔…",
-    formStoryPremium: "この写真は1分のAI追悼映像に使われることがあります。",
+    formStoryPremium:
+      "この写真とエピソードは、5本のAI追悼クリップ（各約10秒・動く写真のように）に使われることがあります。",
     formStoryFree: "大切な思い出を共有いただきありがとうございます。",
     sending: "送信中…",
     shareThisMemory: "この思い出を共有",
@@ -1181,11 +1280,47 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "プラス",
     adminTierLabelPremium: "プレミアム",
     adminContributionsCollected: (count: number) => `${count}件の心のこもった寄稿`,
+    adminPremiumStatusLine: (count: number) =>
+      `現在のプラン / プレミアム / ${count}件の心のこもった寄稿`,
+    adminPremiumAiTitle: "動く写真トリビュート（5章）",
+    adminPremiumAiDescription: (min: number, max: number) =>
+      `承認済みの写真を${min}〜${max}枚選んでください。プレミアムは約10秒×5本のクリップ（Luma Ray 2）。訪問者のコメントと各写真の物語を重ね、魔法の写真のように温かくつなぎます。1本ずつ生成します。`,
+    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
+      `トリビュート用に選んだ写真: ${selected} / ${max} (最小${min}枚)`,
+    adminPremiumGenerateFilmCta: "次のトリビュートクリップを生成（約10秒）",
+    adminPremiumSelectMinGuide: (min: number) => `続行するには、少なくとも${min}枚の写真を選択してください。`,
+    adminPremiumFooterTagline: "Aeterna Memoir — 大切な思い出を永遠に保存します。",
+    adminPremiumMaxPhotosHint: (max: number) => `トリビュートでは最大${max}枚まで選べます。`,
+    adminPremiumFilmSelectRangeError: (min: number, max: number) =>
+      `承認済みの写真を${min}〜${max}枚選んでください。`,
+    adminPremiumTributeLiveBody: "追悼の映像はメモリアルで公開済みです。共有の準備ができています。",
+    adminPremiumPreviewOnMemorialCta: "メモリアルでプレビュー",
+    adminPremiumFilmCraftingTitle: "AIが作品を制作中です…1〜2分ほどかかることがあります。",
+    adminPremiumFilmCraftingSubtitle:
+      "このページを離れても構いません — 準備ができたらメモリアルを更新します。このページは自動で更新されます。",
+    adminPremiumFilmFailed:
+      "レンダリング中に問題が発生しました。サポートへご連絡ください。クリップクレジットの復旧と再試行をお手伝いします。",
+    adminPremiumApprovePhotosFirst:
+      "下の「思い出」でゲストの写真を承認してから、ここに戻ってクリップを作成してください。",
+    adminPremiumRemoveFromFilmAria: "AIトリビュートクリップの選択から外す",
+    adminPremiumIncludeInFilmAria: "AIトリビュートクリップに含める",
+    adminPremiumClipsRemaining: (remaining: number, total: number) =>
+      `残りのトリビュートクリップ ${remaining} / ${total}`,
+    adminPremiumPhotoPickGuidance:
+      "5本すべてに最適なのは15〜20枚（必須10〜25枚）。訪問者のコメントと各写真の物語がナレーションに溶け込みます。",
+    adminPremiumCompletedClipsLabel: "完成したトリビュートクリップ",
+    adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
+      `第${clipOneIndexed}章 · 約10秒 · 全${totalClips}本`,
+    adminPremiumAllClipsComplete:
+      "5章すべてのトリビュートが揃いました。上で再生するか、公開メモリアルでご覧ください。",
+    adminPremiumNoClipCredits: "クリップのクレジットがありません。サポートへご連絡ください。",
     adminPreserveForeverCta: "永遠に保存する — $19.99",
     adminProcessing: "処理中…",
     adminMemoriesSectionTitle: "思い出",
     adminTabPending: (count: number) => `承認待ち (${count})`,
     adminTabApproved: (count: number) => `承認済み (${count})`,
+    upgradePremiumCta: "プレミアムにアップグレード",
+    upgradePremiumTail: "将来のメモリアルでAI追悼クリップ（各約10秒×5本）を使うために。",
     errors: {
       nameRequired: "お名前を入力してください。",
       photoRequired: "写真を選んでください。",
@@ -1294,10 +1429,11 @@ const JA_PATCH: DeepPartial<AppStrings> = {
       },
       premium: {
         title: "永遠のフィルム",
-        tagline: "永遠の遺産プランの全特典に加え、AIが制作する1分間の追悼フィルムへの優先アクセスをご提供します。",
+        tagline: "動く写真5章 · 各約10秒",
         b1: "永遠の遺産プランのすべての特典",
-        b2: "V2公開時のAI追悼フィルムを先行 — 今すぐ予約",
-        tierSub: "永遠の遺産 ＋ AI追悼フィルム先行",
+        b2:
+          "AIトリビュート映像5本（各約10秒・Luma Ray 2）— 大切な写真がそっと息づき、もう一度会えたような温かさを",
+        tierSub: "5×約10秒 · 動く写真スタイル",
       },
     },
   },

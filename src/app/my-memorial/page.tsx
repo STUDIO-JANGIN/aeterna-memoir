@@ -10,6 +10,7 @@ import { raceWithTimeout } from "@/lib/raceWithTimeout"
 import { deleteMemorialAction } from "@/app/actions/deleteMemorial"
 import { listMyMemorialsAction, type MyMemorialSummary } from "@/app/actions/listMyMemorials"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { LandingFooter } from "@/components/LandingFooter"
 
 type Phase = "loading" | "empty" | "choose" | "error"
 
@@ -152,11 +153,12 @@ export default function MyMemorialPage() {
   }
 
   return (
-    <div
-      className={`relative min-h-dvh flex flex-col items-center justify-center bg-landing px-6 md:px-12 text-center ${
-        showSignOut ? "pt-24 pb-20 md:pt-28 md:pb-32" : "py-20 md:py-28"
-      }`}
-    >
+    <div className="flex min-h-dvh flex-col bg-landing">
+      <div
+        className={`relative flex flex-1 flex-col items-center justify-center px-6 md:px-12 text-center ${
+          showSignOut ? "pt-24 pb-12 md:pt-28 md:pb-16" : "py-20 md:py-28"
+        }`}
+      >
       {showSignOut ? (
         <div className="fixed top-0 right-0 z-[100] flex justify-end gap-2 p-4 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))]">
           <button
@@ -342,6 +344,8 @@ export default function MyMemorialPage() {
           </Link>
         </>
       )}
+      </div>
+      <LandingFooter />
     </div>
   )
 }

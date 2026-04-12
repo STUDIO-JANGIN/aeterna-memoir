@@ -1,7 +1,11 @@
 "use server"
 
+import { eventRowIsPaidMemorial } from "@/lib/paidMemorialDeadlines"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { revalidatePath } from "next/cache"
+
+const PAID_MEMORIAL_DEADLINE_LOCKED =
+  "This memorial includes lifetime storage. Collection deadlines cannot be shortened or closed."
 
 export type UpdateDeadlineResult =
   | { ok: true; collection_end_at: string; expired_at: string }
@@ -16,12 +20,16 @@ export async function extendDeadlineAction(
   const supabase = getSupabaseAdmin()
   const { data: row, error: fetchError } = await supabase
     .from("events")
-    .select("collection_end_at, created_at")
+    .select("collection_end_at, created_at, is_paid, tier, is_premium")
     .eq("id", eventId)
     .single()
 
   if (fetchError || !row) {
     return { ok: false, error: fetchError?.message ?? "Event not found." }
+  }
+
+  if (eventRowIsPaidMemorial(row)) {
+    return { ok: false, error: PAID_MEMORIAL_DEADLINE_LOCKED }
   }
 
   const now = new Date()
@@ -49,6 +57,19 @@ export async function extendDeadlineAction(
 /** Close immediately by setting collection_end_at to the current time (past). */
 export async function closeDeadlineNowAction(eventId: string, slug?: string): Promise<UpdateDeadlineResult> {
   const supabase = getSupabaseAdmin()
+  const { data: row, error: fetchError } = await supabase
+    .from("events")
+    .select("is_paid, tier, is_premium")
+    .eq("id", eventId)
+    .maybeSingle()
+
+  if (fetchError || !row) {
+    return { ok: false, error: fetchError?.message ?? "Event not found." }
+  }
+  if (eventRowIsPaidMemorial(row)) {
+    return { ok: false, error: PAID_MEMORIAL_DEADLINE_LOCKED }
+  }
+
   const iso = new Date().toISOString()
   const { error } = await supabase
     .from("events")

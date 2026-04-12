@@ -99,7 +99,8 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
     dragHere: "或拖曳至此",
     formStoryTitle: "這張影像背後的故事是什麼？",
     formStoryPh: "一趟旅程、靜好的日常、難忘的笑顏…",
-    formStoryPremium: "您的相片或入選一分鐘 AI 致敬影片。",
+    formStoryPremium:
+      "您的相片可能入選五段 AI 追思短片（各約 10 秒），如會動的珍貴畫面。",
     formStoryFree: "感謝您獻上珍貴回憶。",
     sending: "傳送中…",
     shareThisMemory: "分享此回憶",
@@ -143,13 +144,47 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "Plus",
     adminTierLabelPremium: "Premium",
     adminContributionsCollected: (count: number) => `已收集 ${count} 份真摯的回憶`,
+    adminPremiumStatusLine: (count: number) =>
+      `目前方案 / 尊榮版 (Premium) / 已收集 ${count} 份真摯的回憶`,
+    adminPremiumAiTitle: "會動的追思畫面（五章）",
+    adminPremiumAiDescription: (min: number, max: number) =>
+      `請選擇 ${min}–${max} 張已核准的照片。進階方案含五段獨立短片（各約 10 秒，Luma Ray 2）— 如珍藏相片輕輕甦醒，並融入訪客留言與每張照片背後的故事。每次生成一段，每段使用一個額度。`,
+    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
+      `獻禮素材池內照片：${selected} / ${max}（至少 ${min} 張）`,
+    adminPremiumGenerateFilmCta: "生成下一段追思短片（約 10 秒）",
+    adminPremiumSelectMinGuide: (min: number) => `請至少選擇 ${min} 張照片以繼續。`,
+    adminPremiumFooterTagline: "Aeterna Memoir — 永恒守護您的珍貴回憶。",
+    adminPremiumMaxPhotosHint: (max: number) => `影片最多可選 ${max} 張照片。`,
+    adminPremiumFilmSelectRangeError: (min: number, max: number) =>
+      `請選擇 ${min}–${max} 張已批准的照片。`,
+    adminPremiumTributeLiveBody: "追思短片已於紀念頁上線，歡迎分享。",
+    adminPremiumPreviewOnMemorialCta: "於紀念頁預覽",
+    adminPremiumFilmCraftingTitle: "AI 正在製作您的追思短片…約需 1–2 分鐘。",
+    adminPremiumFilmCraftingSubtitle:
+      "您可以離開此頁 — 短片就緒後我們會更新紀念頁，本頁亦會自動重新整理。",
+    adminPremiumFilmFailed:
+      "渲染時發生問題。請聯絡客服 — 我們可協助恢復短片額度並重試。",
+    adminPremiumApprovePhotosFirst:
+      "請先在下方「回憶」區核准訪客照片，再返回此處生成短片。",
+    adminPremiumRemoveFromFilmAria: "從 AI 追思短片選材中移除",
+    adminPremiumIncludeInFilmAria: "加入 AI 追思短片選材",
+    adminPremiumClipsRemaining: (remaining: number, total: number) =>
+      `尚可生成 ${remaining} / ${total} 段追思短片`,
+    adminPremiumPhotoPickGuidance:
+      "五段短片整體效果最佳建議選 15–20 張（必填 10–25 張）。訪客留言與每則故事會融入敘事。",
+    adminPremiumCompletedClipsLabel: "已完成的追思短片",
+    adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
+      `第 ${clipOneIndexed} 章 · 約 10 秒 · 共 ${totalClips} 段`,
+    adminPremiumAllClipsComplete:
+      "五章追思短片皆已就緒。您可於上方重播，或至公開紀念頁觀看。",
+    adminPremiumNoClipCredits: "短片額度已用完。如需協助請聯絡客服。",
     adminPreserveForeverCta: "永久保存 — $19.99",
     adminProcessing: "處理中…",
     adminMemoriesSectionTitle: "回憶紀錄",
     adminTabPending: (count: number) => `待審核 (${count})`,
     adminTabApproved: (count: number) => `已批准 (${count})`,
     upgradePremiumCta: "升級進階方案",
-    upgradePremiumTail: "以備日後紀念頁之 AI 致敬影片。",
+    upgradePremiumTail: "以備日後在紀念頁使用 AI 追思短片。",
     recentSupportAria: "近期援助",
     donationStatusAria: "援助狀態",
     close: "關閉",
@@ -262,10 +297,10 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
       },
       premium: {
         title: "永恒影卷",
-        tagline: "包含「永恆傳承」所有功能，並享有優先製作 1 分鐘 AI 追思影片的權利。",
+        tagline: "包含「永恆傳承」所有功能，並享有五段 AI 追思短片（各約 10 秒）",
         b1: "永恆傳承之全部權益",
-        b2: "第二版上線時 AI 追思影片優先——即刻預約",
-        tierSub: "永恆傳承＋ AI 追思影片優先",
+        b2: "五段會動的追思畫面，再次感受摯愛同在 — 第二版開放時優先",
+        tierSub: "5× 約10秒 · 永恆傳承＋AI 追思短片",
       },
     },
   },

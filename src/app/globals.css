@@ -332,6 +332,11 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /** Memory drawer: own compositor layer for smoother overflow scrolling inside flex. */
+  .memorial-drawer-scroll {
+    transform: translateZ(0);
+  }
+
   /* —— Landing sync: backgrounds, type, cards, CTAs —— */
   .bg-landing {
     background-color: var(--landing-bg);

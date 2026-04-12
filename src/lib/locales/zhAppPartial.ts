@@ -120,9 +120,10 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
       const p = (n: number) => String(n).padStart(2, "0")
       return `${p(d)}天 : ${p(h)}時 : ${p(m)}分 : ${p(s)}秒`
     },
-    trialUpgradePart1: "若要永久保留這些珍貴回憶，請於 7 天內升級。期限過後，殿堂將會暫時關閉以保護數據隱私。",
-    trialUpgradeLinkLabel: "",
-    trialUpgradePart2: "",
+    trialUpgradePart1: "若要永久保留這些珍貴回憶，請於 7 天內",
+    trialUpgradeLinkLabel: "升級",
+    trialUpgradePart2: "。期限過後，殿堂將會暫時關閉以保護數據隱私。",
+    memorialUpgradeAnchorIntro: "於下方完成安全結帳，即可永久保存此紀念頁並保留所有已分享的回憶。",
     adminLoadingTitle: "載入中",
     adminLoadingSubtitle: "正在準備紀念後台…",
     adminAccessRestrictedTitle: "無法存取",

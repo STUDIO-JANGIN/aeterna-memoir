@@ -50,12 +50,21 @@ function toPublicComment(row: Record<string, unknown>): StoryCommentPublic | nul
         ? String(row.created_at)
         : new Date().toISOString()
   if (!id) return null
+  const likesRaw = row.likes_count
+  const likes_count =
+    typeof likesRaw === "number" && !Number.isNaN(likesRaw)
+      ? likesRaw
+      : typeof likesRaw === "string"
+        ? parseInt(likesRaw, 10) || 0
+        : 0
+
   return {
     id,
     visitor_name,
     text,
     created_at,
     is_reported: false,
+    likes_count,
   }
 }
 
@@ -63,6 +72,13 @@ function toPublicComment(row: Record<string, unknown>): StoryCommentPublic | nul
 function isReportColumnOrCacheError(msg: string): boolean {
   const m = msg.toLowerCase()
   return m.includes("schema cache") || (m.includes("is_reported") && (m.includes("column") || m.includes("could not find")))
+}
+
+function isLikesCountColumnError(msg: string): boolean {
+  const m = msg.toLowerCase()
+  return (
+    m.includes("likes_count") && (m.includes("column") || m.includes("could not find") || m.includes("schema cache"))
+  )
 }
 
 export type StoryCommentsResult =
@@ -112,11 +128,11 @@ export async function getStoryCommentsAction(
     return { ok: true, comments: [] }
   }
 
-  const selectCols = "id, visitor_name, text, created_at, is_reported"
+  const selectColsFull = "id, visitor_name, text, created_at, is_reported, likes_count"
 
   const first = await supabase
     .from("comments")
-    .select(selectCols)
+    .select(selectColsFull)
     .eq("photo_id", photoIdUuid)
     .eq("event_id", eventIdUuid)
     .eq("is_reported", false)
@@ -125,12 +141,13 @@ export async function getStoryCommentsAction(
   let data: Record<string, unknown>[] | null = (first.data ?? null) as Record<string, unknown>[] | null
   let error = first.error
 
-  if (error && isReportColumnOrCacheError(error.message ?? "")) {
+  if (error && (isReportColumnOrCacheError(error.message ?? "") || isLikesCountColumnError(error.message ?? ""))) {
     const second = await supabase
       .from("comments")
-      .select(selectCols)
+      .select("id, visitor_name, text, created_at, is_reported")
       .eq("photo_id", photoIdUuid)
       .eq("event_id", eventIdUuid)
+      .eq("is_reported", false)
       .order("created_at", { ascending: true })
     if (second.error && isReportColumnOrCacheError(second.error.message ?? "")) {
       const third = await supabase
@@ -243,11 +260,24 @@ export async function addStoryCommentAction(
     is_reported: false,
   }
 
-  let { data: inserted, error: insertErr } = await supabase
+  const firstInsert = await supabase
     .from("comments")
     .insert(insertPayload)
-    .select("id, visitor_name, text, created_at, is_reported")
+    .select("id, visitor_name, text, created_at, is_reported, likes_count")
     .single()
+
+  let inserted: Record<string, unknown> | null = (firstInsert.data ?? null) as Record<string, unknown> | null
+  let insertErr = firstInsert.error
+
+  if (insertErr && isLikesCountColumnError(insertErr.message ?? "")) {
+    const second = await supabase
+      .from("comments")
+      .insert(insertPayload)
+      .select("id, visitor_name, text, created_at, is_reported")
+      .single()
+    inserted = (second.data ?? null) as Record<string, unknown> | null
+    insertErr = second.error
+  }
 
   if (insertErr && isReportColumnOrCacheError(insertErr.message ?? "")) {
     const minimal = {
@@ -260,7 +290,7 @@ export async function addStoryCommentAction(
     if (retry.error && isReportColumnOrCacheError(retry.error.message ?? "")) {
       retry = await supabase.from("comments").insert(minimal).select("id, visitor_name, text, created_at").single()
     }
-    inserted = retry.data
+    inserted = (retry.data ?? null) as Record<string, unknown> | null
     insertErr = retry.error
   }
 

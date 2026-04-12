@@ -8,4 +8,6 @@ export interface Comment {
   text: string
   created_at: string
   is_reported: boolean
+  /** Viewer hearts; column added via supabase-comments-likes-count.sql */
+  likes_count?: number
 }

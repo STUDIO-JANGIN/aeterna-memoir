@@ -121,10 +121,11 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
       const p = (n: number) => String(n).padStart(2, "0")
       return `${p(d)}ي : ${p(h)}س : ${p(m)}د : ${p(s)}ث`
     },
-    trialUpgradePart1:
-      "للحفاظ على هذه الذكريات حية إلى الأبد، يرجى الترقية خلال 7 أيام. بعد هذه الفترة، سيتم إغلاق الضريح بلطف لحماية خصوصية البيانات.",
-    trialUpgradeLinkLabel: "",
-    trialUpgradePart2: "",
+    trialUpgradePart1: "للحفاظ على هذه الذكريات حية إلى الأبد، يرجى ",
+    trialUpgradeLinkLabel: "الترقية",
+    trialUpgradePart2: " خلال 7 أيام. بعد هذه الفترة، سيتم إغلاق الضريح بلطف لحماية خصوصية البيانات.",
+    memorialUpgradeAnchorIntro:
+      "أكمل الدفع الآمن أدناه للحفاظ على هذه الصفحة التذكارية والاحتفاظ بكل الذكريات المشتركة.",
     adminLoadingTitle: "جاري التحميل",
     adminLoadingSubtitle: "جاري تجهيز لوحة التحكم…",
     adminAccessRestrictedTitle: "وصول مقيد",

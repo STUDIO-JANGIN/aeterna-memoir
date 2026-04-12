@@ -1,6 +1,10 @@
 "use server"
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import {
+  isMissingVisitorsStoryIdColumn,
+  visitorProviderForStoryNotify,
+} from "@/lib/visitorStoryNotify"
 
 export type SubscribeVisitorResult =
   | { ok: true }
@@ -20,18 +24,33 @@ export async function subscribeVisitorAction(
   }
 
   try {
-    const row: Record<string, unknown> = {
+    const sid = storyId?.trim() ?? ""
+    const baseRow: Record<string, unknown> = {
       event_id: eventId,
       email: trimmed,
       provider,
     }
-    if (storyId?.trim()) {
-      row.story_id = storyId.trim()
+
+    let row: Record<string, unknown> = { ...baseRow }
+    if (sid) {
+      row.story_id = sid
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from("visitors")
       .upsert(row, { onConflict: "event_id,email", ignoreDuplicates: false })
+
+    if (error && sid && isMissingVisitorsStoryIdColumn(error)) {
+      const { story_id: _drop, ...withoutStory } = row
+      row = {
+        ...withoutStory,
+        provider: visitorProviderForStoryNotify(sid),
+      }
+      const retry = await supabase
+        .from("visitors")
+        .upsert(row, { onConflict: "event_id,email", ignoreDuplicates: false })
+      error = retry.error
+    }
 
     if (error) {
       if (error.code === "23503") {

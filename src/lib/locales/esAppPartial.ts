@@ -127,10 +127,12 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
       const p = (n: number) => String(n).padStart(2, "0")
       return `${p(d)}d : ${p(h)}h : ${p(m)}m : ${p(s)}s`
     },
-    trialUpgradePart1:
-      "Para mantener vivos estos recuerdos para siempre, actualice su plan dentro de los próximos 7 días. Después de este periodo, el santuario se cerrará suavemente para proteger la privacidad de los datos.",
-    trialUpgradeLinkLabel: "",
-    trialUpgradePart2: "",
+    trialUpgradePart1: "Para mantener vivos estos recuerdos para siempre, ",
+    trialUpgradeLinkLabel: "actualice su plan",
+    trialUpgradePart2:
+      " dentro de los próximos 7 días. Después de este periodo, el santuario se cerrará suavemente para proteger la privacidad de los datos.",
+    memorialUpgradeAnchorIntro:
+      "Complete el pago seguro a continuación para conservar este memorial y mantener visibles todos los recuerdos compartidos.",
     adminLoadingTitle: "Cargando",
     adminLoadingSubtitle: "Preparando su panel…",
     adminAccessRestrictedTitle: "Acceso restringido",

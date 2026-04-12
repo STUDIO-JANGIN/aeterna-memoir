@@ -1153,7 +1153,7 @@ export default function GuestFeedPage({ params }: PageProps) {
             <MemorialTrialCountdown
               variant="banner"
               remainingMs={photoDeadlineRemainingMs}
-              upgradeHref="/#pricing"
+              upgradeHref={`/p/${encodeURIComponent(slug)}#memorial-preserve-upgrade`}
               copy={memorialTrialBannerCopy}
             />
           </div>
@@ -1161,11 +1161,11 @@ export default function GuestFeedPage({ params }: PageProps) {
 
       <header className="relative w-full px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8">
         <div className="mx-auto flex max-w-lg flex-col items-center text-center">
-          <div className="mb-6 aspect-square w-[min(76vw,20rem)] max-w-[85vw] sm:w-[min(82vw,22rem)] sm:max-w-[90vw] shrink-0 overflow-hidden rounded-full border border-white/[0.12] bg-[#030303]/[0.15] shadow-[0_28px_72px_-24px_rgba(0,0,0,0.65)]">
+          <div className="mb-6 aspect-square w-[min(76vw,20rem)] max-w-[85vw] sm:w-[min(82vw,22rem)] sm:max-w-[90vw] shrink-0 overflow-hidden rounded-full border border-[var(--aeterna-gold)]/22 bg-gradient-to-b from-[#f4f1ea]/[0.1] via-[#3a342c] to-[#252018] shadow-[0_22px_56px_-18px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.07)]">
             {profileSrc ? (
               <img src={profileSrc} alt="" className="memorial-thumbnail h-full w-full object-cover" loading="eager" decoding="async" />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-white/[0.06] font-serif text-[clamp(2.5rem,18vw,4rem)] text-[var(--landing-text-muted)]">
+              <div className="flex h-full w-full items-center justify-center bg-[#f4f1ea]/[0.06] font-serif text-[clamp(2.5rem,18vw,4rem)] text-[var(--landing-text-muted)]">
                 {(event.name ?? "?").charAt(0)}
               </div>
             )}
@@ -1236,6 +1236,42 @@ export default function GuestFeedPage({ params }: PageProps) {
           ) : null}
         </div>
       </header>
+
+      {/* Trial banner “upgrade” link scrolls here — same checkout as unlock / preserve */}
+      {event &&
+        !isPaidMemorial &&
+        photoDeadlineRemainingMs !== null &&
+        photoDeadlineRemainingMs > 0 &&
+        !isPhotoDeadlinePassed && (
+          <section
+            id="memorial-preserve-upgrade"
+            tabIndex={-1}
+            className="scroll-mt-[max(5.5rem,env(safe-area-inset-top))] mx-auto w-full max-w-lg px-4 pb-6 pt-1"
+          >
+            <div className="rounded-2xl border border-[var(--border-gold-subtle)]/45 bg-[#030303]/30 px-4 py-5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <p className="text-sm leading-relaxed text-[var(--landing-text-body)] mb-4">
+                {tx.memorial.memorialUpgradeAnchorIntro}
+              </p>
+              <motion.button
+                type="button"
+                onClick={() => {
+                  if (!PAYMENT_ENABLED) {
+                    setShowPaymentComingSoon(true)
+                    return
+                  }
+                  void handleUnlockMemories()
+                }}
+                disabled={checkoutLoading}
+                className="inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl bg-[var(--aeterna-gold)] px-6 py-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60"
+                whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
+                whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
+                transition={ARTISAN_SPRING}
+              >
+                {checkoutLoading ? tx.common.redirecting : tx.memorial.upgradePremiumCta}
+              </motion.button>
+            </div>
+          </section>
+        )}
 
       {/* Full screen cinematic section (when film_url exists) */}
       {filmReleased && (

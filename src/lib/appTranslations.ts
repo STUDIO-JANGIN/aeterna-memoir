@@ -188,6 +188,8 @@ export type AppStrings = {
     trialUpgradePart1: string
     trialUpgradeLinkLabel: string
     trialUpgradePart2: string
+    /** Shown above the checkout CTA at `#memorial-preserve-upgrade` (trial banner link target). */
+    memorialUpgradeAnchorIntro: string
     /** `/p/[slug]/admin` and related loading / access states */
     adminLoadingTitle: string
     adminLoadingSubtitle: string
@@ -518,6 +520,7 @@ const EN: AppStrings = {
     trialUpgradeLinkLabel: "upgrade",
     trialUpgradePart2:
       " within 7 days. After this window, the shrine will gently close to protect the privacy of the data.",
+    memorialUpgradeAnchorIntro: "Complete secure checkout below to preserve this memorial and keep every shared memory available.",
     adminLoadingTitle: "Loading",
     adminLoadingSubtitle: "Preparing your memorial dashboard…",
     adminAccessRestrictedTitle: "Access restricted",
@@ -839,10 +842,11 @@ const KO_PATCH: DeepPartial<AppStrings> = {
       const p = (n: number) => String(n).padStart(2, "0")
       return `${p(d)}일 : ${p(h)}시 : ${p(m)}분 : ${p(s)}초`
     },
-    trialUpgradePart1:
-      "이 추억들을 영원히 간직하시려면 7일 이내에 업그레이드해 주세요. 이 기간이 지나면 데이터 보호를 위해 추모관이 고요히 닫히게 됩니다.",
-    trialUpgradeLinkLabel: "",
-    trialUpgradePart2: "",
+    trialUpgradePart1: "이 추억들을 영원히 간직하시려면 7일 이내에 ",
+    trialUpgradeLinkLabel: "업그레이드",
+    trialUpgradePart2:
+      "해 주세요. 이 기간이 지나면 데이터 보호를 위해 추모관이 고요히 닫히게 됩니다.",
+    memorialUpgradeAnchorIntro: "아래에서 안전하게 결제를 완료하면 이 추모관을 영구적으로 보존하고, 나눠 주신 추억을 계속 둘러보실 수 있습니다.",
     adminLoadingTitle: "로딩 중",
     adminLoadingSubtitle: "추모 대시보드를 준비하고 있습니다…",
     adminAccessRestrictedTitle: "접근 제한",
@@ -1152,10 +1156,12 @@ const JA_PATCH: DeepPartial<AppStrings> = {
       const p = (n: number) => String(n).padStart(2, "0")
       return `${p(d)}日 : ${p(h)}時 : ${p(m)}分 : ${p(s)}秒`
     },
-    trialUpgradePart1:
-      "これらの思い出を永遠に残すために、7日以内にアップグレードをお願いいたします。期限を過ぎると、データ保護のため、追悼空間は静かに閉じられます。",
-    trialUpgradeLinkLabel: "",
-    trialUpgradePart2: "",
+    trialUpgradePart1: "これらの思い出を永遠に残すために、7日以内に",
+    trialUpgradeLinkLabel: "アップグレード",
+    trialUpgradePart2:
+      "をお願いいたします。期限を過ぎると、データ保護のため、追悼空間は静かに閉じられます。",
+    memorialUpgradeAnchorIntro:
+      "下の安全な決済で、このメモリアルを保存し、共有された思い出をいつでもご覧いただけます。",
     adminLoadingTitle: "読み込み中",
     adminLoadingSubtitle: "メモリアルダッシュボードを準備しています…",
     adminAccessRestrictedTitle: "アクセスが制限されています",

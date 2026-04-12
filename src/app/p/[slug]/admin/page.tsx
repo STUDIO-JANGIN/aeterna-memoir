@@ -295,7 +295,12 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     <div className="min-h-dvh p-6 md:p-10 md:pb-16">
       {!isPaidMemorial && trialRemainingMs > 0 && (
         <div className="max-w-6xl mx-auto mb-8 md:mb-10 w-full">
-          <MemorialTrialCountdown remainingMs={trialRemainingMs} className="w-full" copy={memorialTrialBannerCopy} />
+          <MemorialTrialCountdown
+            remainingMs={trialRemainingMs}
+            className="w-full"
+            upgradeHref={`/p/${encodeURIComponent(slug)}/admin#memorial-preserve-upgrade`}
+            copy={memorialTrialBannerCopy}
+          />
         </div>
       )}
 
@@ -349,7 +354,11 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
           </p>
 
           {currentTier === "free" && (
-            <div className="flex flex-col items-stretch justify-center sm:items-center">
+            <div
+              id="memorial-preserve-upgrade"
+              tabIndex={-1}
+              className="scroll-mt-8 flex flex-col items-stretch justify-center sm:items-center"
+            >
               <button
                 type="button"
                 onClick={handlePlusCheckout}

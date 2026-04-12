@@ -127,10 +127,12 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
       const p = (n: number) => String(n).padStart(2, "0")
       return `${p(d)}j : ${p(h)}h : ${p(m)}min : ${p(s)}s`
     },
-    trialUpgradePart1:
-      "Pour garder ces souvenirs vivants à jamais, veuillez passer à l'offre supérieure sous 7 jours. Passé ce délai, le sanctuaire se fermera délicatement pour protéger la confidentialité des données.",
-    trialUpgradeLinkLabel: "",
-    trialUpgradePart2: "",
+    trialUpgradePart1: "Pour garder ces souvenirs vivants à jamais, veuillez ",
+    trialUpgradeLinkLabel: "mettre à niveau",
+    trialUpgradePart2:
+      " sous 7 jours. Passé ce délai, le sanctuaire se fermera délicatement pour protéger la confidentialité des données.",
+    memorialUpgradeAnchorIntro:
+      "Terminez le paiement sécurisé ci-dessous pour préserver ce sanctuaire et conserver tous les souvenirs partagés.",
     adminLoadingTitle: "Chargement",
     adminLoadingSubtitle: "Préparation de votre tableau de bord…",
     adminAccessRestrictedTitle: "Accès restreint",

@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
-import { ArrowUp, Flag } from "lucide-react"
+import { ArrowUp } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
+import { heartCommentAction, unheartCommentAction } from "@/app/actions/heartComment"
 import {
   addStoryCommentAction,
   getStoryCommentsAction,
-  reportStoryCommentAction,
   type StoryCommentPublic,
 } from "@/app/actions/storyComments"
 import { coerceIdString, parseUuidString } from "@/lib/uuid"
@@ -68,11 +68,20 @@ export function StoryMemoryDrawer({
   const [body, setBody] = useState("")
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
-  const [reportingId, setReportingId] = useState<string | null>(null)
+  const [heartedCommentIds, setHeartedCommentIds] = useState<Set<string>>(new Set())
+  const [commentHeartBusyId, setCommentHeartBusyId] = useState<string | null>(null)
 
   /** stories.id from DB (UUID text) — never pass objects/numbers raw into server actions */
   const photoStoryId = useMemo(() => coerceIdString(story?.id), [story?.id])
   const memorialEventId = useMemo(() => coerceIdString(eventId), [eventId])
+
+  const commentHeartsStorageKey = useMemo(
+    () =>
+      nameStorageKey && photoStoryId
+        ? `aeterna_comment_hearts_${nameStorageKey}_${photoStoryId}`
+        : null,
+    [nameStorageKey, photoStoryId],
+  )
 
   const canPostComment = useMemo(
     () => Boolean(parseUuidString(photoStoryId) && parseUuidString(memorialEventId)),
@@ -95,6 +104,20 @@ export function StoryMemoryDrawer({
       // ignore
     }
   }, [nameStorageKey])
+
+  useEffect(() => {
+    if (!commentHeartsStorageKey || typeof window === "undefined") return
+    try {
+      const raw = localStorage.getItem(commentHeartsStorageKey)
+      if (!raw) return
+      const ids = JSON.parse(raw) as unknown
+      if (Array.isArray(ids)) {
+        setHeartedCommentIds(new Set(ids.map((id) => String(id)).filter(Boolean)))
+      }
+    } catch {
+      // ignore
+    }
+  }, [commentHeartsStorageKey])
 
   const loadComments = useCallback(
     async (opts?: { silent?: boolean }) => {
@@ -212,14 +235,38 @@ export function StoryMemoryDrawer({
     }
   }, [photoStoryId, memorialEventId, authorName, body, persistName, sessionUser, loadComments])
 
-  const handleReport = async (commentId: string) => {
-    setReportingId(commentId)
-    const res = await reportStoryCommentAction(commentId)
-    setReportingId(null)
-    if (res.ok) {
-      await loadComments({ silent: true })
-    }
-  }
+  const handleCommentHeart = useCallback(
+    async (commentId: string) => {
+      const id = String(commentId)
+      if (!id || commentHeartBusyId) return
+      setCommentHeartBusyId(id)
+      try {
+        const removing = heartedCommentIds.has(id)
+        const result = removing ? await unheartCommentAction(id) : await heartCommentAction(id)
+        if (result.ok) {
+          setHeartedCommentIds((prev) => {
+            const next = new Set(prev)
+            if (removing) next.delete(id)
+            else next.add(id)
+            if (commentHeartsStorageKey && typeof window !== "undefined") {
+              try {
+                localStorage.setItem(commentHeartsStorageKey, JSON.stringify([...next]))
+              } catch {
+                // ignore
+              }
+            }
+            return next
+          })
+          setComments((prev) =>
+            prev.map((c) => (c.id === id ? { ...c, likes_count: result.likesCount } : c)),
+          )
+        }
+      } finally {
+        setCommentHeartBusyId(null)
+      }
+    },
+    [commentHeartBusyId, heartedCommentIds, commentHeartsStorageKey],
+  )
 
   return (
     <motion.div
@@ -294,8 +341,8 @@ export function StoryMemoryDrawer({
               )}
             </div>
 
-            {/* Scroll: story, hearts, and shared memories */}
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 pt-3">
+            {/* Scroll: story, hearts, and shared memories — scroll-touch + touch-pan-y for smooth mobile momentum */}
+            <div className="scroll-touch memorial-drawer-scroll min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain px-4 pb-2 pt-3">
               <p className="font-[var(--font-serif)] text-base text-[var(--aeterna-gold)]">{story.author_name ?? "Anonymous"}</p>
               <p className="mt-1 text-sm leading-relaxed text-[var(--once-text-primary)]">{story.story_text ?? ""}</p>
 
@@ -335,32 +382,50 @@ export function StoryMemoryDrawer({
                   </p>
                 ) : (
                   <ul className="space-y-2.5">
-                    {comments.map((c) => (
-                      <li
-                        key={c.id}
-                        className="group flex items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-sm"
-                      >
-                        <div className="min-w-0 flex-1 leading-snug">
-                          <span className="font-medium text-[var(--once-text-primary)]">{c.visitor_name}</span>
-                          <span className="text-[var(--once-text-muted)]"> — </span>
-                          <span className="text-[var(--once-text-primary)]">{c.text}</span>
-                          <span className="text-[var(--once-text-muted)]"> — </span>
-                          <span className="whitespace-nowrap text-xs text-[var(--aeterna-gold-muted)] tabular-nums">
-                            {formatShortTime(c.created_at)}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleReport(c.id)}
-                          disabled={reportingId === c.id}
-                          className="shrink-0 rounded-lg p-1.5 text-[var(--once-text-muted)] opacity-70 transition hover:bg-red-500/15 hover:text-red-300 hover:opacity-100"
-                          aria-label="Report this message"
-                          title="Report"
+                    {comments.map((c) => {
+                      const cid = String(c.id)
+                      const count = c.likes_count ?? 0
+                      const isHearted = heartedCommentIds.has(cid)
+                      const busy = commentHeartBusyId === cid
+                      return (
+                        <li
+                          key={c.id}
+                          className="group flex items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-sm"
                         >
-                          <Flag className="h-3.5 w-3.5" strokeWidth={1.5} />
-                        </button>
-                      </li>
-                    ))}
+                          <div className="min-w-0 flex-1 leading-snug">
+                            <span className="font-medium text-[var(--once-text-primary)]">{c.visitor_name}</span>
+                            <span className="text-[var(--once-text-muted)]"> — </span>
+                            <span className="text-[var(--once-text-primary)]">{c.text}</span>
+                            <span className="text-[var(--once-text-muted)]"> — </span>
+                            <span className="whitespace-nowrap text-xs text-[var(--aeterna-gold-muted)] tabular-nums">
+                              {formatShortTime(c.created_at)}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void handleCommentHeart(cid)}
+                            disabled={busy}
+                            className={`flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-1 py-0.5 transition disabled:opacity-50 ${
+                              isHearted
+                                ? "text-red-400"
+                                : "text-[var(--once-text-muted)] hover:bg-white/[0.06] hover:text-red-400/90"
+                            }`}
+                            aria-label={isHearted ? "Remove heart from this message" : "Heart this message"}
+                            title={isHearted ? "Remove heart" : "Heart"}
+                          >
+                            <svg className="h-4 w-4" fill={isHearted ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.8}
+                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                              />
+                            </svg>
+                            <span className="text-[10px] font-medium tabular-nums leading-none">{count}</span>
+                          </button>
+                        </li>
+                      )
+                    })}
                   </ul>
                 )}
               </div>

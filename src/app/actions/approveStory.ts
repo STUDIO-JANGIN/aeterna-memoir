@@ -3,6 +3,10 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { sendStoryApprovedEmail } from "@/lib/sendStoryApprovedEmail"
+import {
+  isMissingVisitorsStoryIdColumn,
+  visitorProviderForStoryNotify,
+} from "@/lib/visitorStoryNotify"
 
 export type ApproveResult = { ok: true } | { ok: false; error: string }
 
@@ -20,13 +24,41 @@ export async function approveStoryAction(storyId: string): Promise<ApproveResult
   }
 
   try {
-    const { data: visitors, error: visErr } = await supabase
+    const emails = new Set<string>()
+    const byStory = await supabase
       .from("visitors")
       .select("email")
       .eq("story_id", storyId)
       .not("email", "is", null)
 
-    if (visErr || !visitors?.length) {
+    if (byStory.error && isMissingVisitorsStoryIdColumn(byStory.error)) {
+      // DB has no story_id column — only encoded provider rows exist
+    } else if (byStory.error) {
+      console.error("[approveStory] visitors by story_id", byStory.error)
+    } else {
+      for (const v of byStory.data ?? []) {
+        const to = (v.email as string | null)?.trim()
+        if (to) emails.add(to)
+      }
+    }
+
+    const byProvider = await supabase
+      .from("visitors")
+      .select("email")
+      .eq("provider", visitorProviderForStoryNotify(storyId))
+      .not("email", "is", null)
+
+    if (byProvider.error) {
+      console.error("[approveStory] visitors by provider", byProvider.error)
+    } else {
+      for (const v of byProvider.data ?? []) {
+        const to = (v.email as string | null)?.trim()
+        if (to) emails.add(to)
+      }
+    }
+
+    const visitors = [...emails].map((email) => ({ email }))
+    if (!visitors.length) {
       return { ok: true }
     }
 

@@ -1,7 +1,7 @@
 "use server"
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
-import { verifyMemorialOwnerBySlug } from "@/lib/verifyMemorialOwner"
+import { resolveMemorialOwnerForSlug } from "@/lib/verifyMemorialOwner"
 
 export type SetSelectedResult = { ok: true } | { ok: false; error: string }
 
@@ -70,6 +70,21 @@ export async function getEventBySlugAction(slug: string): Promise<AdminEvent | n
   return getEventBySlug(slug)
 }
 
+/** Load one memorial row by id (admin). Uses `*` so a missing optional column in an explicit list cannot break the query. */
+async function getEventByIdForAdmin(eventId: string): Promise<AdminEvent | null> {
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase.from("events").select("*").eq("id", eventId).maybeSingle()
+  if (error) {
+    console.error("[getEventByIdForAdmin] query failed", { eventId, message: error.message, code: error.code })
+    return null
+  }
+  if (!data || typeof data !== "object" || !("id" in data) || !data.id) return null
+  return {
+    ...data,
+    expired_at: data.expired_at ?? data.collection_end_at ?? null,
+  } as AdminEvent
+}
+
 /** Fetch one event by slug (admin/guest). Try exact match, then one case-insensitive fallback. */
 export async function getEventBySlug(slug: string): Promise<AdminEvent | null> {
   const supabase = getSupabaseAdmin()
@@ -79,12 +94,9 @@ export async function getEventBySlug(slug: string): Promise<AdminEvent | null> {
     return null
   }
 
-  const selectCols =
-    "id, name, slug, collection_end_at, expired_at, is_paid, tier, video_credits, created_at, birth_date, death_date, location, ceremony_time, flower_link, profile_image, music_url, bank_info, invitation_bio, preview_film_url, full_film_requested_at, full_film_url, tribute_film_urls, video_status, invite_pdf_url, invite_pdf_urls"
-
   const { data, error } = await supabase
     .from("events")
-    .select(selectCols)
+    .select("*")
     .eq("slug", slugNorm)
     .maybeSingle()
 
@@ -102,7 +114,7 @@ export async function getEventBySlug(slug: string): Promise<AdminEvent | null> {
 
   const { data: dataFallback, error: errorFallback } = await supabase
     .from("events")
-    .select(selectCols)
+    .select("*")
     .ilike("slug", slugNorm)
     .limit(1)
     .maybeSingle()
@@ -128,16 +140,19 @@ export async function getStoriesForAdminAction(slug: string): Promise<{
   stories: AdminStory[]
   error?: string
 }> {
-  const allowed = await verifyMemorialOwnerBySlug(slug)
-  if (!allowed) {
+  const resolved = await resolveMemorialOwnerForSlug(slug)
+  if (!resolved.ok) {
     return { event: null, stories: [], error: "Unauthorized." }
   }
 
   const supabase = getSupabaseAdmin()
-  const eventData = await getEventBySlug(slug)
+  const eventData = await getEventByIdForAdmin(resolved.eventId)
 
   if (!eventData) {
-    console.error("[getStoriesForAdminAction] getEventBySlug returned null → Event not found.", { slug })
+    console.error("[getStoriesForAdminAction] getEventByIdForAdmin returned null after owner resolve.", {
+      slug,
+      eventId: resolved.eventId,
+    })
     return { event: null, stories: [], error: "Event not found." }
   }
 

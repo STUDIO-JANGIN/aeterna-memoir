@@ -2218,13 +2218,20 @@ function CreateEventForm() {
                     remembranceBio={invitationBio.trim() || undefined}
                   />
                 </div>
-                <div className="mt-8 flex w-full shrink-0 flex-col gap-3">
+                <div className="mt-8 flex w-full shrink-0 flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
                   <button
                     type="button"
-                    onClick={() => router.push(`/p/${createdSlug}`)}
-                    className="btn-landing-gold flex min-h-[52px] w-full items-center justify-center px-6 text-base font-semibold"
+                    onClick={() => router.push(`/p/${encodeURIComponent(createdSlug)}`)}
+                    className="btn-landing-gold flex min-h-[52px] w-full items-center justify-center px-6 text-base font-semibold sm:min-w-[200px] sm:flex-1"
                   >
                     {a.createWizard.viewMemorial}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/p/${encodeURIComponent(createdSlug)}/admin`)}
+                    className="flex min-h-[52px] w-full items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.04] px-6 text-base font-semibold text-[var(--landing-text-body)] transition-colors hover:border-[var(--aeterna-gold)]/40 hover:bg-[var(--aeterna-gold)]/10 hover:text-[var(--aeterna-gold)] sm:min-w-[200px] sm:flex-1"
+                  >
+                    {a.memorial.admin}
                   </button>
                 </div>
               </div>

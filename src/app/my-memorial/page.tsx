@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
+import { raceWithTimeout } from "@/lib/raceWithTimeout"
 import { deleteMemorialAction } from "@/app/actions/deleteMemorial"
 import { listMyMemorialsAction, type MyMemorialSummary } from "@/app/actions/listMyMemorials"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
@@ -47,8 +48,20 @@ export default function MyMemorialPage() {
 
   const handleSignOut = useCallback(async () => {
     setSigningOut(true)
+    const SIGN_OUT_MS = 10_000
     try {
-      await supabase.auth.signOut({ scope: "local" })
+      const out = await raceWithTimeout(
+        supabase.auth.signOut({ scope: "local" }),
+        SIGN_OUT_MS,
+        "timeout" as const,
+      )
+      if (out === "timeout") {
+        window.location.assign("/")
+        return
+      }
+      if (out.error) {
+        setMessage(out.error.message)
+      }
       router.push("/")
     } finally {
       setSigningOut(false)

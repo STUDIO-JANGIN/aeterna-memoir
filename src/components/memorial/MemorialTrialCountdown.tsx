@@ -79,12 +79,14 @@ export function MemorialTrialCountdown({
         </p>
         <p className="mt-4 text-sm leading-relaxed text-[var(--landing-text-body)] max-w-2xl mx-auto px-1">
           {copy.trialUpgradePart1}
-          <Link
-            href={upgradeHref}
-            className="font-medium text-[var(--aeterna-gold)] underline underline-offset-[0.2em] decoration-[var(--aeterna-gold)]/50 hover:text-[var(--aeterna-gold-light)] hover:decoration-[var(--aeterna-gold)] transition-colors"
-          >
-            {copy.trialUpgradeLinkLabel}
-          </Link>
+          {copy.trialUpgradeLinkLabel.trim() ? (
+            <Link
+              href={upgradeHref}
+              className="font-medium text-[var(--aeterna-gold)] underline underline-offset-[0.2em] decoration-[var(--aeterna-gold)]/50 hover:text-[var(--aeterna-gold-light)] hover:decoration-[var(--aeterna-gold)] transition-colors"
+            >
+              {copy.trialUpgradeLinkLabel}
+            </Link>
+          ) : null}
           {copy.trialUpgradePart2}
         </p>
       </div>

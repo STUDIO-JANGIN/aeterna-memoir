@@ -127,10 +127,34 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
       const p = (n: number) => String(n).padStart(2, "0")
       return `${p(d)}d : ${p(h)}h : ${p(m)}m : ${p(s)}s`
     },
-    trialUpgradePart1: "Para mantener vivos estos recuerdos para siempre, ",
-    trialUpgradeLinkLabel: "actualice su plan",
-    trialUpgradePart2:
-      " dentro de los próximos 7 días. Después de este periodo, el santuario se cerrará suavemente para proteger la privacidad de los datos.",
+    trialUpgradePart1:
+      "Para mantener vivos estos recuerdos para siempre, actualice su plan dentro de los próximos 7 días. Después de este periodo, el santuario se cerrará suavemente para proteger la privacidad de los datos.",
+    trialUpgradeLinkLabel: "",
+    trialUpgradePart2: "",
+    adminLoadingTitle: "Cargando",
+    adminLoadingSubtitle: "Preparando su panel…",
+    adminAccessRestrictedTitle: "Acceso restringido",
+    adminAccessRestrictedBody: "No tiene acceso a este panel.",
+    adminBackToHome: "Volver al inicio",
+    adminNotFoundTitle: "No encontrado",
+    adminNotFoundBody: "No se pudo cargar este memorial.",
+    adminDashboardKicker: "Panel de Control",
+    adminDashboardWelcome:
+      "Organice recuerdos, proteja el legado y comparta este santuario. Gestione el perfil y los archivos en Ajustes.",
+    adminEdit: "Editar",
+    adminSharePdfInvitation: "Invitación PDF",
+    adminPdfGenerating: "Generando…",
+    adminBackToFeed: "Volver al feed",
+    adminCurrentPlan: "Plan actual",
+    adminTierLabelFree: "Gratis",
+    adminTierLabelPlus: "Plus",
+    adminTierLabelPremium: "Premium",
+    adminContributionsCollected: (count: number) => `${count} contribuciones sinceras recolectadas`,
+    adminPreserveForeverCta: "Preservar para siempre — $19.99",
+    adminProcessing: "Procesando…",
+    adminMemoriesSectionTitle: "Recuerdos",
+    adminTabPending: (count: number) => `Pendientes (${count})`,
+    adminTabApproved: (count: number) => `Aprobados (${count})`,
     upgradePremiumCta: "Pasarse a Premium",
     upgradePremiumTail: "para una futura película homenaje en sus santuarios.",
     recentSupportAria: "Apoyos recientes",
@@ -233,21 +257,21 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
     checkingAccountBtn: "Comprobando…",
     plans: {
       free: {
-        title: "Ventana del Recuerdo ($0)",
+        title: "Ventana del Recuerdo",
         tagline: "7 días para reunir recuerdos. Un comienzo suave y lleno de paz.",
         b1: "Siete días para que familia y amigos dejen fotos y relatos",
         b2: "Suba de plan para grabar el memorial en el tiempo",
         tierSub: "Ventana gratuita para reunir recuerdos.",
       },
       plus: {
-        title: "Legado Eterno ($19.99)",
+        title: "Legado Eterno",
         tagline: "Mantenga cada foto e historia preservada para siempre. Sin fecha de expiración.",
         b1: "Recuerdos conservados sin fin",
         b2: "Un memorial compartible, permanente",
         tierSub: "Preservación permanente. Sin caducidad.",
       },
       premium: {
-        title: "La Película Eterna ($39.99)",
+        title: "La Película Eterna",
         tagline:
           "Todo lo incluido en Legado Eterno, además de acceso prioritario a su película tributo de 1 minuto creada con IA.",
         b1: "Todo Legado Eterno",

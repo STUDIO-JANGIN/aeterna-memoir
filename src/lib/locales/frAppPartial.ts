@@ -127,10 +127,34 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
       const p = (n: number) => String(n).padStart(2, "0")
       return `${p(d)}j : ${p(h)}h : ${p(m)}min : ${p(s)}s`
     },
-    trialUpgradePart1: "Pour garder ces souvenirs vivants à jamais, veuillez ",
-    trialUpgradeLinkLabel: "passer à l’offre supérieure sous 7 jours",
-    trialUpgradePart2:
-      ". Passé ce délai, le sanctuaire se fermera délicatement pour protéger la confidentialité des données.",
+    trialUpgradePart1:
+      "Pour garder ces souvenirs vivants à jamais, veuillez passer à l'offre supérieure sous 7 jours. Passé ce délai, le sanctuaire se fermera délicatement pour protéger la confidentialité des données.",
+    trialUpgradeLinkLabel: "",
+    trialUpgradePart2: "",
+    adminLoadingTitle: "Chargement",
+    adminLoadingSubtitle: "Préparation de votre tableau de bord…",
+    adminAccessRestrictedTitle: "Accès restreint",
+    adminAccessRestrictedBody: "Vous n’avez pas accès à ce tableau de bord.",
+    adminBackToHome: "Retour à l’accueil",
+    adminNotFoundTitle: "Introuvable",
+    adminNotFoundBody: "Ce sanctuaire n’a pas pu être chargé.",
+    adminDashboardKicker: "Tableau de bord",
+    adminDashboardWelcome:
+      "Organisez les souvenirs, protégez l'héritage et partagez ce sanctuaire. Gérez le profil et les médias à tout moment dans les Paramètres.",
+    adminEdit: "Modifier",
+    adminSharePdfInvitation: "Invitation PDF",
+    adminPdfGenerating: "Génération…",
+    adminBackToFeed: "Retour au flux",
+    adminCurrentPlan: "Forfait actuel",
+    adminTierLabelFree: "Gratuit",
+    adminTierLabelPlus: "Plus",
+    adminTierLabelPremium: "Premium",
+    adminContributionsCollected: (count: number) => `${count} contributions sincères collectées`,
+    adminPreserveForeverCta: "Préserver à jamais — $19.99",
+    adminProcessing: "Traitement…",
+    adminMemoriesSectionTitle: "Souvenirs",
+    adminTabPending: (count: number) => `En attente (${count})`,
+    adminTabApproved: (count: number) => `Approuvés (${count})`,
     upgradePremiumCta: "Passer à Premium",
     upgradePremiumTail: "pour un futur film hommage sur vos sanctuaires.",
     recentSupportAria: "Soutiens récents",
@@ -234,21 +258,21 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     checkingAccountBtn: "Vérification…",
     plans: {
       free: {
-        title: "Fenêtre de Mémoire ($0)",
+        title: "Fenêtre de Mémoire",
         tagline: "7 jours pour réunir les premiers souvenirs. Un début doux et serein.",
         b1: "Sept jours pour que famille et amis déposent photos et récits",
         b2: "Passez à une offre supérieure pour graver le sanctuaire dans le temps",
         tierSub: "Sept jours. Début apaisé.",
       },
       plus: {
-        title: "Héritage Éternel ($19.99)",
+        title: "Héritage Éternel",
         tagline: "Préservez chaque photo et chaque récit pour toujours. Sans date d'expiration.",
         b1: "Souvenirs conservés sans fin",
         b2: "Un sanctuaire partageable, permanent",
         tierSub: "Pour toujours. Sans expiration.",
       },
       premium: {
-        title: "Le Film Éternel ($39.99)",
+        title: "Le Film Éternel",
         tagline:
           "Tous les avantages d'Héritage Éternel, avec accès prioritaire au film hommage IA",
         b1: "Tout l’héritage éternel",

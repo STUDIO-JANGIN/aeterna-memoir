@@ -7,12 +7,6 @@ import { supabase } from "@/lib/supabase/browser"
 import { getEventBySlugAction, type AdminEvent } from "@/app/actions/setStorySelected"
 import { updateEventBySlugAction } from "@/app/actions/updateEventBySlug"
 import { generateInvitePdfAction } from "@/app/actions/generateInvitePdf"
-import {
-  getMemorialVisitorsAction,
-  type VisitorRow,
-} from "@/app/actions/getMemorialVisitors"
-import { EnhanceRemembranceWithAi } from "@/components/remembrance/EnhanceRemembranceWithAi"
-import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -22,7 +16,6 @@ export default function AdminSettingsPage({ params }: PageProps) {
   const resolvedParams = use(params)
   const slug = typeof resolvedParams?.slug === "string" ? resolvedParams.slug.trim() : ""
   const router = useRouter()
-  const { locale, app: a } = useLandingLocale()
 
   const [event, setEvent] = useState<AdminEvent | null>(null)
   const [loading, setLoading] = useState(true)
@@ -32,8 +25,6 @@ export default function AdminSettingsPage({ params }: PageProps) {
   const [invitationBio, setInvitationBio] = useState("")
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
-  const [visitors, setVisitors] = useState<VisitorRow[]>([])
-  const [visitorsError, setVisitorsError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!slug) {
@@ -47,22 +38,6 @@ export default function AdminSettingsPage({ params }: PageProps) {
         setEvent(e ?? null)
         if (!e) setError("Event not found.")
         setLoading(false)
-      }
-    })
-    return () => { cancelled = true }
-  }, [slug])
-
-  useEffect(() => {
-    if (!slug) return
-    let cancelled = false
-    getMemorialVisitorsAction(slug).then((res) => {
-      if (cancelled) return
-      if (res.ok) {
-        setVisitors(res.visitors)
-        setVisitorsError(null)
-      } else {
-        setVisitors([])
-        setVisitorsError(res.error)
       }
     })
     return () => {
@@ -86,12 +61,9 @@ export default function AdminSettingsPage({ params }: PageProps) {
     const death_date = (formData.get("death_date") as string)?.trim() ?? ""
     const location = (formData.get("location") as string)?.trim() ?? ""
     const ceremony_time = (formData.get("ceremony_time") as string)?.trim() ?? ""
-    const flower_link = (formData.get("flower_link") as string)?.trim() || null
     const bank_info = (formData.get("bank_info") as string)?.trim() || null
     const invitation_bio_raw = invitationBio.trim()
     const invitation_bio = invitation_bio_raw ? invitation_bio_raw.slice(0, 2000) : null
-    const music_url_raw = (formData.get("music_url") as string)?.trim() ?? ""
-    const music_url = music_url_raw ? music_url_raw.slice(0, 2000) : null
     const file = formData.get("profile_image") as File | null
     let profile_image: string | null = event.profile_image ?? null
     if (file && file.size > 0) {
@@ -108,11 +80,9 @@ export default function AdminSettingsPage({ params }: PageProps) {
       death_date: death_date || undefined,
       location: location || undefined,
       ceremony_time: ceremony_time || undefined,
-      flower_link,
       bank_info,
       profile_image,
       invitation_bio,
-      music_url,
     })
     setSavingProfile(false)
     if (result.ok) {
@@ -125,11 +95,9 @@ export default function AdminSettingsPage({ params }: PageProps) {
               death_date: death_date || null,
               location: location || null,
               ceremony_time: ceremony_time || null,
-              flower_link,
               bank_info,
               profile_image,
               invitation_bio,
-              music_url,
             }
           : null
       )
@@ -170,9 +138,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
   if (!event || error) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center bg-landing font-sans px-6 text-center text-white">
-        <p className="text-[var(--aeterna-gold-muted)] mb-4">
-          {error ?? "Memorial not found."}
-        </p>
+        <p className="text-[var(--aeterna-gold-muted)] mb-4">{error ?? "Memorial not found."}</p>
         <Link
           href={slug ? `/p/${slug}/admin` : "/"}
           className="text-sm text-[var(--aeterna-gold)] hover:underline"
@@ -196,17 +162,17 @@ export default function AdminSettingsPage({ params }: PageProps) {
             </svg>
             Back to admin
           </Link>
-          <h1 className="text-lg font-medium text-[var(--aeterna-headline)] tracking-[0.02em]">
-            Event settings
-          </h1>
+          <h1 className="text-lg font-medium text-[var(--aeterna-headline)] tracking-[0.02em]">Profile settings</h1>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-10">
-        {/* Event info form */}
-        <section aria-labelledby="event-form-heading">
-          <h2 id="event-form-heading" className="text-sm font-medium text-[var(--aeterna-gold)] uppercase tracking-widest mb-6">
-            Edit event info
+        <section aria-labelledby="profile-form-heading">
+          <h2
+            id="profile-form-heading"
+            className="text-sm font-medium text-[var(--aeterna-gold)] uppercase tracking-widest mb-6"
+          >
+            Edit profile
           </h2>
           <form onSubmit={handleProfileSubmit} className="space-y-5">
             {event.profile_image && (
@@ -219,7 +185,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
               </div>
             )}
             <div>
-              <label htmlFor="name" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="name"
+                className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
+              >
                 Name
               </label>
               <input
@@ -232,7 +201,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
               />
             </div>
             <div>
-              <label htmlFor="profile_image" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="profile_image"
+                className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
+              >
                 Profile image
               </label>
               <input
@@ -245,7 +217,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="birth_date" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
+                <label
+                  htmlFor="birth_date"
+                  className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
+                >
                   Birth date
                 </label>
                 <input
@@ -258,7 +233,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 />
               </div>
               <div>
-                <label htmlFor="death_date" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
+                <label
+                  htmlFor="death_date"
+                  className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
+                >
                   Death date
                 </label>
                 <input
@@ -272,7 +250,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
               </div>
             </div>
             <div>
-              <label htmlFor="location" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="location"
+                className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
+              >
                 Location
               </label>
               <input
@@ -285,7 +266,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
               />
             </div>
             <div>
-              <label htmlFor="ceremony_time" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="ceremony_time"
+                className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
+              >
                 Ceremony time
               </label>
               <input
@@ -297,79 +281,32 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 placeholder="e.g. March 15, 2024 at 2pm"
               />
             </div>
-            <EnhanceRemembranceWithAi
-              label={
-                <label
-                  htmlFor="invitation_bio"
-                  className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider"
-                >
-                  Remembrance message
-                </label>
-              }
-              text={invitationBio}
-              onApply={setInvitationBio}
-              deceasedName={event.name}
-              locale={locale}
-              variant="settings"
-              labels={{
-                enhanceWithAi: a.createWizard.enhanceWithAi,
-                enhanceGenerating: a.createWizard.enhanceGenerating,
-                enhanceChooseVersion: a.createWizard.enhanceChooseVersion,
-                enhanceUseThis: a.createWizard.enhanceUseThis,
-                enhanceWriteFirst: a.createWizard.enhanceWriteFirst,
-                enhanceTooLong: a.createWizard.enhanceTooLong,
-                enhanceErrorGeneric: a.createWizard.enhanceErrorGeneric,
-                enhanceOptionPoetic: a.createWizard.enhanceOptionPoetic,
-                enhanceOptionFormal: a.createWizard.enhanceOptionFormal,
-                enhanceOptionWarm: a.createWizard.enhanceOptionWarm,
-                enhanceRefine: a.createWizard.enhanceRefine,
-                enhanceRefining: a.createWizard.enhanceRefining,
-              }}
-            >
-              <>
-                <textarea
-                  id="invitation_bio"
-                  name="invitation_bio"
-                  rows={5}
-                  value={invitationBio}
-                  onChange={(e) => setInvitationBio(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-y min-h-[120px]"
-                  placeholder="Short message shown on the memorial and invitation (optional)"
-                />
-                <p className="mt-1.5 text-[11px] text-[var(--aeterna-gold-muted)]">
-                  Shown on the public memorial page and printable invite. You can edit anytime.
-                </p>
-              </>
-            </EnhanceRemembranceWithAi>
             <div>
-              <label htmlFor="music_url" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
-                Background music URL
+              <label
+                htmlFor="invitation_bio"
+                className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
+              >
+                Remembrance message
               </label>
-              <input
-                id="music_url"
-                name="music_url"
-                type="url"
-                defaultValue={event.music_url ?? ""}
-                className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
-                placeholder="YouTube or direct audio link (optional)"
+              <textarea
+                id="invitation_bio"
+                name="invitation_bio"
+                rows={5}
+                value={invitationBio}
+                onChange={(e) => setInvitationBio(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-y min-h-[120px]"
+                placeholder="Short message shown on the memorial and invitation (optional)"
               />
+              <p className="mt-1.5 text-[11px] text-[var(--aeterna-gold-muted)]">
+                Shown on the public memorial page and printable invite. You can edit anytime.
+              </p>
             </div>
             <div>
-              <label htmlFor="flower_link" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
-                Flower / tribute link
-              </label>
-              <input
-                id="flower_link"
-                name="flower_link"
-                type="url"
-                defaultValue={event.flower_link ?? ""}
-                className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
-                placeholder="https://..."
-              />
-            </div>
-            <div>
-              <label htmlFor="bank_info" className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5">
-                Condolence account details (`bank_info`)
+              <label
+                htmlFor="bank_info"
+                className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
+              >
+                Condolence account details
               </label>
               <textarea
                 id="bank_info"
@@ -377,7 +314,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 rows={4}
                 defaultValue={event.bank_info ?? ""}
                 className="w-full px-4 py-3 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-none"
-                placeholder="Bank name, account number, account holder, etc. (shown to visitors after support payment)"
+                placeholder="Bank name, account number, account holder, etc."
               />
             </div>
             {profileError && (
@@ -385,97 +322,41 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 {profileError}
               </p>
             )}
-            <button
-              type="submit"
-              disabled={savingProfile}
-              className="w-full min-h-[48px] rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm tracking-[0.04em] hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60 transition-colors"
-            >
-              {savingProfile ? "Saving…" : "Save profile"}
-            </button>
-          </form>
-        </section>
-
-        {/* Celebration of life invitation PDF */}
-        <section
-          aria-labelledby="invite-pdf-heading"
-          className="card-landing-airy p-6 md:p-8"
-        >
-          <h2
-            id="invite-pdf-heading"
-            className="text-sm font-medium text-[var(--aeterna-gold)] uppercase tracking-widest mb-3"
-          >
-            QR invitation (PDF)
-          </h2>
-          <p className="text-sm text-[var(--aeterna-body)] mb-3">
-            Generate a polished celebration-of-life invitation PDF using the event title, location, and schedule.
-            A QR code is automatically added so guests can open the memorial album instantly.
-          </p>
-          <p className="text-xs text-[var(--aeterna-gold-muted)] mb-4">
-            The generated PDF is saved to the &quot;invites&quot; folder, and the link can be shared directly by email or messaging.
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={handleGenerateInvite}
-              disabled={inviteLoading}
-              className="min-h-[44px] px-6 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60 transition-colors"
-            >
-              {inviteLoading ? "Generating…" : "Generate QR invitation"}
-            </button>
-            {event.invite_pdf_url && (
-              <a
-                href={event.invite_pdf_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)] underline-offset-2 hover:underline mt-2 sm:mt-0"
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-3">
+              <button
+                type="submit"
+                disabled={savingProfile}
+                className="min-h-[48px] flex-1 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm tracking-[0.04em] hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60 transition-colors sm:max-w-[14rem]"
               >
-                Open existing invitation
-              </a>
+                {savingProfile ? "Saving…" : "Save profile"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleGenerateInvite()}
+                disabled={inviteLoading}
+                className="min-h-[48px] flex-1 rounded-xl border border-[var(--aeterna-gold)]/40 bg-transparent text-[var(--aeterna-gold)] font-medium text-sm tracking-[0.04em] hover:bg-[var(--aeterna-gold)]/10 disabled:opacity-60 transition-colors sm:max-w-[14rem]"
+              >
+                {inviteLoading ? "Generating…" : "Generate QR invitation"}
+              </button>
+            </div>
+            {inviteError && (
+              <p className="text-sm text-red-400 text-right" role="alert">
+                {inviteError}
+              </p>
             )}
-          </div>
-          {inviteError && (
-            <p className="mt-2 text-sm text-red-400" role="alert">
-              {inviteError}
-            </p>
-          )}
-        </section>
-
-        {/* Guest notification emails (post-upload opt-in) */}
-        <section aria-labelledby="visitor-emails-heading" className="card-landing-airy p-6 md:p-8">
-          <h2
-            id="visitor-emails-heading"
-            className="text-sm font-medium text-[var(--aeterna-gold)] uppercase tracking-widest mb-3"
-          >
-            Guest notification emails
-          </h2>
-          <p className="text-sm text-[var(--aeterna-body)] mb-4">
-            Visitors who asked to be emailed when their submitted memory goes live. Approve their story on the main
-            admin page to send the notification (Resend: set <code className="text-xs opacity-80">RESEND_API_KEY</code>{" "}
-            in production).
-          </p>
-          {visitorsError ? (
-            <p className="text-sm text-red-400" role="alert">
-              {visitorsError}
-            </p>
-          ) : visitors.length === 0 ? (
-            <p className="text-sm text-[var(--aeterna-gold-muted)]">No notification signups yet.</p>
-          ) : (
-            <ul className="space-y-2 text-sm text-[var(--landing-text-body)]">
-              {visitors.map((v, i) => (
-                <li
-                  key={`${v.email ?? "e"}-${v.created_at ?? i}`}
-                  className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-white/[0.08] bg-[#030303]/30 px-4 py-3"
+            {event.invite_pdf_url ? (
+              <p className="text-right">
+                <a
+                  href={event.invite_pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)] underline-offset-2 hover:underline"
                 >
-                  <span className="font-medium text-[var(--aeterna-headline)]">{v.email ?? "—"}</span>
-                  <span className="text-xs text-[var(--aeterna-gold-muted)] tabular-nums">
-                    {v.created_at ? new Date(v.created_at).toLocaleString() : ""}
-                    {v.provider ? ` · ${v.provider}` : ""}
-                    {v.story_id ? " · linked to a story" : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+                  Open existing invitation
+                </a>
+              </p>
+            ) : null}
+          </form>
         </section>
       </main>
     </div>

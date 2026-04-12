@@ -188,6 +188,30 @@ export type AppStrings = {
     trialUpgradePart1: string
     trialUpgradeLinkLabel: string
     trialUpgradePart2: string
+    /** `/p/[slug]/admin` and related loading / access states */
+    adminLoadingTitle: string
+    adminLoadingSubtitle: string
+    adminAccessRestrictedTitle: string
+    adminAccessRestrictedBody: string
+    adminBackToHome: string
+    adminNotFoundTitle: string
+    adminNotFoundBody: string
+    adminDashboardKicker: string
+    adminDashboardWelcome: string
+    adminEdit: string
+    adminSharePdfInvitation: string
+    adminPdfGenerating: string
+    adminBackToFeed: string
+    adminCurrentPlan: string
+    adminTierLabelFree: string
+    adminTierLabelPlus: string
+    adminTierLabelPremium: string
+    adminContributionsCollected: (count: number) => string
+    adminPreserveForeverCta: string
+    adminProcessing: string
+    adminMemoriesSectionTitle: string
+    adminTabPending: (count: number) => string
+    adminTabApproved: (count: number) => string
     upgradePremiumCta: string
     upgradePremiumTail: string
     recentSupportAria: string
@@ -494,6 +518,31 @@ const EN: AppStrings = {
     trialUpgradeLinkLabel: "upgrade",
     trialUpgradePart2:
       " within 7 days. After this window, the shrine will gently close to protect the privacy of the data.",
+    adminLoadingTitle: "Loading",
+    adminLoadingSubtitle: "Preparing your memorial dashboard…",
+    adminAccessRestrictedTitle: "Access restricted",
+    adminAccessRestrictedBody: "You don't have access to this dashboard.",
+    adminBackToHome: "Back to home",
+    adminNotFoundTitle: "Not found",
+    adminNotFoundBody: "This memorial could not be loaded.",
+    adminDashboardKicker: "Dashboard",
+    adminDashboardWelcome:
+      "Curate memories, protect the legacy, and share this sanctuary. Manage profile and media anytime in Settings.",
+    adminEdit: "Edit",
+    adminSharePdfInvitation: "Share PDF invitation",
+    adminPdfGenerating: "Generating…",
+    adminBackToFeed: "Back to feed",
+    adminCurrentPlan: "Current plan",
+    adminTierLabelFree: "Free",
+    adminTierLabelPlus: "Plus",
+    adminTierLabelPremium: "Premium",
+    adminContributionsCollected: (count: number) =>
+      count === 1 ? "1 Heartfelt Contribution Collected" : `${count} Heartfelt Contributions Collected`,
+    adminPreserveForeverCta: "Preserve Forever — $19.99",
+    adminProcessing: "Processing…",
+    adminMemoriesSectionTitle: "Memories",
+    adminTabPending: (count: number) => `Pending (${count})`,
+    adminTabApproved: (count: number) => `Approved (${count})`,
     upgradePremiumCta: "Upgrade to Premium",
     upgradePremiumTail: "for an AI tribute film on future memorials.",
     recentSupportAria: "Recent Support",
@@ -790,9 +839,34 @@ const KO_PATCH: DeepPartial<AppStrings> = {
       const p = (n: number) => String(n).padStart(2, "0")
       return `${p(d)}일 : ${p(h)}시 : ${p(m)}분 : ${p(s)}초`
     },
-    trialUpgradePart1: "이 추억들을 영원히 간직하시려면 7일 이내에 ",
-    trialUpgradeLinkLabel: "업그레이드해 주세요",
-    trialUpgradePart2: ". 이 기간이 지나면 데이터 보호를 위해 추모관이 고요히 닫히게 됩니다.",
+    trialUpgradePart1:
+      "이 추억들을 영원히 간직하시려면 7일 이내에 업그레이드해 주세요. 이 기간이 지나면 데이터 보호를 위해 추모관이 고요히 닫히게 됩니다.",
+    trialUpgradeLinkLabel: "",
+    trialUpgradePart2: "",
+    adminLoadingTitle: "로딩 중",
+    adminLoadingSubtitle: "추모 대시보드를 준비하고 있습니다…",
+    adminAccessRestrictedTitle: "접근 제한",
+    adminAccessRestrictedBody: "이 대시보드에 접근할 권한이 없습니다.",
+    adminBackToHome: "홈으로",
+    adminNotFoundTitle: "찾을 수 없음",
+    adminNotFoundBody: "이 추모관을 불러올 수 없습니다.",
+    adminDashboardKicker: "대시보드",
+    adminDashboardWelcome:
+      "추억을 큐레이션하고, 유산을 보호하며, 이 성소를 공유하세요. 프로필과 미디어는 설정에서 언제든 관리할 수 있습니다.",
+    adminEdit: "편집",
+    adminSharePdfInvitation: "PDF 초대장",
+    adminPdfGenerating: "생성 중…",
+    adminBackToFeed: "피드로 돌아가기",
+    adminCurrentPlan: "현재 플랜",
+    adminTierLabelFree: "무료",
+    adminTierLabelPlus: "플러스",
+    adminTierLabelPremium: "프리미엄",
+    adminContributionsCollected: (count: number) => `${count}개의 소중한 추억이 수집됨`,
+    adminPreserveForeverCta: "영원히 보존하기 — $19.99",
+    adminProcessing: "처리 중…",
+    adminMemoriesSectionTitle: "추억들",
+    adminTabPending: (count: number) => `대기 중 (${count})`,
+    adminTabApproved: (count: number) => `승인됨 (${count})`,
     upgradePremiumCta: "프리미엄으로 업그레이드",
     upgradePremiumTail: "향후 기념관의 AI 헌사 영상을 위해.",
     recentSupportAria: "최근 후원",
@@ -895,21 +969,21 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     checkingAccountBtn: "계정 확인 중…",
     plans: {
       free: {
-        title: "기억의 창 (0 KRW)",
+        title: "기억의 창",
         tagline: "추억을 모으기 위한 7일간의 여정. 평온하고 부드러운 시작.",
         b1: "7일간 가족과 친지가 사진과 이야기를 남깁니다",
         b2: "언제든 업그레이드해 기념관을 영구 보존하세요",
         tierSub: "7일간의 여정. 평온한 시작.",
       },
       plus: {
-        title: "영원한 유산 (19,900 KRW)",
+        title: "영원한 유산",
         tagline: "모든 사진과 기록을 유효기간 없이 영구히 보존합니다.",
         b1: "모든 사진과 이야기가 영구 보존됩니다",
         b2: "영구적으로 공유 가능한 기념의 집",
         tierSub: "영구 보존. 만료 없음.",
       },
       premium: {
-        title: "영원한 필름 (39,900 KRW)",
+        title: "영원한 필름",
         tagline: "Legacy의 모든 혜택과 더불어, AI가 제작하는 1분 추모 필름 우선 이용권을 제공합니다.",
         b1: "Eternal Legacy의 모든 혜택",
         b2: "V2 출시 시 AI 추모 영상 우선 이용 — 지금 사전 예약",
@@ -1078,9 +1152,34 @@ const JA_PATCH: DeepPartial<AppStrings> = {
       const p = (n: number) => String(n).padStart(2, "0")
       return `${p(d)}日 : ${p(h)}時 : ${p(m)}分 : ${p(s)}秒`
     },
-    trialUpgradePart1: "これらの思い出を永遠に残すために、7日以内に",
-    trialUpgradeLinkLabel: "アップグレードをお願いいたします",
-    trialUpgradePart2: "。期限を過ぎると、データ保護のため、追悼空間は静かに閉じられます。",
+    trialUpgradePart1:
+      "これらの思い出を永遠に残すために、7日以内にアップグレードをお願いいたします。期限を過ぎると、データ保護のため、追悼空間は静かに閉じられます。",
+    trialUpgradeLinkLabel: "",
+    trialUpgradePart2: "",
+    adminLoadingTitle: "読み込み中",
+    adminLoadingSubtitle: "メモリアルダッシュボードを準備しています…",
+    adminAccessRestrictedTitle: "アクセスが制限されています",
+    adminAccessRestrictedBody: "このダッシュボードにアクセスする権限がありません。",
+    adminBackToHome: "ホームへ",
+    adminNotFoundTitle: "見つかりません",
+    adminNotFoundBody: "このメモリアルを読み込めませんでした。",
+    adminDashboardKicker: "ダッシュボード",
+    adminDashboardWelcome:
+      "想い出を整え、遺産を守り、この聖所を共有しましょう。プロフィールやメディアは設定からいつでも管理できます。",
+    adminEdit: "編集",
+    adminSharePdfInvitation: "PDF招待状",
+    adminPdfGenerating: "生成中…",
+    adminBackToFeed: "フィードに戻る",
+    adminCurrentPlan: "現在のプラン",
+    adminTierLabelFree: "無料",
+    adminTierLabelPlus: "プラス",
+    adminTierLabelPremium: "プレミアム",
+    adminContributionsCollected: (count: number) => `${count}件の心のこもった寄稿`,
+    adminPreserveForeverCta: "永遠に保存する — $19.99",
+    adminProcessing: "処理中…",
+    adminMemoriesSectionTitle: "思い出",
+    adminTabPending: (count: number) => `承認待ち (${count})`,
+    adminTabApproved: (count: number) => `承認済み (${count})`,
     errors: {
       nameRequired: "お名前を入力してください。",
       photoRequired: "写真を選んでください。",
@@ -1174,21 +1273,21 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     checkingAccountBtn: "確認中…",
     plans: {
       free: {
-        title: "記憶の窓 (0 JPY)",
+        title: "記憶の窓",
         tagline: "想い出を紡ぎ始めるための7日間。穏やかで優しい始まりの時。",
         b1: "7日間、家族が写真とストーリーを追加できます",
         b2: "いつでもアップグレードして永続保存",
         tierSub: "7日間の無料期間。穏やかな始まり。",
       },
       plus: {
-        title: "永遠の遺産 (2,900 JPY)",
+        title: "永遠の遺産",
         tagline: "すべての写真と物語を、期限なく永久に保存いたします。",
         b1: "すべての写真とストーリーが永久保存されます",
         b2: "永続的に共有できるメモリアルの家",
         tierSub: "永久保存。期限なし。",
       },
       premium: {
-        title: "永遠のフィルム (5,900 JPY)",
+        title: "永遠のフィルム",
         tagline: "永遠の遺産プランの全特典に加え、AIが制作する1分間の追悼フィルムへの優先アクセスをご提供します。",
         b1: "永遠の遺産プランのすべての特典",
         b2: "V2公開時のAI追悼フィルムを先行 — 今すぐ予約",

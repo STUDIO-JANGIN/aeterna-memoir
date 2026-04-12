@@ -259,18 +259,18 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   if (loading) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-3 px-6">
-        <p className="text-landing-label text-[var(--aeterna-gold)]">Loading</p>
-        <p className="text-landing-body max-w-xs text-center">Preparing your memorial dashboard…</p>
+        <p className="text-landing-label text-[var(--aeterna-gold)]">{tx.memorial.adminLoadingTitle}</p>
+        <p className="text-landing-body max-w-xs text-center">{tx.memorial.adminLoadingSubtitle}</p>
       </div>
     )
   }
   if (!event && error === "Unauthorized.") {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-6 bg-landing px-6 text-center">
-        <h1 className="text-landing-section-title max-w-md">Access restricted</h1>
-        <p className="text-landing-body max-w-md">You don&apos;t have access to this dashboard.</p>
+        <h1 className="text-landing-section-title max-w-md">{tx.memorial.adminAccessRestrictedTitle}</h1>
+        <p className="text-landing-body max-w-md">{tx.memorial.adminAccessRestrictedBody}</p>
         <Link href="/" className="btn-landing-primary">
-          Back to home
+          {tx.memorial.adminBackToHome}
         </Link>
       </div>
     )
@@ -278,11 +278,18 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   if (!event) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-3 bg-landing px-6">
-        <h1 className="text-landing-section-title">Not found</h1>
-        <p className="text-landing-body">This memorial could not be loaded.</p>
+        <h1 className="text-landing-section-title">{tx.memorial.adminNotFoundTitle}</h1>
+        <p className="text-landing-body">{tx.memorial.adminNotFoundBody}</p>
       </div>
     )
   }
+
+  const tierLabel =
+    currentTier === "free"
+      ? tx.memorial.adminTierLabelFree
+      : currentTier === "plus"
+        ? tx.memorial.adminTierLabelPlus
+        : tx.memorial.adminTierLabelPremium
 
   return (
     <div className="min-h-dvh p-6 md:p-10 md:pb-16">
@@ -295,23 +302,20 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
       <div className="max-w-4xl mx-auto">
         <header className="mb-8 md:mb-10">
           <div className="card-landing-airy p-6 md:p-10">
-            <p className="text-landing-label mb-5">Dashboard</p>
+            <p className="text-landing-label mb-5">{tx.memorial.adminDashboardKicker}</p>
             <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
               <div className="space-y-2 min-w-0 flex-1">
                 <h1 className="font-[var(--font-serif)] text-[clamp(1.5rem,4vw,2.125rem)] font-normal leading-tight tracking-[-0.02em] text-[var(--landing-text-title)]">
                   {event.name}
                 </h1>
-                <p className="text-landing-body pt-1 max-w-xl leading-relaxed">
-                  Curate memories, protect the legacy, and share this sanctuary. Manage profile and media anytime in
-                  Settings.
-                </p>
+                <p className="text-landing-body pt-1 max-w-xl leading-relaxed">{tx.memorial.adminDashboardWelcome}</p>
               </div>
               <div className="flex flex-col gap-3 shrink-0 w-full lg:w-auto lg:min-w-[12.5rem]">
                 <Link
                   href={`/p/${slug}/admin/settings`}
                   className="btn-landing-gold w-full justify-center min-h-[48px]"
                 >
-                  Edit
+                  {tx.memorial.adminEdit}
                 </Link>
                 <button
                   type="button"
@@ -319,13 +323,13 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                   disabled={invitePdfLoading}
                   className="btn-landing-outline-gold w-full justify-center min-h-[48px] disabled:opacity-50 disabled:cursor-wait"
                 >
-                  {invitePdfLoading ? "Generating…" : "Share PDF invitation"}
+                  {invitePdfLoading ? tx.memorial.adminPdfGenerating : tx.memorial.adminSharePdfInvitation}
                 </button>
                 <Link
                   href={`/p/${slug}`}
                   className="btn-landing-outline-gold w-full justify-center"
                 >
-                  Back to feed
+                  {tx.memorial.adminBackToFeed}
                 </Link>
               </div>
             </div>
@@ -334,17 +338,14 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
 
         <div className="card-landing-airy p-6 md:p-10 mb-10 md:mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/[0.08]">
-            <span className="text-landing-label">Current plan</span>
+            <span className="text-landing-label">{tx.memorial.adminCurrentPlan}</span>
             <span className="inline-flex items-center justify-center min-h-[36px] px-4 py-1.5 bg-[var(--aeterna-gold)]/12 text-[var(--aeterna-gold)] text-[10px] font-medium rounded-full uppercase tracking-[0.2em] ring-1 ring-[var(--aeterna-gold)]/35">
-              {currentTier}
+              {tierLabel}
             </span>
           </div>
 
           <p className="text-landing-body mb-8 max-w-2xl leading-relaxed">
-            <span className="font-[var(--font-serif)] text-xl text-[var(--landing-text-hero)] not-italic tabular-nums">
-              {stories.length}
-            </span>{" "}
-            Heartfelt Contribution{stories.length === 1 ? "" : "s"} Collected
+            {tx.memorial.adminContributionsCollected(stories.length)}
           </p>
 
           {currentTier === "free" && (
@@ -355,7 +356,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                 disabled={plusCheckoutLoading}
                 className="w-full sm:max-w-md min-h-[52px] items-center justify-center px-6 btn-landing-gold disabled:pointer-events-none inline-flex"
               >
-                {plusCheckoutLoading ? "Processing…" : "Preserve Forever — $19.99"}
+                {plusCheckoutLoading ? tx.memorial.adminProcessing : tx.memorial.adminPreserveForeverCta}
               </button>
             </div>
           )}
@@ -510,7 +511,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
 
         <div className="card-landing-airy p-6 md:p-8 mb-6 md:mb-8">
           <h2 className="font-[var(--font-serif)] text-xl md:text-2xl font-normal tracking-[-0.02em] text-[var(--landing-text-title)] mb-6">
-            Memories
+            {tx.memorial.adminMemoriesSectionTitle}
           </h2>
           <div
             className="flex w-full max-w-xl mx-auto md:mx-0 items-stretch justify-center gap-2 border-b border-white/[0.08]"
@@ -527,7 +528,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                   : "border-transparent text-[var(--landing-text-muted)] hover:text-[var(--landing-text-body)]"
               }`}
             >
-              Pending ({pending.length})
+              {tx.memorial.adminTabPending(pending.length)}
             </button>
             <button
               type="button"
@@ -540,7 +541,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                   : "border-transparent text-[var(--landing-text-muted)] hover:text-[var(--landing-text-body)]"
               }`}
             >
-              Approved ({approved.length})
+              {tx.memorial.adminTabApproved(approved.length)}
             </button>
           </div>
         </div>

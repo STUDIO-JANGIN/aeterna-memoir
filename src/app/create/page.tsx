@@ -37,6 +37,7 @@ import { getLandingHeroTitleTrackingClass, getLandingLocaleFontClasses } from "@
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
+import { raceWithTimeout } from "@/lib/raceWithTimeout"
 import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
 
 /** URL `plan=` → internal tier. Legacy: `basic` = Plus; marketing: `forever` = Plus, `film` = Premium. */
@@ -229,7 +230,7 @@ function CreateEventForm() {
   /** Match landing (/) hero typography on md+; CJK uses keep-all + balanced lines so desktop ≠ awkward wraps. */
   const { serif: wizardDisplaySerif } = getLandingLocaleFontClasses(locale)
   const wizardHeroTitleTracking = getLandingHeroTitleTrackingClass(locale)
-  const { user, ready: authReady, refresh: refreshAuthUser } = useSupabaseUser()
+  const { user, ready: authReady, refresh: refreshAuthUser, setUser: setAuthUser } = useSupabaseUser()
   const signedIn = Boolean(user?.id)
   const [googleLoading, setGoogleLoading] = useState(false)
   /** Blocks primary continue until sign-out has fully cleared session (avoids OAuth races). */
@@ -813,11 +814,17 @@ function CreateEventForm() {
   const handleSignOut = async () => {
     setSigningOut(true)
     setCreateError(null)
+    const SIGN_OUT_MS = 10_000
     try {
-      const { error } = await supabase.auth.signOut({ scope: "local" })
-      if (error) setCreateError(error.message)
-      await refreshAuthUser()
+      const signOutResult = await raceWithTimeout(
+        supabase.auth.signOut({ scope: "local" }),
+        SIGN_OUT_MS,
+        { error: null } satisfies Awaited<ReturnType<typeof supabase.auth.signOut>>,
+      )
+      if (signOutResult.error) setCreateError(signOutResult.error.message)
+      setAuthUser(null)
       router.refresh()
+      void refreshAuthUser()
     } finally {
       setSigningOut(false)
     }

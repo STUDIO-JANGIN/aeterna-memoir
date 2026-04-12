@@ -3,9 +3,13 @@
 import { useCallback, useEffect, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase/browser"
+import { raceWithTimeout } from "@/lib/raceWithTimeout"
 
 /** Never block `ready` forever if getUser() hangs (offline, extension, or network stall). */
 const AUTH_INIT_TIMEOUT_MS = 8_000
+/** Same ceiling as init — `getUser()` has no built-in timeout and can block callers (e.g. sign-out) forever. */
+const AUTH_GET_USER_TIMEOUT_MS = 8_000
+const GET_USER_TIMEOUT = "timeout" as const
 
 /**
  * Single source of truth for the browser Supabase user.
@@ -20,7 +24,14 @@ export function useSupabaseUser() {
   const [ready, setReady] = useState(false)
 
   const refresh = useCallback(async (): Promise<User | null> => {
-    const { data, error } = await supabase.auth.getUser()
+    const res = await raceWithTimeout(supabase.auth.getUser(), AUTH_GET_USER_TIMEOUT_MS, GET_USER_TIMEOUT)
+    if (res === GET_USER_TIMEOUT) {
+      const { data: sess } = await supabase.auth.getSession()
+      const u = sess.session?.user ?? null
+      setUser(u)
+      return u
+    }
+    const { data, error } = res
     if (error) {
       const { data: sess } = await supabase.auth.getSession()
       const u = sess.session?.user ?? null
@@ -62,11 +73,20 @@ export function useSupabaseUser() {
 
       // OAuth return, refresh, tab focus: always re-resolve user and unblock UI.
       try {
-        const { data, error } = await supabase.auth.getUser()
-        if (error) {
+        const res = await raceWithTimeout(
+          supabase.auth.getUser(),
+          AUTH_GET_USER_TIMEOUT_MS,
+          GET_USER_TIMEOUT,
+        )
+        if (res === GET_USER_TIMEOUT) {
           setUser(session.user)
         } else {
-          setUser(data.user ?? session.user)
+          const { data, error } = res
+          if (error) {
+            setUser(session.user)
+          } else {
+            setUser(data.user ?? session.user)
+          }
         }
       } catch {
         setUser(session.user)

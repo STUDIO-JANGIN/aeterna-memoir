@@ -3,6 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/browser"
+import { createEventAction } from "@/app/actions/createEvent"
+import { uploadNewEventProfileAction } from "@/app/actions/uploadNewEventProfile"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 
 const CEREMONY_MONTHS = [
@@ -126,58 +128,44 @@ export default function NewMemorialPage() {
         ceremony_time = `${weekdayLabel} ${ceremony_month} ${ceremony_date} ${ceremony_time_slot}`
       }
 
-              const location = rawLocation.trim()
-      const flower_link = rawContribution.trim()
-        ? rawContribution.trim()
-        : location
+      const location = rawLocation.trim()
+      const contributionTrim = rawContribution.trim()
+      const fundLinkForCreate =
+        contributionTrim ||
+        (location
           ? `https://www.google.com/maps/search/?api=1&query=florist+near+${encodeURIComponent(location)}`
-          : ""
+          : "")
+      const hasFund = !!(contributionTrim || location.trim())
 
-      const { data: inserted, error: insertError } = await supabase
-        .from("events")
-        .insert([
-          {
-            name: name.trim(),
-            creator_email: userEmail,
-            birth_date: birth_year || null,
-            death_date: death_year || null,
-            location,
-            ceremony_time,
-            music_url: music_url || null,
-            flower_link,
-            participant_limit: 10,
-            photo_limit_per_user: 5,
-            media_tier: "free",
-          },
-        ])
-        .select()
-        .single()
+      const created = await createEventAction({
+        name: name.trim(),
+        birth_date: birth_year || "—",
+        death_date: death_year || "—",
+        location,
+        ceremony_time,
+        has_fund: hasFund,
+        fund_link: fundLinkForCreate || undefined,
+        music_url: music_url || null,
+      })
 
-      if (insertError || !inserted) {
-        setFormError(t.createNew.errCreate)
+      if (!created.ok) {
+        setFormError(created.error || t.createNew.errCreate)
         return
       }
 
-      const eventId = inserted.id as string
+      const { slug } = created
 
       if (profileImageFile && profileImageFile.size > 0) {
-        const filePath = `profiles/${eventId}/${Date.now()}_${profileImageFile.name}`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("photos")
-          .upload(filePath, profileImageFile)
-
-        if (!uploadError && uploadData) {
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from("photos").getPublicUrl(filePath)
-          await supabase
-            .from("events")
-            .update({ profile_image: publicUrl })
-            .eq("id", eventId)
+        const fd = new FormData()
+        fd.append("profile_image", profileImageFile)
+        const up = await uploadNewEventProfileAction(slug, fd)
+        if (!up.ok) {
+          // eslint-disable-next-line no-console
+          console.warn("[create/new] profile upload failed", up.error)
         }
       }
 
-      router.push(`/admin/${eventId}`)
+      router.push(`/p/${encodeURIComponent(slug)}/admin`)
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Error creating memorial with details", error)

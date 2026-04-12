@@ -39,6 +39,8 @@ export type CreateEventInput = {
   custom_expired_at?: string
   /** Optional remembrance line for the printable invitation. */
   invitation_bio?: string
+  /** Optional memorial music URL (e.g. Spotify). */
+  music_url?: string | null
   /**
    * @deprecated Ignored at insert. Events are always created as `free`; Plus/Premium
    * are set only after Stripe payment (webhook / verified session).
@@ -126,6 +128,8 @@ export async function createEventAction(
   const invitation_bio =
     input.invitation_bio?.trim() ? input.invitation_bio.trim().slice(0, 2000) : null
 
+  const music_url = input.music_url?.trim() ? input.music_url.trim() : null
+
   const insertRow: Record<string, unknown> = {
     name,
     creator_email: email,
@@ -136,6 +140,7 @@ export async function createEventAction(
     ceremony_time,
     flower_link,
     invitation_bio,
+    music_url,
     slug,
     expired_at,
     collection_end_at,

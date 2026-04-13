@@ -160,17 +160,19 @@ export default function AdminSettingsPage({ params }: PageProps) {
   return (
     <div className="min-h-dvh bg-landing text-white font-sans">
       <header className="sticky top-0 z-10 border-b border-white/[0.06] bg-landing/95 backdrop-blur">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+        <div className="relative max-w-2xl mx-auto px-4 py-4 flex items-center justify-center min-h-[3.25rem]">
           <Link
             href={`/p/${slug}/admin`}
-            className="text-xs uppercase tracking-widest text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)] inline-flex items-center gap-2"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-xs uppercase tracking-widest text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)] inline-flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to admin
           </Link>
-          <h1 className="text-lg font-medium text-[var(--aeterna-headline)] tracking-[0.02em]">Profile settings</h1>
+          <h1 className="text-lg font-medium text-[var(--aeterna-headline)] tracking-[0.02em] text-center px-12">
+            Profile settings
+          </h1>
         </div>
       </header>
 
@@ -183,15 +185,24 @@ export default function AdminSettingsPage({ params }: PageProps) {
             Edit profile
           </h2>
           <form onSubmit={handleProfileSubmit} className="space-y-5">
-            {event.profile_image && (
-              <div className="flex justify-center">
-                <img
-                  src={event.profile_image}
-                  alt=""
-                  className="w-24 h-24 rounded-full object-cover border-2 border-white/[0.1]"
-                />
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/[0.1] bg-[#030303]/50 flex items-center justify-center shrink-0">
+                {event.profile_image ? (
+                  <img src={event.profile_image} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-serif text-[var(--landing-text-muted)]">
+                    {(event.name ?? "?").trim().charAt(0) || "?"}
+                  </span>
+                )}
               </div>
-            )}
+              <input
+                id="profile_image"
+                name="profile_image"
+                type="file"
+                accept="image/*"
+                className="w-full max-w-sm text-sm text-[var(--aeterna-body)] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--aeterna-gold-pale)] file:text-[var(--aeterna-charcoal)]"
+              />
+            </div>
             <div>
               <label
                 htmlFor="name"
@@ -206,21 +217,6 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 defaultValue={event.name ?? ""}
                 className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
                 placeholder="Loved one's name"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="profile_image"
-                className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
-              >
-                Profile image
-              </label>
-              <input
-                id="profile_image"
-                name="profile_image"
-                type="file"
-                accept="image/*"
-                className="w-full text-sm text-[var(--aeterna-body)] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--aeterna-gold-pale)] file:text-[var(--aeterna-charcoal)]"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -245,7 +241,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                   htmlFor="death_date"
                   className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
                 >
-                  Death date
+                  Date of passing
                 </label>
                 <input
                   id="death_date"
@@ -319,9 +315,9 @@ export default function AdminSettingsPage({ params }: PageProps) {
               <textarea
                 id="bank_info"
                 name="bank_info"
-                rows={4}
+                rows={2}
                 defaultValue={event.bank_info ?? ""}
-                className="w-full px-4 py-3 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-none"
+                className="w-full max-w-lg px-3 py-2 text-sm rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-y min-h-[4.5rem] max-h-32"
                 placeholder="Bank name, account number, account holder, etc."
               />
             </div>

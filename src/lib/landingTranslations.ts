@@ -169,8 +169,8 @@ const EN: LandingStrings = {
 const KO: LandingStrings = {
   nav: { howItWorks: "이용 안내", pricing: "요금", faq: "자주 묻는 질문" },
   hero: {
-    title1: "영원한 기억을 위한 디지털 추모관",
-    title2: "",
+    title1: "영원한 기억을 위한",
+    title2: "디지털 추모관",
     body: "사랑하는 가족과 반려동물을 위해, 시간이 흘러도 변치 않을 품격 있는 안식처를 마련하세요. 앱 설치의 번거로움 없이 QR 코드와 링크만으로 소중한 이들과 사진과 이야기를 나눌 수 있습니다. 방문자들이 추억에 공감하고 마음을 더하는 이 공간은, 고인의 삶을 기리는 가장 따뜻하고 성스러운 타임라인이 됩니다.",
     tagline: "발자취, 추모, 그리고 보존이 어우러진 단 하나의 성소.",
     ctaCreate: "지금 추모 공간 만들기",
@@ -271,8 +271,8 @@ const KO: LandingStrings = {
 const JA: LandingStrings = {
   nav: { howItWorks: "ご利用案内", pricing: "料金・プラン", faq: "よくある質問" },
   hero: {
-    title1: "永遠の記憶を刻む、デジタルの聖所",
-    title2: "",
+    title1: "永遠の記憶を刻む、",
+    title2: "デジタルの聖所",
     body: "大切な家族やペットのために、歳月が流れても色褪せない品格ある安らぎの場を。アプリのインストールは不要です。QRコードやリンクを通じて、大切な方々と写真や物語を分かち合えます。訪れる方々が共感し、想いを寄せるこの場所は、故人の歩みを称える最も温かく神聖なタイムラインとなります。",
     tagline: "絆、追悼、そして永遠の保存が共鳴する、唯一無二の聖域。",
     ctaCreate: "今すぐ追悼空間を作成する",
@@ -373,8 +373,8 @@ const JA: LandingStrings = {
 const FR: LandingStrings = {
   nav: { howItWorks: "Fonctionnement", pricing: "Tarifs", faq: "FAQ" },
   hero: {
-    title1: "Un sanctuaire numérique pour la mémoire sacrée",
-    title2: "",
+    title1: "Un sanctuaire numérique pour",
+    title2: "la mémoire sacrée",
     body:
       "Un espace pérenne pour les êtres chers et les compagnons de vie, préservé avec dignité. Partagez instantanément via un QR code ou un lien : sans application, sans contrainte. Les proches ajoutent photos et souvenirs depuis n'importe quel téléphone. Un fil commémoratif apaisant où chaque souvenir reçoit un hommage, telle une ligne du temps sacrée de leur héritage.",
     tagline: "Empreintes, recueillement et éternité en un seul lieu sacré.",
@@ -476,8 +476,8 @@ const FR: LandingStrings = {
 const ES: LandingStrings = {
   nav: { howItWorks: "Cómo funciona", pricing: "Tarifas", faq: "Preguntas frecuentes" },
   hero: {
-    title1: "Un santuario digital para el recuerdo sagrado",
-    title2: "",
+    title1: "Un santuario digital para el",
+    title2: "recuerdo sagrado",
     body:
       "Un espacio perdurable para personas y mascotas, preservado con la máxima dignidad. Comparta al instante mediante código QR o enlace: sin aplicaciones, sin fricciones; los invitados añaden fotos e historias desde cualquier teléfono. Un muro conmemorativo donde los visitantes dejan corazones y comentan cada recuerdo, creando una línea de tiempo sagrada de su legado.",
     tagline: "Huellas, recuerdos y preservación en un solo lugar sagrado.",
@@ -579,8 +579,8 @@ const ES: LandingStrings = {
 const AR: LandingStrings = {
   nav: { howItWorks: "كيف يعمل", pricing: "الباقات والأسعار", faq: "الأسئلة الشائعة" },
   hero: {
-    title1: "ضريح رقمي للذكرى المقدسة",
-    title2: "",
+    title1: "ضريح رقمي",
+    title2: "للذكرى المقدسة",
     body: "مساحة باقية للأحبة والحيوانات الأليفة، تُحفظ بكل إجلال. شاركها فوراً عبر رمز QR أو رابط مباشر: بلا تطبيقات، بلا تعقيد؛ يضيف الضيوف الصور والقصص من أي هاتف. سجل ذكريات هادئ يفيض بالمشاعر، حيث يتفاعل الزوار مع كل ذكرى، ليكون جدولاً زمنياً مقدساً لإرثهم.",
     tagline: "الأثر، والذكرى، والخلود.. في مكان واحد مقدس.",
     ctaCreate: "أنشئ ضريحاً الآن",
@@ -682,8 +682,8 @@ const AR: LandingStrings = {
 const ZH: LandingStrings = {
   nav: { howItWorks: "運作方式", pricing: "方案費用", faq: "常見問題" },
   hero: {
-    title1: "永恆記憶的數位殿堂",
-    title2: "",
+    title1: "永恆記憶的",
+    title2: "數位殿堂",
     body:
       "為您心愛的家人與寵物，打造一座跨越時光、充滿尊嚴的永恆安息地。無需下載應用程式，僅需透過 QR Code 或專屬連結，即可與親友即時分享照片與故事。這裡是一處溫柔的追思空間，讓訪客在每一份回憶中留下心意與評論，共同編織出一段神聖的生命傳承。",
     tagline: "讓足跡、思念與永恆的守護，在此神聖交匯。",

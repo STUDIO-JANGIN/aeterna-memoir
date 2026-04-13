@@ -10,6 +10,7 @@ import { embedInvitePdfFont, fontkit } from "@/lib/invitePdfFonts"
 import { bcp47ForLandingLocale } from "@/lib/invitePdfLocale"
 import { getInvitePdfStrings } from "@/lib/invitePdfTranslations"
 import type { InvitePdfUrlsMap } from "@/lib/resolveInvitePdfUrl"
+import { getEventBySlug } from "@/app/actions/setStorySelected"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { type LandingLocale, LANDING_LOCALES } from "@/lib/landingTranslations"
 
@@ -342,20 +343,19 @@ export async function generateInvitePdfAction(
     ? LANDING_LOCALES.map((l) => l.code)
     : [options?.locale ?? "en"]
 
-  const { data: event, error: eventErr } = await supabase
-    .from("events")
-    .select(
-      "id, name, location, ceremony_time, invite_pdf_url, invite_pdf_urls, birth_date, death_date, invitation_bio, profile_image"
-    )
-    .eq("slug", slugNorm)
-    .maybeSingle()
-
-  if (eventErr || !event?.id) {
+  /**
+   * Use {@link getEventBySlug} (exact slug, then case-insensitive fallback) so this matches
+   * admin settings and other flows. A plain `.eq("slug", …)` misses rows when URL casing
+   * differs from the value stored in `events.slug`.
+   */
+  const event = await getEventBySlug(slugNorm)
+  if (!event?.id) {
     return { ok: false, error: "Event not found." }
   }
 
   const origin = getAppBaseUrl()
-  const guestUrl = `${origin}/p/${encodeURIComponent(slugNorm)}`
+  const slugForGuestUrl = (event.slug ?? slugNorm).trim()
+  const guestUrl = `${origin}/p/${encodeURIComponent(slugForGuestUrl)}`
 
   const existingUrls =
     (event.invite_pdf_urls as InvitePdfUrlsMap | null | undefined) ?? {}

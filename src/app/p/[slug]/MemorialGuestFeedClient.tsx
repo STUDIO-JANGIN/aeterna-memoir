@@ -290,7 +290,6 @@ export default function GuestFeedPage({ params }: PageProps) {
   const isPaidMemorial = event ? eventRowIsPaidMemorial(event) : false
   const isPremiumTier = (event?.tier ?? "").trim().toLowerCase() === "premium"
   const showBlurByDeadline = isExpired && !isPaidMemorial
-  const TOP_20_VISIBLE = 20
   const tributeFilmUrlsList =
     (event?.tribute_film_urls ?? []).filter((u): u is string => typeof u === "string" && u.length > 0)
   const tributeFilmUrl =
@@ -792,9 +791,13 @@ export default function GuestFeedPage({ params }: PageProps) {
   }
 
   const isLocked = isClosed && (!event || !eventRowIsPaidMemorial(event))
-  const paywallThreshold = TOP_20_VISIBLE
-  const lockedCount = isLocked && stories.length > paywallThreshold ? stories.length - paywallThreshold : 0
-  const isBlurredByDeadlineOnly = (index: number) => showBlurByDeadline && index >= TOP_20_VISIBLE
+  /** Rare edge case: collection closed but photo window not expired (mismatched deadlines). */
+  const paywallThreshold = 20
+  const legacyPaywallLockedCount =
+    isLocked && stories.length > paywallThreshold ? stories.length - paywallThreshold : 0
+  const showUnlockUpsell =
+    (showBlurByDeadline && stories.length > 0) ||
+    (!showBlurByDeadline && isLocked && legacyPaywallLockedCount > 0)
 
   const handleUnlockMemories = async () => {
     if (!event || !slug || checkoutLoading) return
@@ -911,7 +914,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     <LayoutGroup>
     <div
       className={`relative min-h-dvh text-[var(--landing-text-hero)] font-sans ${
-        filmReleased || (isLocked && lockedCount > 0 && !filmReleased) ? "pb-28 md:pb-0" : ""
+        filmReleased || (isLocked && showUnlockUpsell && !filmReleased) ? "pb-28 md:pb-0" : ""
       }`}
     >
       <AnimatePresence>
@@ -938,16 +941,32 @@ export default function GuestFeedPage({ params }: PageProps) {
               <p className="text-[var(--aeterna-body)] text-sm mb-6">
                 {tx.memorial.premiumRestoreBody}
               </p>
-              <motion.button
-                type="button"
-                onClick={() => setShowPremiumBlurPopup(false)}
-                className="min-h-[44px] px-6 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm hover:bg-[var(--aeterna-gold-light)] transition-colors"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={ARTISAN_SPRING}
-              >
-                {tx.common.ok}
-              </motion.button>
+              <div className="flex flex-col gap-2">
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    setShowPremiumBlurPopup(false)
+                    void handleUnlockMemories()
+                  }}
+                  disabled={checkoutLoading}
+                  className="min-h-[44px] w-full rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm hover:bg-[var(--aeterna-gold-light)] transition-colors disabled:opacity-60"
+                  whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
+                  transition={ARTISAN_SPRING}
+                >
+                  {checkoutLoading ? tx.common.redirecting : tx.memorial.unlockMemories}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => setShowPremiumBlurPopup(false)}
+                  className="min-h-[44px] w-full rounded-xl border border-white/15 text-[var(--aeterna-headline)] text-sm hover:bg-white/[0.06] transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={ARTISAN_SPRING}
+                >
+                  {tx.common.ok}
+                </motion.button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -1472,11 +1491,21 @@ export default function GuestFeedPage({ params }: PageProps) {
           </div>
         ) : (
           <>
-            {isLocked && lockedCount > 0 && (
+            {showUnlockUpsell && (
               <>
                 <div className="max-w-4xl mx-auto px-4 pb-4 flex flex-col items-center gap-3">
                   <p className="text-sm text-[var(--aeterna-headline)] text-center">
-                    There are <strong className="text-[var(--aeterna-gold)]">{lockedCount}</strong> more memories from family and friends.
+                    {showBlurByDeadline ? (
+                      <>
+                        There are <strong className="text-[var(--aeterna-gold)]">{stories.length}</strong> memories in
+                        this memorial — upgrade to view the full gallery.
+                      </>
+                    ) : (
+                      <>
+                        There are <strong className="text-[var(--aeterna-gold)]">{legacyPaywallLockedCount}</strong> more
+                        memories from family and friends.
+                      </>
+                    )}
                   </p>
                   <motion.button
                     type="button"
@@ -1515,7 +1544,7 @@ export default function GuestFeedPage({ params }: PageProps) {
             <ul className="grid grid-cols-3 md:grid-cols-4 gap-[3px] bg-landing">
               {stories.map((story, index) => {
                 const isBlurredByPaywall = isLocked && index >= paywallThreshold
-                const isBlurred = isBlurredByDeadlineOnly(index) || isBlurredByPaywall
+                const isBlurred = showBlurByDeadline || isBlurredByPaywall
                 return (
                   <motion.li
                     key={story.id}
@@ -1526,7 +1555,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                   >
                     <motion.button
                       type="button"
-                      className={`absolute inset-0 h-full w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--aeterna-gold)]/50 ${isBlurredByPaywall ? "cursor-default" : ""}`}
+                      className={`absolute inset-0 h-full w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--aeterna-gold)]/50 ${isBlurredByPaywall && !showBlurByDeadline ? "cursor-default" : ""}`}
                       onClick={() => {
                         if (showBlurByDeadline) setShowPremiumBlurPopup(true)
                         else if (!isBlurredByPaywall) setViewerStory(story)
@@ -1538,7 +1567,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                             : tx.memorial.locked
                           : tx.memorial.viewStoryAria
                       }
-                      disabled={isBlurredByPaywall}
+                      disabled={!showBlurByDeadline && isBlurredByPaywall}
                       onContextMenu={(e) => e.preventDefault()}
                     >
                       {story.image_url ? (

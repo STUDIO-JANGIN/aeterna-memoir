@@ -3,7 +3,7 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
 import { supabase } from "@/lib/supabase/browser"
 import imageCompression from "browser-image-compression"
@@ -112,9 +112,8 @@ const DONATION_STORAGE_KEY = (s: string) => `aeterna_donation_${s}`
 
 export default function GuestFeedPage({ params }: PageProps) {
   const resolvedParams = use(params)
-  const slug = resolvedParams.slug
+  const slug = typeof resolvedParams?.slug === "string" ? resolvedParams.slug.trim() : ""
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   const [event, setEvent] = useState<FeedEvent | null>(null)
   const [stories, setStories] = useState<Story[]>([])
@@ -401,7 +400,14 @@ export default function GuestFeedPage({ params }: PageProps) {
     }
 
     const fetchData = async () => {
-      if (!slug) return
+      if (!slug) {
+        setError(tx.memorial.errors.memorialNotFound)
+        setEvent(null)
+        setStories([])
+        setLoading(false)
+        setLoadSyncing(false)
+        return
+      }
       const slugTrim = slug.trim()
       setLoading(true)
       setLoadSyncing(false)
@@ -572,14 +578,17 @@ export default function GuestFeedPage({ params }: PageProps) {
   }
 
   // Open upload flow when shared link includes ?share=1 (matches Message / Copy share text).
+  // Use window.location here instead of useSearchParams() to avoid Next.js App Router CSR bailout /
+  // missing-Suspense-boundary client exceptions on production memorial pages.
   useEffect(() => {
     if (typeof window === "undefined" || !slug || shareFormOpenedRef.current) return
-    if (searchParams.get("share") !== "1") return
+    const share = new URLSearchParams(window.location.search).get("share")
+    if (share !== "1") return
     shareFormOpenedRef.current = true
     setShareStep(1)
     setFormOpen(true)
     router.replace(`/p/${encodeURIComponent(slug)}`, { scroll: false })
-  }, [slug, searchParams, router])
+  }, [slug, router])
 
   const handleMemoryPhotoChange = (file: File | null) => {
     setPhotoPermanentUrl(null)

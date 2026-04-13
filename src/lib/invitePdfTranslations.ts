@@ -21,6 +21,22 @@ export type InvitePdfStrings = {
   closing2: string
 }
 
+/** “Please contact … for further details” (after closing lines). */
+export function formatInvitePdfContactLine(locale: LandingLocale, phone: string): string {
+  const p = phone.trim()
+  if (!p) return ""
+  const map: Record<LandingLocale, string> = {
+    en: `Please contact ${p} for further details.`,
+    ko: `자세한 안내는 ${p}로 문의해 주시기 바랍니다.`,
+    ja: `詳細は ${p} までお問い合わせください。`,
+    fr: `Pour plus de précisions, veuillez contacter : ${p}.`,
+    es: `Para más información, contacte a ${p}.`,
+    ar: `للمزيد من التفاصيل، يُرجى التواصل على ${p}.`,
+    zh: `若需詳情，請聯絡：${p}。`,
+  }
+  return map[locale] ?? map.en
+}
+
 const INVITE_PDF_COPY: Record<LandingLocale, InvitePdfStrings> = {
   en: {
     fallbackName: "Beloved",

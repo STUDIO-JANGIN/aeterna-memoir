@@ -39,6 +39,8 @@ export type CreateEventInput = {
   custom_expired_at?: string
   /** Optional remembrance line for the printable invitation. */
   invitation_bio?: string
+  /** Optional contact phone for the printable invitation. */
+  invitation_contact_phone?: string
   /** Optional memorial music URL (e.g. Spotify). */
   music_url?: string | null
   /**
@@ -128,6 +130,10 @@ export async function createEventAction(
   const invitation_bio =
     input.invitation_bio?.trim() ? input.invitation_bio.trim().slice(0, 2000) : null
 
+  const invitation_contact_phone = input.invitation_contact_phone?.trim()
+    ? input.invitation_contact_phone.trim().slice(0, 40)
+    : null
+
   const music_url = input.music_url?.trim() ? input.music_url.trim() : null
 
   const insertRow: Record<string, unknown> = {
@@ -140,6 +146,7 @@ export async function createEventAction(
     ceremony_time,
     flower_link,
     invitation_bio,
+    invitation_contact_phone,
     music_url,
     slug,
     expired_at,

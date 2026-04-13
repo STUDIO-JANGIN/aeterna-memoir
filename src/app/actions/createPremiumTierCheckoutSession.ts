@@ -1,7 +1,7 @@
 "use server"
 
 import Stripe from "stripe"
-import { PAYMENT_METHOD_TYPES } from "@/lib/checkout"
+import { checkoutSessionPaymentAndLocale } from "@/lib/checkout"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import {
@@ -27,6 +27,7 @@ export type PremiumTierCheckoutSessionOptions = {
   cancelToCreate?: boolean
   planQueryParam?: "basic" | "premium" | "free" | "forever" | "film"
   pricingCurrency?: PricingCurrencyId
+  checkoutLocale?: string
 }
 
 function resolvePremiumCancelUrl(
@@ -82,6 +83,10 @@ export async function createPremiumTierCheckoutSessionAction(
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      ...checkoutSessionPaymentAndLocale({
+        locale: options?.checkoutLocale,
+        currency: curr,
+      }),
       line_items: lineItems,
       ...(stripePriceId ? { currency: curr } : {}),
       metadata: {

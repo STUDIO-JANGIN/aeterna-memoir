@@ -236,6 +236,8 @@ export type AppStrings = {
     adminPreserveForeverCta: string
     /** Free tier — Stripe Premium (AI tribute film) checkout */
     adminEternalFilmCta: string
+    /** Plus tier — reassurance under plan CTAs */
+    adminPlusPreservedBody: string
     adminProcessing: string
     adminMemoriesSectionTitle: string
     adminTabPending: (count: number) => string
@@ -258,6 +260,40 @@ export type AppStrings = {
       checkoutFailed: string
       donationCheckoutFailed: string
     }
+  }
+  /** `/p/[slug]/admin/settings` — profile & invitation editing */
+  adminProfilePage: {
+    backToAdmin: string
+    pageTitle: string
+    editProfileSection: string
+    nameLabel: string
+    namePlaceholder: string
+    birthDateLabel: string
+    birthDatePlaceholder: string
+    dateOfPassingLabel: string
+    dateOfPassingPlaceholder: string
+    locationLabel: string
+    locationPlaceholder: string
+    ceremonyTimeLabel: string
+    ceremonyTimePlaceholder: string
+    invitationContactPhoneLabel: string
+    invitationContactPhonePlaceholder: string
+    remembranceMessageLabel: string
+    remembrancePlaceholder: string
+    remembranceHint: string
+    condolenceAccountLabel: string
+    condolencePlaceholder: string
+    saveProfile: string
+    saving: string
+    generateQrInvitation: string
+    generating: string
+    loading: string
+    memorialNotFound: string
+    invalidSlug: string
+    eventNotFound: string
+    saveFailed: string
+    generatePdfFailed: string
+    openInvitationWithLocale: (localeUpper: string) => string
   }
   createWizard: {
     stepOf: string
@@ -314,6 +350,8 @@ export type AppStrings = {
     date: string
     time: string
     phLocation: string
+    serviceContactPhoneLabel: string
+    serviceContactPhonePh: string
     hour: string
     min: string
     amPm: string
@@ -610,6 +648,8 @@ const EN: AppStrings = {
     adminPremiumNoClipCredits: "No clip credits left. Contact support if you need help.",
     adminPreserveForeverCta: "Preserve Forever — $19.99",
     adminEternalFilmCta: "Eternal Film — $39.99",
+    adminPlusPreservedBody:
+      "Your memorial is preserved — every story and photo remains here for as long as you need.",
     adminProcessing: "Processing…",
     adminMemoriesSectionTitle: "Memories",
     adminTabPending: (count: number) => `Pending (${count})`,
@@ -632,6 +672,40 @@ const EN: AppStrings = {
       checkoutFailed: "Unable to start checkout.",
       donationCheckoutFailed: "We couldn’t start checkout. Please try again.",
     },
+  },
+  adminProfilePage: {
+    backToAdmin: "Back to admin",
+    pageTitle: "Profile settings",
+    editProfileSection: "Edit profile",
+    nameLabel: "Name",
+    namePlaceholder: "Loved one's name",
+    birthDateLabel: "Birth date",
+    birthDatePlaceholder: "e.g. 1950-01-15",
+    dateOfPassingLabel: "Date of passing",
+    dateOfPassingPlaceholder: "e.g. 2024-03-01",
+    locationLabel: "Location",
+    locationPlaceholder: "City, venue, etc.",
+    ceremonyTimeLabel: "Ceremony time",
+    ceremonyTimePlaceholder: "e.g. March 15, 2024 at 2pm",
+    invitationContactPhoneLabel: "Invitation contact phone",
+    invitationContactPhonePlaceholder: "Optional — shown on printed PDF invite",
+    remembranceMessageLabel: "Remembrance message",
+    remembrancePlaceholder: "Short message shown on the memorial and invitation (optional)",
+    remembranceHint:
+      "Shown on the public memorial page and printable invite. You can edit anytime.",
+    condolenceAccountLabel: "Condolence account",
+    condolencePlaceholder: "Bank name, account number, account holder, etc.",
+    saveProfile: "Save profile",
+    saving: "Saving…",
+    generateQrInvitation: "Generate QR invitation",
+    generating: "Generating…",
+    loading: "Loading…",
+    memorialNotFound: "Memorial not found.",
+    invalidSlug: "Invalid URL: missing slug.",
+    eventNotFound: "Event not found.",
+    saveFailed: "Failed to save.",
+    generatePdfFailed: "Failed to generate invitation PDF.",
+    openInvitationWithLocale: (localeUpper: string) => `Open invitation (${localeUpper})`,
   },
   createWizard: {
     stepOf: "Step {current} of {total}",
@@ -690,6 +764,8 @@ const EN: AppStrings = {
     date: "Date",
     time: "Time",
     phLocation: "Venue, address, or city",
+    serviceContactPhoneLabel: "Contact phone (for guests)",
+    serviceContactPhonePh: "Optional — shown on the printed invitation",
     hour: "Hour",
     min: "Min",
     amPm: "AM / PM",
@@ -977,6 +1053,8 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     adminPremiumNoClipCredits: "남은 클립 크레딧이 없습니다. 지원이 필요하면 문의해 주세요.",
     adminPreserveForeverCta: "영원히 보존하기 — $19.99",
     adminEternalFilmCta: "이터널 필름 — $39.99",
+    adminPlusPreservedBody:
+      "귀하의 추모 공간은 안전하게 보존됩니다. 모든 이야기와 사진은 당신이 필요로 하는 한 언제까지나 이곳에 머물 것입니다.",
     adminProcessing: "처리 중…",
     adminMemoriesSectionTitle: "추억들",
     adminTabPending: (count: number) => `대기 중 (${count})`,
@@ -999,6 +1077,40 @@ const KO_PATCH: DeepPartial<AppStrings> = {
       checkoutFailed: "결제를 시작할 수 없습니다.",
       donationCheckoutFailed: "결제를 시작할 수 없습니다. 다시 시도해 주세요.",
     },
+  },
+  adminProfilePage: {
+    backToAdmin: "관리자 홈으로",
+    pageTitle: "프로필 설정",
+    editProfileSection: "프로필 수정",
+    nameLabel: "성함",
+    namePlaceholder: "고인 성함",
+    birthDateLabel: "생년월일",
+    birthDatePlaceholder: "예: 1950-01-15",
+    dateOfPassingLabel: "기일 (별세일)",
+    dateOfPassingPlaceholder: "예: 2024-03-01",
+    locationLabel: "장소",
+    locationPlaceholder: "도시, 장소 등",
+    ceremonyTimeLabel: "식순 및 시간",
+    ceremonyTimePlaceholder: "예: 2024년 3월 15일 오후 2시",
+    invitationContactPhoneLabel: "초대장 연락처(전화)",
+    invitationContactPhonePlaceholder: "선택 — 인쇄 초대장에 표시됩니다",
+    remembranceMessageLabel: "추모 메시지",
+    remembrancePlaceholder: "추모 페이지와 초대장에 표시할 짧은 메시지(선택)",
+    remembranceHint:
+      "공개 추모 페이지 및 초대장에 표시됩니다. 언제든 수정 가능합니다.",
+    condolenceAccountLabel: "조의금 전달 계좌",
+    condolencePlaceholder: "은행명, 계좌번호, 예금주 등",
+    saveProfile: "프로필 저장",
+    saving: "저장 중…",
+    generateQrInvitation: "QR 초대장 생성",
+    generating: "생성 중…",
+    loading: "불러오는 중…",
+    memorialNotFound: "기념관을 찾을 수 없습니다.",
+    invalidSlug: "잘못된 주소입니다. 식별자가 없습니다.",
+    eventNotFound: "이벤트를 찾을 수 없습니다.",
+    saveFailed: "저장하지 못했습니다.",
+    generatePdfFailed: "초대장 PDF를 만들지 못했습니다.",
+    openInvitationWithLocale: (localeUpper: string) => `초대장 열기 (${localeUpper})`,
   },
   createWizard: {
     stepOf: "{current}단계 / 총 {total}단계",
@@ -1057,6 +1169,8 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     date: "날짜",
     time: "시간",
     phLocation: "예배장, 주소 또는 도시",
+    serviceContactPhoneLabel: "문의 연락처(방문객용)",
+    serviceContactPhonePh: "선택 — 인쇄 초대장에 표시됩니다",
     hour: "시",
     min: "분",
     amPm: "오전 / 오후",
@@ -1334,6 +1448,8 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     adminPremiumNoClipCredits: "クリップのクレジットがありません。サポートへご連絡ください。",
     adminPreserveForeverCta: "永遠に保存する — $19.99",
     adminEternalFilmCta: "エターナルフィルム — $39.99",
+    adminPlusPreservedBody:
+      "あなたの想い出の場所は守られています。すべての物語と写真は、あなたが必要とする限り、いつまでもここに残り続けます。",
     adminProcessing: "処理中…",
     adminMemoriesSectionTitle: "思い出",
     adminTabPending: (count: number) => `承認待ち (${count})`,
@@ -1350,6 +1466,40 @@ const JA_PATCH: DeepPartial<AppStrings> = {
       memorialNotFound: "メモリアルが見つかりません。",
       loadFailed: "読み込み中に問題が発生しました。",
     },
+  },
+  adminProfilePage: {
+    backToAdmin: "管理画面に戻る",
+    pageTitle: "プロフィール設定",
+    editProfileSection: "プロフィール編集",
+    nameLabel: "お名前",
+    namePlaceholder: "故人のお名前",
+    birthDateLabel: "生年月日",
+    birthDatePlaceholder: "例: 1950-01-15",
+    dateOfPassingLabel: "命日（没年月日）",
+    dateOfPassingPlaceholder: "例: 2024-03-01",
+    locationLabel: "場所",
+    locationPlaceholder: "市区町村、会場など",
+    ceremonyTimeLabel: "葬儀・儀式の時間",
+    ceremonyTimePlaceholder: "例: 2024年3月15日 午後2時",
+    invitationContactPhoneLabel: "招待状の連絡先電話",
+    invitationContactPhonePlaceholder: "任意 — 印刷用PDFに表示されます",
+    remembranceMessageLabel: "追悼メッセージ",
+    remembrancePlaceholder: "メモリアルと招待状に表示する短いメッセージ（任意）",
+    remembranceHint:
+      "公開追悼ページと招待状に表示されます。いつでも編集可能です。",
+    condolenceAccountLabel: "弔問金のお振込先",
+    condolencePlaceholder: "銀行名、口座番号、名義など",
+    saveProfile: "プロフィールを保存",
+    saving: "保存中…",
+    generateQrInvitation: "QR招待状を作成",
+    generating: "作成中…",
+    loading: "読み込み中…",
+    memorialNotFound: "メモリアルが見つかりません。",
+    invalidSlug: "URLが無効です（スラッグがありません）。",
+    eventNotFound: "イベントが見つかりません。",
+    saveFailed: "保存できませんでした。",
+    generatePdfFailed: "招待状PDFを生成できませんでした。",
+    openInvitationWithLocale: (localeUpper: string) => `招待状を開く (${localeUpper})`,
   },
   createWizard: {
     stepOf: "ステップ {current} / {total}",
@@ -1407,6 +1557,8 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     date: "日付",
     time: "時刻",
     phLocation: "会場、住所、都市",
+    serviceContactPhoneLabel: "連絡先電話（参列者向け）",
+    serviceContactPhonePh: "任意 — 印刷招待状に表示されます",
     hour: "時",
     min: "分",
     amPm: "午前 / 午後",

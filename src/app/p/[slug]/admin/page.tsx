@@ -184,7 +184,9 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     setPlusCheckoutLoading(true)
     setPlusCheckoutError(null)
     setPremiumCheckoutError(null)
-    const result: any = await createPlusCheckoutSessionAction(event.id, slug)
+    const result: any = await createPlusCheckoutSessionAction(event.id, slug, {
+      checkoutLocale: locale,
+    })
     setPlusCheckoutLoading(false)
     if (result.ok && result.url) {
       window.location.href = result.url
@@ -198,7 +200,9 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     setPremiumCheckoutLoading(true)
     setPremiumCheckoutError(null)
     setPlusCheckoutError(null)
-    const result: any = await createPremiumTierCheckoutSessionAction(event.id, slug)
+    const result: any = await createPremiumTierCheckoutSessionAction(event.id, slug, {
+      checkoutLocale: locale,
+    })
     setPremiumCheckoutLoading(false)
     if (result.ok && result.url) {
       window.location.href = result.url
@@ -415,7 +419,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
 
           {currentTier === "plus" && (
             <p className="text-landing-body max-w-2xl leading-relaxed">
-              Your memorial is preserved — every story and photo remains here for as long as you need.
+              {tx.memorial.adminPlusPreservedBody}
             </p>
           )}
 

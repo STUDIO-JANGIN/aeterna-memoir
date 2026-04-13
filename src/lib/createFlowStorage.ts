@@ -31,6 +31,8 @@ export type CreateDraftV1 = {
   fundLink: string
   /** Words of remembrance for printable invitation */
   invitationBio: string
+  /** Contact phone for printed invitation (when hosting a service). */
+  serviceContactPhone?: string
   /** @deprecated Removed from UI; always 7-day gathering server-side */
   collectionPeriod?: "3" | "7" | "14" | "custom"
   customExpiredAt?: string

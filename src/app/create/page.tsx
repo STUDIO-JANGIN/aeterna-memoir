@@ -313,6 +313,8 @@ function CreateEventForm() {
   const [fundLink, setFundLink] = useState("")
   /** Printable invitation — words of remembrance */
   const [invitationBio, setInvitationBio] = useState("")
+  /** Shown on printed invitation when hosting a service */
+  const [serviceContactPhone, setServiceContactPhone] = useState("")
   /** Step 6: whether they host a service; if false, service/support steps are skipped. */
   const [willHostMemorialService, setWillHostMemorialService] = useState<boolean | null>(null)
   /** When URL locked a plan, user can open full plan grid to switch. */
@@ -565,6 +567,7 @@ function CreateEventForm() {
       }
       setFundLink(draft.fundLink)
       setInvitationBio(draft.invitationBio ?? "")
+      setServiceContactPhone(draft.serviceContactPhone ?? "")
       setWillHostMemorialService(
         typeof draft.willHostMemorialService === "boolean" ? draft.willHostMemorialService : null
       )
@@ -606,7 +609,7 @@ function CreateEventForm() {
     if (typeof window === "undefined") return
     if (!memorialType) return
     const draft: CreateDraftV1 = {
-      v: 5,
+      v: 7,
       memorialType,
       wizardStep,
       willHostMemorialService,
@@ -624,6 +627,7 @@ function CreateEventForm() {
       ceremonyPeriod,
       fundLink,
       invitationBio,
+      serviceContactPhone,
       storagePlan,
     }
     const t = window.setTimeout(() => writeCreateDraft(draft), 450)
@@ -1012,6 +1016,7 @@ function CreateEventForm() {
       ceremonyPeriod,
       fundLink,
       invitationBio,
+      serviceContactPhone,
       storagePlan,
     }
   }
@@ -1139,6 +1144,7 @@ function CreateEventForm() {
       cancelToCreate: true as const,
       planQueryParam: storagePlanToUrlPlan(storagePlan),
       pricingCurrency,
+      checkoutLocale: locale,
     }
 
     const memorialName = name.trim()
@@ -1215,6 +1221,9 @@ function CreateEventForm() {
       collection_period: "7",
       custom_expired_at: undefined,
       invitation_bio: invitationBio.trim() ? invitationBio.trim().slice(0, 2000) : undefined,
+      invitation_contact_phone: serviceContactPhone.trim()
+        ? serviceContactPhone.trim().slice(0, 40)
+        : undefined,
     })
 
     if (result.ok) {
@@ -2010,6 +2019,22 @@ function CreateEventForm() {
                         </select>
                       </div>
                     </div>
+
+                    {willHostMemorialService === true && (
+                      <div className="space-y-6">
+                        <h3 className={stepSectionTitleClass}>{a.createWizard.serviceContactPhoneLabel}</h3>
+                        <input
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          value={serviceContactPhone}
+                          onChange={(e) => setServiceContactPhone(e.target.value)}
+                          placeholder={a.createWizard.serviceContactPhonePh}
+                          className={ghostLineInputClass}
+                          aria-label={a.createWizard.serviceContactPhoneLabel}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

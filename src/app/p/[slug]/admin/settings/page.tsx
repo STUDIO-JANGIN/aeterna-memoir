@@ -18,7 +18,8 @@ export default function AdminSettingsPage({ params }: PageProps) {
   const resolvedParams = use(params)
   const slug = typeof resolvedParams?.slug === "string" ? resolvedParams.slug.trim() : ""
   const router = useRouter()
-  const { locale } = useLandingLocale()
+  const { app: tx, locale } = useLandingLocale()
+  const ap = tx.adminProfilePage
 
   const [event, setEvent] = useState<AdminEvent | null>(null)
   const [loading, setLoading] = useState(true)
@@ -26,12 +27,13 @@ export default function AdminSettingsPage({ params }: PageProps) {
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [invitationBio, setInvitationBio] = useState("")
+  const [invitationContactPhone, setInvitationContactPhone] = useState("")
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!slug) {
-      setError("Invalid URL: missing slug.")
+      setError(tx.adminProfilePage.invalidSlug)
       setLoading(false)
       return
     }
@@ -39,17 +41,20 @@ export default function AdminSettingsPage({ params }: PageProps) {
     getEventBySlugAction(slug).then((e) => {
       if (!cancelled) {
         setEvent(e ?? null)
-        if (!e) setError("Event not found.")
+        if (!e) setError(tx.adminProfilePage.eventNotFound)
         setLoading(false)
       }
     })
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [slug, tx])
 
   useEffect(() => {
-    if (event) setInvitationBio(event.invitation_bio ?? "")
+    if (event) {
+      setInvitationBio(event.invitation_bio ?? "")
+      setInvitationContactPhone(event.invitation_contact_phone ?? "")
+    }
   }, [event])
 
   const handleProfileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -67,6 +72,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
     const bank_info = (formData.get("bank_info") as string)?.trim() || null
     const invitation_bio_raw = invitationBio.trim()
     const invitation_bio = invitation_bio_raw ? invitation_bio_raw.slice(0, 2000) : null
+    const invitation_contact_phone_raw = (formData.get("invitation_contact_phone") as string)?.trim() ?? ""
+    const invitation_contact_phone = invitation_contact_phone_raw
+      ? invitation_contact_phone_raw.slice(0, 40)
+      : null
     const file = formData.get("profile_image") as File | null
     let profile_image: string | null = event.profile_image ?? null
     if (file && file.size > 0) {
@@ -86,6 +95,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
       bank_info,
       profile_image,
       invitation_bio,
+      invitation_contact_phone,
     })
     setSavingProfile(false)
     if (result.ok) {
@@ -101,12 +111,13 @@ export default function AdminSettingsPage({ params }: PageProps) {
               bank_info,
               profile_image,
               invitation_bio,
+              invitation_contact_phone,
             }
           : null
       )
       router.refresh()
     } else {
-      setProfileError(result.error ?? "Failed to save.")
+      setProfileError(result.error ?? ap.saveFailed)
     }
   }
 
@@ -125,7 +136,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
         setInviteError(result.error)
       }
     } catch (err) {
-      setInviteError(err instanceof Error ? err.message : "Failed to generate invitation PDF.")
+      setInviteError(err instanceof Error ? err.message : ap.generatePdfFailed)
     } finally {
       setInviteLoading(false)
     }
@@ -134,7 +145,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
   if (loading) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-landing text-landing-label">
-        Loading…
+        {ap.loading}
       </div>
     )
   }
@@ -146,12 +157,15 @@ export default function AdminSettingsPage({ params }: PageProps) {
   if (!event || error) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center bg-landing font-sans px-6 text-center text-white">
-        <p className="text-[var(--aeterna-gold-muted)] mb-4">{error ?? "Memorial not found."}</p>
+        <p className="text-[var(--aeterna-gold-muted)] mb-4">{error ?? ap.memorialNotFound}</p>
         <Link
           href={slug ? `/p/${slug}/admin` : "/"}
-          className="text-sm text-[var(--aeterna-gold)] hover:underline"
+          className="inline-flex items-center gap-2 text-sm text-[var(--aeterna-gold)] hover:underline"
         >
-          ← Back to admin
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          {ap.backToAdmin}
         </Link>
       </div>
     )
@@ -168,10 +182,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to admin
+            {ap.backToAdmin}
           </Link>
           <h1 className="text-lg font-medium text-[var(--aeterna-headline)] tracking-[0.02em] text-center px-12">
-            Profile settings
+            {ap.pageTitle}
           </h1>
         </div>
       </header>
@@ -182,7 +196,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
             id="profile-form-heading"
             className="text-sm font-medium text-[var(--aeterna-gold)] uppercase tracking-widest mb-6"
           >
-            Edit profile
+            {ap.editProfileSection}
           </h2>
           <form onSubmit={handleProfileSubmit} className="space-y-5">
             <div className="flex flex-col items-center gap-3">
@@ -208,7 +222,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 htmlFor="name"
                 className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
               >
-                Name
+                {ap.nameLabel}
               </label>
               <input
                 id="name"
@@ -216,7 +230,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 type="text"
                 defaultValue={event.name ?? ""}
                 className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
-                placeholder="Loved one's name"
+                placeholder={ap.namePlaceholder}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -225,7 +239,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                   htmlFor="birth_date"
                   className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
                 >
-                  Birth date
+                  {ap.birthDateLabel}
                 </label>
                 <input
                   id="birth_date"
@@ -233,7 +247,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                   type="text"
                   defaultValue={event.birth_date ?? ""}
                   className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
-                  placeholder="e.g. 1950-01-15"
+                  placeholder={ap.birthDatePlaceholder}
                 />
               </div>
               <div>
@@ -241,7 +255,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                   htmlFor="death_date"
                   className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
                 >
-                  Date of passing
+                  {ap.dateOfPassingLabel}
                 </label>
                 <input
                   id="death_date"
@@ -249,7 +263,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                   type="text"
                   defaultValue={event.death_date ?? ""}
                   className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
-                  placeholder="e.g. 2024-03-01"
+                  placeholder={ap.dateOfPassingPlaceholder}
                 />
               </div>
             </div>
@@ -258,7 +272,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 htmlFor="location"
                 className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
               >
-                Location
+                {ap.locationLabel}
               </label>
               <input
                 id="location"
@@ -266,7 +280,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 type="text"
                 defaultValue={event.location ?? ""}
                 className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
-                placeholder="City, venue, etc."
+                placeholder={ap.locationPlaceholder}
               />
             </div>
             <div>
@@ -274,7 +288,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 htmlFor="ceremony_time"
                 className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
               >
-                Ceremony time
+                {ap.ceremonyTimeLabel}
               </label>
               <input
                 id="ceremony_time"
@@ -282,7 +296,26 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 type="text"
                 defaultValue={event.ceremony_time ?? ""}
                 className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
-                placeholder="e.g. March 15, 2024 at 2pm"
+                placeholder={ap.ceremonyTimePlaceholder}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="invitation_contact_phone"
+                className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
+              >
+                {ap.invitationContactPhoneLabel}
+              </label>
+              <input
+                id="invitation_contact_phone"
+                name="invitation_contact_phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={invitationContactPhone}
+                onChange={(e) => setInvitationContactPhone(e.target.value)}
+                className="w-full min-h-[44px] px-4 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)]"
+                placeholder={ap.invitationContactPhonePlaceholder}
               />
             </div>
             <div>
@@ -290,7 +323,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 htmlFor="invitation_bio"
                 className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
               >
-                Remembrance message
+                {ap.remembranceMessageLabel}
               </label>
               <textarea
                 id="invitation_bio"
@@ -299,10 +332,10 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 value={invitationBio}
                 onChange={(e) => setInvitationBio(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-y min-h-[120px]"
-                placeholder="Short message shown on the memorial and invitation (optional)"
+                placeholder={ap.remembrancePlaceholder}
               />
               <p className="mt-1.5 text-[11px] text-[var(--aeterna-gold-muted)]">
-                Shown on the public memorial page and printable invite. You can edit anytime.
+                {ap.remembranceHint}
               </p>
             </div>
             <div>
@@ -310,7 +343,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 htmlFor="bank_info"
                 className="block text-xs text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-1.5"
               >
-                Condolence account details
+                {ap.condolenceAccountLabel}
               </label>
               <textarea
                 id="bank_info"
@@ -318,7 +351,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 rows={2}
                 defaultValue={event.bank_info ?? ""}
                 className="w-full max-w-lg px-3 py-2 text-sm rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-y min-h-[4.5rem] max-h-32"
-                placeholder="Bank name, account number, account holder, etc."
+                placeholder={ap.condolencePlaceholder}
               />
             </div>
             {profileError && (
@@ -332,7 +365,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 disabled={savingProfile}
                 className="min-h-[48px] flex-1 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm tracking-[0.04em] hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60 transition-colors sm:max-w-[14rem]"
               >
-                {savingProfile ? "Saving…" : "Save profile"}
+                {savingProfile ? ap.saving : ap.saveProfile}
               </button>
               <button
                 type="button"
@@ -340,7 +373,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 disabled={inviteLoading}
                 className="min-h-[48px] flex-1 rounded-xl border border-[var(--aeterna-gold)]/40 bg-transparent text-[var(--aeterna-gold)] font-medium text-sm tracking-[0.04em] hover:bg-[var(--aeterna-gold)]/10 disabled:opacity-60 transition-colors sm:max-w-[14rem]"
               >
-                {inviteLoading ? "Generating…" : "Generate QR invitation"}
+                {inviteLoading ? ap.generating : ap.generateQrInvitation}
               </button>
             </div>
             {inviteError && (
@@ -356,7 +389,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                   rel="noopener noreferrer"
                   className="text-xs text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)] underline-offset-2 hover:underline"
                 >
-                  Open invitation ({locale.toUpperCase()})
+                  {ap.openInvitationWithLocale(locale.toUpperCase())}
                 </a>
               </p>
             ) : null}

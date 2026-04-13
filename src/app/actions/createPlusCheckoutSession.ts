@@ -1,7 +1,7 @@
 "use server"
 
 import Stripe from "stripe"
-import { PAYMENT_METHOD_TYPES } from "@/lib/checkout"
+import { checkoutSessionPaymentAndLocale } from "@/lib/checkout"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import {
@@ -29,6 +29,8 @@ export type PlusCheckoutSessionOptions = {
   planQueryParam?: "basic" | "premium" | "free" | "forever" | "film"
   /** Regional Stripe Price / `price_data` (KRW, JPY, SAR, USD). Defaults to USD. */
   pricingCurrency?: PricingCurrencyId
+  /** App landing locale — drives Checkout language and KR wallet ordering. */
+  checkoutLocale?: string
 }
 
 function resolvePlusCancelUrl(
@@ -84,6 +86,10 @@ export async function createPlusCheckoutSessionAction(
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      ...checkoutSessionPaymentAndLocale({
+        locale: options?.checkoutLocale,
+        currency: curr,
+      }),
       line_items: lineItems,
       ...(stripePriceId ? { currency: curr } : {}),
       metadata: {

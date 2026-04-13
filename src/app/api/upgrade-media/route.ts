@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
+import { checkoutSessionPaymentAndLocale } from "@/lib/checkout"
 import { getAppBaseUrl } from "@/lib/appUrl"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      ...checkoutSessionPaymentAndLocale({ currency: "usd" }),
       line_items: [
         {
           price_data: {

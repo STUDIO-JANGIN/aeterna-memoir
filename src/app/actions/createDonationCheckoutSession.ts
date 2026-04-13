@@ -2,8 +2,8 @@
 
 import Stripe from "stripe"
 import {
-  PAYMENT_METHOD_TYPES,
-  PAYMENT_METHOD_TYPES_FALLBACK,
+  checkoutSessionPaymentAndLocale,
+  getCheckoutPaymentMethodTypesFallback,
   getDonationAmountByLocale,
   getDonationProductCopy,
 } from "@/lib/checkout"
@@ -37,42 +37,53 @@ export async function createDonationCheckoutSessionAction(
   const origin = getAppBaseUrl()
 
   const { currency, unit_amount } = getDonationAmountByLocale(locale ?? "en")
-  const product = getDonationProductCopy(locale ?? "en")
+  const product = getDonationProductCopy()
 
-  const createSession = (methods: readonly string[]) =>
-    stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency,
-            unit_amount,
-            product_data: {
-              name: product.name,
-              description: product.description,
-              images: [],
-            },
+  const common = checkoutSessionPaymentAndLocale({
+    locale: locale ?? undefined,
+    currency,
+  })
+
+  const body: Stripe.Checkout.SessionCreateParams = {
+    mode: "payment",
+    ...common,
+    line_items: [
+      {
+        price_data: {
+          currency,
+          unit_amount,
+          product_data: {
+            name: product.name,
+            description: product.description,
+            images: [],
           },
-          quantity: 1,
         },
-      ],
-      metadata: {
-        eventId,
-        memorialId: eventId,
-        slug,
-        purpose: "platform_tip",
+        quantity: 1,
       },
-      success_url: `${origin}/p/${encodeURIComponent(slug)}/donation-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/p/${encodeURIComponent(slug)}`,
-    })
+    ],
+    metadata: {
+      eventId,
+      memorialId: eventId,
+      slug,
+      purpose: "platform_tip",
+    },
+    success_url: `${origin}/p/${encodeURIComponent(slug)}/donation-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/p/${encodeURIComponent(slug)}`,
+  }
 
-  let session: Awaited<ReturnType<typeof createSession>>
+  let session: Stripe.Checkout.Session
   try {
-    session = await createSession(PAYMENT_METHOD_TYPES)
+    session = await stripe.checkout.sessions.create(body)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     if (msg.includes("payment_method") || msg.includes("Invalid")) {
-      session = await createSession(PAYMENT_METHOD_TYPES_FALLBACK)
+      session = await stripe.checkout.sessions.create({
+        ...body,
+        payment_method_types: getCheckoutPaymentMethodTypesFallback({
+          locale: locale ?? undefined,
+          currency,
+        }),
+      })
     } else {
       throw err
     }

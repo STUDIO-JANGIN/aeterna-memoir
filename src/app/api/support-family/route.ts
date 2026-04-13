@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
+import { checkoutSessionPaymentAndLocale } from "@/lib/checkout"
 import { getAppBaseUrl } from "@/lib/appUrl"
-import { PAYMENT_METHOD_TYPES } from "@/lib/checkout"
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     const eventId = body.eventId as string | undefined
     const amount = Number(body.amount)
     const currency = (body.currency as string | undefined) || "usd"
+    const checkoutLocale = typeof body.locale === "string" ? body.locale : undefined
 
     if (!eventId || !amount || Number.isNaN(amount) || amount <= 0) {
       return NextResponse.json({ error: "Invalid eventId or amount" }, { status: 400 })
@@ -31,6 +32,10 @@ export async function POST(req: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      ...checkoutSessionPaymentAndLocale({
+        locale: checkoutLocale,
+        currency,
+      }),
       line_items: [
         {
           price_data: {

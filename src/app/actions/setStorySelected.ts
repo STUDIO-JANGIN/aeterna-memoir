@@ -54,6 +54,8 @@ export type AdminEvent = {
   music_url: string | null
   bank_info: string | null
   invitation_bio: string | null
+  /** Phone for invitation “contact for details” line; optional. */
+  invitation_contact_phone?: string | null
   preview_film_url: string | null
   full_film_requested_at: string | null
   full_film_url?: string | null

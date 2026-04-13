@@ -1,6 +1,7 @@
 "use server"
 
 import Stripe from "stripe"
+import { checkoutSessionPaymentAndLocale } from "@/lib/checkout"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { STRIPE_PREMIUM_PRODUCT_AI_FILM } from "@/lib/notifyPremiumFilmPurchase"
@@ -21,7 +22,8 @@ export type CreateCheckoutResult =
 
 export async function createCheckoutSessionAction(
   eventId: string,
-  slug: string
+  slug: string,
+  checkoutLocale?: string
 ): Promise<CreateCheckoutResult> {
   if (!stripe) {
     return { ok: false, error: "Stripe is not configured." }
@@ -30,13 +32,12 @@ export async function createCheckoutSessionAction(
   const origin = getAppBaseUrl()
 
   try {
-    // Use automatic_payment_methods for the current API version.
-    // @ts-ignore
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      ...checkoutSessionPaymentAndLocale({
+        locale: checkoutLocale,
+        currency: "usd",
+      }),
       line_items: [
         {
           price_data: {

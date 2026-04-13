@@ -1,7 +1,7 @@
 "use server"
 
 import Stripe from "stripe"
-import { PAYMENT_METHOD_TYPES } from "@/lib/checkout"
+import { checkoutSessionPaymentAndLocale } from "@/lib/checkout"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { STRIPE_PREMIUM_PRODUCT_AI_FILM } from "@/lib/notifyPremiumFilmPurchase"
@@ -28,7 +28,8 @@ export type CreatePremiumUsdCheckoutResult =
  */
 export async function createPremiumUsdCheckoutSessionAction(
   eventId: string,
-  slug: string
+  slug: string,
+  checkoutLocale?: string
 ): Promise<CreatePremiumUsdCheckoutResult> {
   if (!stripe) {
     return { ok: false, error: "Stripe is not configured." }
@@ -39,6 +40,10 @@ export async function createPremiumUsdCheckoutSessionAction(
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      ...checkoutSessionPaymentAndLocale({
+        locale: checkoutLocale,
+        currency: "usd",
+      }),
       line_items: [
         {
           price_data: {

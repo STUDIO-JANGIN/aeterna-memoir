@@ -785,7 +785,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     }
     setCheckoutLoading(true)
     setCheckoutError(null)
-    const result = (await createCheckoutSessionAction(event.id, slug)) as any
+    const result = (await createCheckoutSessionAction(event.id, slug, appLocale)) as any
     setCheckoutLoading(false)
     if (result.ok && result.url) {
       window.location.href = result.url
@@ -811,7 +811,7 @@ export default function GuestFeedPage({ params }: PageProps) {
     }
     setCheckoutLoading(true)
     setCheckoutError(null)
-    const result = (await createCheckoutSessionAction(event.id, slug)) as any
+    const result = (await createCheckoutSessionAction(event.id, slug, appLocale)) as any
     setCheckoutLoading(false)
     if (result.ok && result.url) {
       window.location.href = result.url
@@ -867,6 +867,11 @@ export default function GuestFeedPage({ params }: PageProps) {
     }
   }
 
+  const memorialBackdropUrl = useMemo(() => {
+    if (!event) return null
+    return resolveMemorialBackgroundUrl(event, stories)
+  }, [event, stories])
+
   if (loading) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-3 font-sans text-[var(--landing-text-muted)] text-sm label-uppercase tracking-widest uppercase px-6 text-center">
@@ -902,10 +907,6 @@ export default function GuestFeedPage({ params }: PageProps) {
   const birth = formatLongDate(event.birth_date)
   const death = formatLongDate(event.death_date)
   const profileSrc = resolveProfileImageUrl(event.profile_image)
-  const memorialBackdropUrl = useMemo(
-    () => resolveMemorialBackgroundUrl(event, stories),
-    [event, stories],
-  )
   const isOwner =
     !!sessionUser &&
     isMemorialOwner(sessionUser, {

@@ -14,7 +14,9 @@ const FONTSOURCE_NOTO_SANS_VERSION = "5.2.10"
 const FONTSOURCE_NOTO_SANS_ARABIC_VERSION = "5.2.10"
 
 const REMOTE_WOFF_NOTO_SANS_LATIN_400 = `https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@${FONTSOURCE_NOTO_SANS_VERSION}/files/noto-sans-latin-400-normal.woff`
+const REMOTE_WOFF_NOTO_SANS_LATIN_700 = `https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@${FONTSOURCE_NOTO_SANS_VERSION}/files/noto-sans-latin-700-normal.woff`
 const REMOTE_WOFF_NOTO_SANS_ARABIC_400 = `https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-arabic@${FONTSOURCE_NOTO_SANS_ARABIC_VERSION}/files/noto-sans-arabic-arabic-400-normal.woff`
+const REMOTE_WOFF_NOTO_SANS_ARABIC_700 = `https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-arabic@${FONTSOURCE_NOTO_SANS_ARABIC_VERSION}/files/noto-sans-arabic-arabic-700-normal.woff`
 
 const CJK_OTF: Record<"kr" | "jp" | "tc", { url: string; file: string }> = {
   kr: {
@@ -119,6 +121,40 @@ export async function embedInvitePdfFont(
       bytes = await loadWoffFontBytes({
         nodeModulesRelativePath: "@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff",
         remoteUrl: REMOTE_WOFF_NOTO_SANS_LATIN_400,
+      })
+      break
+  }
+
+  return pdfDoc.embedFont(bytes, { subset: true })
+}
+
+/**
+ * Bold weight for labels and emphasis (Latin / Arabic). CJK locales return `null` — use faux-bold (color/size) in the caller.
+ */
+export async function embedInvitePdfFontBold(
+  pdfDoc: PDFDocument,
+  locale: LandingLocale
+): Promise<PDFFont | null> {
+  let bytes: Uint8Array
+
+  switch (locale) {
+    case "ko":
+    case "ja":
+    case "zh":
+      return null
+    case "ar":
+      bytes = await loadWoffFontBytes({
+        nodeModulesRelativePath: "@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabic-700-normal.woff",
+        remoteUrl: REMOTE_WOFF_NOTO_SANS_ARABIC_700,
+      })
+      break
+    case "en":
+    case "fr":
+    case "es":
+    default:
+      bytes = await loadWoffFontBytes({
+        nodeModulesRelativePath: "@fontsource/noto-sans/files/noto-sans-latin-700-normal.woff",
+        remoteUrl: REMOTE_WOFF_NOTO_SANS_LATIN_700,
       })
       break
   }

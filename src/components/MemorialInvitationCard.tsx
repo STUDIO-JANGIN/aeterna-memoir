@@ -26,6 +26,12 @@ export type MemorialInvitationCardProps = {
   /** Framing for profile photo (matches create-flow drag). */
   profileImagePan?: { x: number; y: number } | null
   remembranceBio?: string | null
+  /** Localized labels (defaults are English) */
+  invitationInfo?: string
+  saveImageLabel?: string
+  printPdfLabel?: string
+  preparingLabel?: string
+  invitationShareTitle?: string
 }
 
 function buildCanvasInput(p: MemorialInvitationCardProps): MemorialInvitationCanvasInput {
@@ -56,6 +62,11 @@ export function MemorialInvitationCard({
   profileImageUrl,
   profileImagePan,
   remembranceBio,
+  invitationInfo = "Printable invitation · 9:16 · ink-friendly",
+  saveImageLabel = "Save image",
+  printPdfLabel = "Print PDF",
+  preparingLabel = "Preparing invitation…",
+  invitationShareTitle = "Memorial invitation",
 }: MemorialInvitationCardProps) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -100,11 +111,11 @@ export function MemorialInvitationCard({
     try {
       const canvas = await renderCanvas()
       const blob = await canvasToPngBlob(canvas)
-      await shareOrDownloadPng(blob, `memorial-invitation-${slug}.png`, "Memorial invitation")
+      await shareOrDownloadPng(blob, `memorial-invitation-${slug}.png`, invitationShareTitle)
     } finally {
       setBusy(false)
     }
-  }, [renderCanvas, slug])
+  }, [renderCanvas, slug, invitationShareTitle])
 
   const handlePrintPdf = useCallback(async () => {
     setBusy(true)
@@ -214,7 +225,7 @@ export function MemorialInvitationCard({
             <img src={previewSrc} alt="" className="pointer-events-none h-full w-full object-cover object-top" />
           ) : (
             <div className="flex h-full min-h-[min(300px,40vh)] w-full items-center justify-center bg-[#f0ebe4] text-sm text-[#6b6b6b] [font-family:var(--font-sans)]">
-              Preparing invitation…
+              {preparingLabel}
             </div>
           )}
         </MemorialCard>
@@ -224,17 +235,17 @@ export function MemorialInvitationCard({
       <div className="h-px w-20 max-w-[40%] shrink-0 bg-[rgba(197,160,89,0.35)]" aria-hidden />
 
       <p className="max-w-[min(260px,88vw)] shrink-0 text-[11px] leading-relaxed tracking-[0.28em] text-[#8a857c] uppercase font-[var(--font-serif)]">
-        Printable invitation · 9:16 · ink-friendly
+        {invitationInfo}
       </p>
 
       <div className="flex w-full max-w-sm shrink-0 flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
         <button type="button" onClick={handleSaveImage} disabled={busy || !previewSrc} className={btnClass}>
           <Download className="h-4 w-4 shrink-0" strokeWidth={1} aria-hidden />
-          Save image
+          {saveImageLabel}
         </button>
         <button type="button" onClick={handlePrintPdf} disabled={busy || !previewSrc} className={btnClass}>
           <Printer className="h-4 w-4 shrink-0" strokeWidth={1} aria-hidden />
-          Print PDF
+          {printPdfLabel}
         </button>
       </div>
     </div>

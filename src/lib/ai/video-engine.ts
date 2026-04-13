@@ -70,6 +70,13 @@ function parseLumaErrorBody(text: string): string {
 export async function createLumaVideoJob(options: CreateLumaVideoJobOptions): Promise<CreateLumaVideoJobResult> {
   const { imageUrls, prompt, webhookUrl, eventId, slug, slot } = options
 
+  if (!process.env.LUMA_API_KEY?.trim()) {
+    console.error(
+      "[Luma] LUMA_API_KEY is not set — configure it in the server environment (e.g. Vercel project env). Video jobs cannot run until then.",
+    )
+    return { ok: false, error: "LUMA_API_KEY is not configured." }
+  }
+
   if (!imageUrls || imageUrls.length === 0) {
     return { ok: false, error: "At least one image URL is required." }
   }

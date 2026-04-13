@@ -17,8 +17,26 @@ import {
   type PrimaryMessenger,
 } from "@/lib/invitationShare"
 import type { LandingLocale } from "@/lib/landingTranslations"
+import type { InvitePdfUrlsMap } from "@/lib/resolveInvitePdfUrl"
 
 type MemorialTx = AppStrings["memorial"]
+
+function base64ToPdfBlob(base64: string): Blob {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return new Blob([bytes], { type: "application/pdf" })
+}
+
+function pickInvitePdfUrl(urls: InvitePdfUrlsMap | undefined, primaryUrl: string, locale: LandingLocale): string {
+  const fromLocale = urls?.[locale]?.trim()
+  if (fromLocale) return fromLocale
+  if (locale === "zh-hk") {
+    const zh = urls?.zh?.trim()
+    if (zh) return zh
+  }
+  return primaryUrl.trim()
+}
 
 type Props = {
   open: boolean
@@ -84,6 +102,7 @@ export function InvitationActionSheet({
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [busy, setBusy] = useState<"primary" | "native" | "download" | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [pdfPreviewObjectUrl, setPdfPreviewObjectUrl] = useState<string | null>(null)
 
   const primary = getPrimaryMessenger(locale)
   const filename = buildInvitationPdfFilename(deceasedName)
@@ -108,17 +127,22 @@ export function InvitationActionSheet({
     setErrorMsg(null)
     ;(async () => {
       try {
-        const result = await generateInvitePdfAction(slug)
+        const result = await generateInvitePdfAction(slug, { returnBase64ForLocale: locale })
         if (cancelled) return
         if (!result.ok) {
           setErrorMsg(result.error)
           setLoadState("error")
           return
         }
-        const url = result.urls?.[locale] ?? result.url
-        const res = await fetch(url)
-        if (!res.ok) throw new Error("fetch failed")
-        const blob = await res.blob()
+        const url = pickInvitePdfUrl(result.urls, result.url, locale)
+        let blob: Blob
+        if (result.pdfBase64) {
+          blob = base64ToPdfBlob(result.pdfBase64)
+        } else {
+          const res = await fetch(url)
+          if (!res.ok) throw new Error("fetch failed")
+          blob = await res.blob()
+        }
         if (cancelled) return
         setPdfBlob(blob)
         setPdfUrl(url)
@@ -134,6 +158,16 @@ export function InvitationActionSheet({
       cancelled = true
     }
   }, [open, slug, locale, m.adminInvitationError, reset])
+
+  useEffect(() => {
+    if (!pdfBlob) {
+      setPdfPreviewObjectUrl(null)
+      return
+    }
+    const u = URL.createObjectURL(pdfBlob)
+    setPdfPreviewObjectUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [pdfBlob])
 
   useEffect(() => {
     if (!open) return
@@ -232,6 +266,13 @@ export function InvitationActionSheet({
         )}
         {loadState === "ready" && pdfBlob && pdfUrl && (
           <div className="flex flex-col gap-3">
+            <div className="h-[min(50vh,420px)] w-full overflow-hidden rounded-lg border border-[#E2E2E2] bg-[#f0f0ed]">
+              <iframe
+                title={m.adminInvitationSheetTitle}
+                src={pdfPreviewObjectUrl ?? pdfUrl}
+                className="h-full min-h-[240px] w-full"
+              />
+            </div>
             <button
               type="button"
               onClick={() => void handlePrimary()}

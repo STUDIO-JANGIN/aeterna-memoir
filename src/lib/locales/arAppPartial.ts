@@ -134,6 +134,9 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
     notifyFilmTitle: "أعلمني عند جاهزية الفيلم",
     notifyFilmThanks: "شكراً. سنُعلمك عند الجاهزية.",
     noMemoriesYet: "لم يتم مشاركة أي ذكريات بعد.",
+    eternalFilmClipPhotoLimitAlert:
+      "لأفضل جودة للذكاء الاصطناعي، يُرجى استخدام من صورة إلى صورتين لكل مقطع.",
+    eternalFilmUploaderChoose: "اختيار الصور",
     preserveLegacyHeader: "خلد هذا الإرث",
     trialGatheringTimerLabel: "الوقت المتبقي في نافذة جمع الذكريات",
     trialCountdownFromMs: (ms: number) => {
@@ -179,13 +182,13 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
     adminContributionsCollected: (count: number) => `تم جمع ${count} من المساهمات الصادقة`,
     adminPremiumStatusLine: (count: number) =>
       `الخطة الحالية / مميزة (Premium) / تم جمع ${count} من المساهمات الصادقة`,
-    adminPremiumAiTitle: "تحية «صور متحركة» (خمس فصول)",
-    adminPremiumAiDescription: (min: number, max: number) =>
-      `اختر من ${min} إلى ${max} صورة معتمدة. بريميوم يشمل خمس مقاطع منفصلة (~10 ثوانٍ، Luma Ray 2) — كصور عزيزة تنعم بالحياة برفق، مع تعليقات الزوار وقصة كل صورة. أنشئ مقطعاً في كل مرة؛ كل مقطع يستهلك رصيداً واحداً.`,
-    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
-      `صور في مجموعة التحية: ${selected} / ${max} (الحد الأدنى ${min})`,
+    adminPremiumAiTitle: "بريميوم: إنشاء فيلم الأبد (5 مقاطع)",
+    adminPremiumAiDescription:
+      "كل مقطع نحو 10 ثوانٍ، وتضيف Luma AI حركةً لطيفة كالسحر.\nللمقطع الواحد، اختر من صورة إلى صورتين. ندمج قصة كل صورة وكلمات الزوار (التعليقات) في الموجه لالتقاط أدفأ اللحظات.",
+    adminPremiumFilmSelectionSummary: (selected: number, max: number) =>
+      `الصور المختارة: ${selected} / ${max} (بحد أقصى ${max})`,
     adminPremiumGenerateFilmCta: "إنشاء مقطع التحية التالي (~10 ثوانٍ)",
-    adminPremiumSelectMinGuide: (min: number) => `اختر ${min} صور على الأقل للمتابعة.`,
+    adminPremiumSelectMinGuide: "يُرجى اختيار صورة واحدة على الأقل للمتابعة.",
     adminPremiumFooterTagline: "Aeterna Memoir — نحفظ ذكرياتكم الثمينة للأبد.",
     adminPremiumMaxPhotosHint: (max: number) =>
       `يمكنك اختيار ما يصل إلى ${max} صور للتحية.`,
@@ -203,18 +206,16 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
       "وافق أولاً على صور الضيوف في قسم الذكريات أدناه، ثم عد هنا لإنشاء المقاطع.",
     adminPremiumRemoveFromFilmAria: "إزالة من اختيار تحية الذكاء الاصطناعي",
     adminPremiumIncludeInFilmAria: "تضمين في اختيار تحية الذكاء الاصطناعي",
-    adminPremiumClipsRemaining: (remaining: number, total: number) =>
-      `يتبقى ${remaining} من ${total} مقاطع تحية للإنشاء`,
-    adminPremiumPhotoPickGuidance:
-      "لأفضل نتيجة عبر المقاطع الخمسة، اختر 15–20 صورة (مطلوب 10–25). تندمج تعليقات الزوار وقصة كل صورة في السرد.",
+    adminPremiumClipsCompletedStatus: (completed: number, total: number) =>
+      `المقاطع المكتملة: ${completed} / ${total}`,
     adminPremiumCompletedClipsLabel: "مقاطع التحية الخاصة بك",
     adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
       `الفصل ${clipOneIndexed} · ~10 ثوانٍ · ${totalClips} إجمالاً`,
     adminPremiumAllClipsComplete:
       "اكتملت الفصول الخمسة. يمكنك إعادة المشاهدة أعلاه أو على المزار العام.",
     adminPremiumNoClipCredits: "لا يوجد رصيد مقاطع. تواصل مع الدعم إذا احتجت مساعدة.",
-    adminPreserveForeverCta: "حفظ للأبد — $19.99",
-    adminEternalFilmCta: "فيلم الأبد — $39.99",
+    adminPreserveForeverCta: "حفظ للأبد",
+    adminEternalFilmCta: "فيلم الأبد",
     adminPlusPreservedBody:
       "ذكرى أحبائك محفوظة بأمان. ستبقى كل القصص والصور هنا طالما كنت بحاجة إليها.",
     adminProcessing: "جاري المعالجة…",

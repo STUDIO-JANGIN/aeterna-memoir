@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "verify-deploy": "node scripts/verify-deploy.mjs",
-    "list-memorials": "node scripts/list-memorials.mjs"
+    "list-memorials": "node scripts/list-memorials.mjs",
+    "slack:test": "node scripts/test-slack-alert.mjs",
+    "payments:recent": "node scripts/recent-payments.mjs"
   },
   "dependencies": {
     "@fontsource/amiri": "^5.2.6",

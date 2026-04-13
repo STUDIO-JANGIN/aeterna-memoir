@@ -203,6 +203,9 @@ export type AppStrings = {
     notifyFilmTitle: string
     notifyFilmThanks: string
     noMemoriesYet: string
+    /** Eternal Film: alert when user tries to add a 3rd image for one 10s clip */
+    eternalFilmClipPhotoLimitAlert: string
+    eternalFilmUploaderChoose: string
     /** Free-tier preservation banner */
     preserveLegacyHeader: string
     trialGatheringTimerLabel: string
@@ -247,10 +250,11 @@ export type AppStrings = {
     /** Premium (AI film) admin — one-line status; replaces plan row + contribution count */
     adminPremiumStatusLine: (count: number) => string
     adminPremiumAiTitle: string
-    adminPremiumAiDescription: (min: number, max: number) => string
-    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) => string
+    adminPremiumAiDescription: string
+    adminPremiumFilmSelectionSummary: (selected: number, max: number) => string
     adminPremiumGenerateFilmCta: string
-    adminPremiumSelectMinGuide: (min: number) => string
+    /** Shown when the Generate button is disabled because no photo is selected yet */
+    adminPremiumSelectMinGuide: string
     adminPremiumFooterTagline: string
     adminPremiumMaxPhotosHint: (max: number) => string
     adminPremiumFilmSelectRangeError: (min: number, max: number) => string
@@ -262,8 +266,8 @@ export type AppStrings = {
     adminPremiumApprovePhotosFirst: string
     adminPremiumRemoveFromFilmAria: string
     adminPremiumIncludeInFilmAria: string
-    adminPremiumClipsRemaining: (remaining: number, total: number) => string
-    adminPremiumPhotoPickGuidance: string
+    /** Completed tribute clips vs total (e.g. 2 / 5) */
+    adminPremiumClipsCompletedStatus: (completed: number, total: number) => string
     adminPremiumCompletedClipsLabel: string
     adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) => string
     adminPremiumAllClipsComplete: string
@@ -423,6 +427,36 @@ export type AppStrings = {
       plus: { title: string; tagline: string; b1: string; b2: string; tierSub: string }
       premium: { title: string; tagline: string; b1: string; b2: string; tierSub: string }
     }
+  }
+  /** `/p/[slug]/success` — Stripe checkout confirmation */
+  paymentSuccessPage: {
+    loading: string
+    loadingSub: string
+    kicker: string
+    subtitle: string
+    /** `[Name]` is replaced with the memorial name */
+    descriptionTemplate: string
+    descriptionNameFallback: string
+    filmInfoPremium: string
+    filmInfoPlus: string
+    shareTitle: string
+    invitationInfo: string
+    saveImage: string
+    printPdf: string
+    nextStepsTitle: string
+    step1: string
+    step2: string
+    step3: string
+    btnViewMemorial: string
+    btnDashboard: string
+    btnDownloadTribute: string
+    errorSession: string
+    errorConfirm: string
+    errorTitle: string
+    backToMemorial: string
+    suspenseLoading: string
+    invitationPreparing: string
+    invitationShareTitle: string
   }
 }
 
@@ -637,6 +671,8 @@ const EN: AppStrings = {
     notifyFilmTitle: "Notify me when the film is released",
     notifyFilmThanks: "Thank you. We'll notify you when it's ready.",
     noMemoriesYet: "No memories have been shared yet.",
+    eternalFilmClipPhotoLimitAlert: "For the best AI quality, please use 1 to 2 photos per clip.",
+    eternalFilmUploaderChoose: "Choose photos",
     preserveLegacyHeader: "Preserve this legacy",
     trialGatheringTimerLabel: "Time remaining in this gathering window",
     trialCountdownFromMs: (ms: number) => {
@@ -685,13 +721,13 @@ const EN: AppStrings = {
       `Current plan / Premium / ${
         count === 1 ? "1 heartfelt contribution collected" : `${count} heartfelt contributions collected`
       }`,
-    adminPremiumAiTitle: "Moving-picture tribute (five chapters)",
-    adminPremiumAiDescription: (min: number, max: number) =>
-      `Select ${min}–${max} approved photos. Premium includes five separate ~10s clips (Luma Ray 2) — like treasured photographs that softly come alive, woven with guest comments and the stories behind each picture. Generate one clip at a time; each uses one credit.`,
-    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
-      `Photos in your tribute pool: ${selected} / ${max} (minimum ${min})`,
+    adminPremiumAiTitle: "Premium: Eternal Film generation (5 clips)",
+    adminPremiumAiDescription:
+      "Each clip is about 10 seconds. Luma AI adds a gentle, magical sense of motion. For each clip, choose 1–2 photos that work best. We weave each photo’s story and visitors’ words (comments) into the prompt so the warmest moments come through.",
+    adminPremiumFilmSelectionSummary: (selected: number, max: number) =>
+      `Selected photos: ${selected} / ${max} (up to ${max} photos)`,
     adminPremiumGenerateFilmCta: "Generate next tribute clip (~10s)",
-    adminPremiumSelectMinGuide: (min: number) => `Select at least ${min} photos to continue.`,
+    adminPremiumSelectMinGuide: "Select at least one photo to continue.",
     adminPremiumFooterTagline: "Aeterna Memoir — preserving your precious memories forever.",
     adminPremiumMaxPhotosHint: (max: number) => `You can choose up to ${max} photos for the film.`,
     adminPremiumFilmSelectRangeError: (min: number, max: number) =>
@@ -707,18 +743,16 @@ const EN: AppStrings = {
       "Approve guest photos in the Memories section below, then return here to build your film.",
     adminPremiumRemoveFromFilmAria: "Remove from AI tribute film selection",
     adminPremiumIncludeInFilmAria: "Include in AI tribute film",
-    adminPremiumClipsRemaining: (remaining: number, total: number) =>
-      `${remaining} of ${total} tribute clips left to generate`,
-    adminPremiumPhotoPickGuidance:
-      "For the best result across all five clips, choose 15–20 photos (required: 10–25). Visitor comments and each photo’s story are woven into the narration.",
+    adminPremiumClipsCompletedStatus: (completed: number, total: number) =>
+      `Clips completed: ${completed} / ${total}`,
     adminPremiumCompletedClipsLabel: "Your tribute clips",
     adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
       `Chapter ${clipOneIndexed} · ~10s · ${totalClips} total`,
     adminPremiumAllClipsComplete:
       "All five tribute chapters are ready. You can revisit them above or on the public memorial.",
     adminPremiumNoClipCredits: "No clip credits left. Contact support if you need help.",
-    adminPreserveForeverCta: "Preserve Forever — $19.99",
-    adminEternalFilmCta: "Eternal Film — $39.99",
+    adminPreserveForeverCta: "Preserve Forever",
+    adminEternalFilmCta: "Eternal Film",
     adminPlusPreservedBody:
       "Your memorial is preserved — every story and photo remains here for as long as you need.",
     adminProcessing: "Processing…",
@@ -892,6 +926,39 @@ const EN: AppStrings = {
         tierSub: "5× ~10s clips · moving-picture style",
       },
     },
+  },
+  paymentSuccessPage: {
+    loading: "Thank you — we're confirming your payment.",
+    loadingSub: "This usually takes just a few seconds.",
+    kicker: "Payment received",
+    subtitle: "Their story is safe with you.",
+    descriptionTemplate:
+      "We know how tender this moment is. Your support helps keep [Name]'s memorial present for everyone who loved them — quietly, respectfully, and for as long as you choose.",
+    descriptionNameFallback: "your loved one",
+    filmInfoPremium:
+      "Premium includes five ~10s AI tribute clips (moving-picture style). As each clip is ready, it appears on the memorial and in your dashboard.",
+    filmInfoPlus:
+      "Plus preserves every photo and story permanently. You can upgrade to Premium later for the five ~10s tribute clips.",
+    shareTitle: "Share the memorial",
+    invitationInfo: "Printable invitation · 9:16 · ink-friendly",
+    saveImage: "Save image",
+    printPdf: "Print PDF",
+    nextStepsTitle: "Next steps",
+    step1: "Save or print your memorial invitation (9:16) for a program, table card, or keepsake.",
+    step2: "Share the link with family and friends — they can contribute from any phone, no app required.",
+    step3: "Visit your dashboard to manage details and, when it's ready, your tribute film.",
+    btnViewMemorial: "View memorial",
+    btnDashboard: "Open dashboard",
+    btnDownloadTribute: "Open tribute / download",
+    errorSession:
+      "We couldn't find a valid payment session. If you completed checkout, use the link from your email or return to your memorial.",
+    errorConfirm:
+      "We couldn't confirm your payment yet. Please wait a moment and refresh, or contact support if this continues.",
+    errorTitle: "We couldn't finish confirming",
+    backToMemorial: "Back to memorial",
+    suspenseLoading: "Loading…",
+    invitationPreparing: "Preparing invitation…",
+    invitationShareTitle: "Memorial invitation",
   },
 }
 
@@ -1080,6 +1147,8 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     notifyFilmTitle: "영상이 공개되면 이메일로 알려 주세요",
     notifyFilmThanks: "감사합니다. 준비되면 알려 드리겠습니다.",
     noMemoriesYet: "아직 공유된 추억이 없습니다.",
+    eternalFilmClipPhotoLimitAlert: "최상의 영상 품질을 위해, 한 클립당 1~2장의 사진을 권장합니다.",
+    eternalFilmUploaderChoose: "사진 선택",
     preserveLegacyHeader: "이 유산을 보존하세요",
     trialGatheringTimerLabel: "추억 수집 종료까지 남은 시간",
     trialCountdownFromMs: (ms: number) => {
@@ -1125,13 +1194,13 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     adminContributionsCollected: (count: number) => `${count}개의 소중한 추억이 수집됨`,
     adminPremiumStatusLine: (count: number) =>
       `현재 플랜 / 프리미엄 / ${count}개의 소중한 추억이 수집됨`,
-    adminPremiumAiTitle: "움직이는 사진 헌정 (5개 챕터)",
-    adminPremiumAiDescription: (min: number, max: number) =>
-      `승인된 사진 ${min}~${max}장을 선택하세요. 프리미엄은 약 10초짜리 클립 5개(Luma Ray 2)로, 방문자 댓글과 사진별 이야기를 녹여 마법의 사진처럼 따뜻하게 이어집니다. 한 번에 한 클립씩 생성합니다.`,
-    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
-      `헌정 풀에 선택된 사진: ${selected} / ${max} (최소 ${min}장)`,
+    adminPremiumAiTitle: "프리미엄: 영원한 필름 생성 (5개 클립)",
+    adminPremiumAiDescription:
+      "각 클립은 약 10초 분량이며, Luma AI를 통해 마법 같은 움직임을 생성합니다.\n한 클립당 최적의 사진 1~2장을 선택하세요. 사진에 담긴 이야기와 방문자의 마음(댓글)을 프롬프트에 녹여 가장 따뜻한 찰나를 구현합니다.",
+    adminPremiumFilmSelectionSummary: (selected: number, max: number) =>
+      `선택된 사진: ${selected} / ${max} (최대 ${max}장)`,
     adminPremiumGenerateFilmCta: "다음 헌정 클립 생성 (~10초)",
-    adminPremiumSelectMinGuide: (min: number) => `계속하려면 최소 ${min}장의 사진을 선택해 주세요.`,
+    adminPremiumSelectMinGuide: "계속하려면 사진을 1장 이상 선택해 주세요.",
     adminPremiumFooterTagline: "Aeterna Memoir — 당신의 소중한 기억을 영원히 수호합니다.",
     adminPremiumMaxPhotosHint: (max: number) => `헌정 클립에는 최대 ${max}장까지 선택할 수 있습니다.`,
     adminPremiumFilmSelectRangeError: (min: number, max: number) =>
@@ -1147,18 +1216,16 @@ const KO_PATCH: DeepPartial<AppStrings> = {
       "아래 추억 섹션에서 게스트 사진을 승인한 뒤, 다시 이곳으로 돌아와 클립을 만드세요.",
     adminPremiumRemoveFromFilmAria: "AI 헌정 클립 선택에서 제외",
     adminPremiumIncludeInFilmAria: "AI 헌정 클립에 포함",
-    adminPremiumClipsRemaining: (remaining: number, total: number) =>
-      `생성 가능한 헌정 클립 ${remaining} / ${total}`,
-    adminPremiumPhotoPickGuidance:
-      "다섯 클립 모두를 위해 15~20장을 권장합니다(필수 10~25장). 방문자 댓글과 각 사진의 이야기가 함께 녹아듭니다.",
+    adminPremiumClipsCompletedStatus: (completed: number, total: number) =>
+      `생성 완료된 클립: ${completed} / ${total}`,
     adminPremiumCompletedClipsLabel: "완성된 헌정 클립",
     adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
       `챕터 ${clipOneIndexed} · 약 10초 · 총 ${totalClips}개`,
     adminPremiumAllClipsComplete:
       "다섯 개의 헌정 챕터가 모두 준비되었습니다. 위에서 다시 보거나 공개 기념관에서 확인하세요.",
     adminPremiumNoClipCredits: "남은 클립 크레딧이 없습니다. 지원이 필요하면 문의해 주세요.",
-    adminPreserveForeverCta: "영원히 보존하기 — $19.99",
-    adminEternalFilmCta: "이터널 필름 — $39.99",
+    adminPreserveForeverCta: "영원히 보존하기",
+    adminEternalFilmCta: "이터널 필름",
     adminPlusPreservedBody:
       "귀하의 추모 공간은 안전하게 보존됩니다. 모든 이야기와 사진은 당신이 필요로 하는 한 언제까지나 이곳에 머물 것입니다.",
     adminProcessing: "처리 중…",
@@ -1332,6 +1399,39 @@ const KO_PATCH: DeepPartial<AppStrings> = {
         tierSub: "5×약10초 클립 · 움직이는 사진 스타일",
       },
     },
+  },
+  paymentSuccessPage: {
+    loading: "감사합니다 — 결제를 확인하는 중입니다.",
+    loadingSub: "보통 몇 초면 완료됩니다.",
+    kicker: "결제가 완료되었습니다",
+    subtitle: "이제 고인의 이야기는 당신과 함께 안전하게 보존됩니다.",
+    descriptionTemplate:
+      "이 순간이 얼마나 소중한지 잘 알고 있습니다. 당신의 후원은 [Name] 님의 기념관을 사랑하는 모든 이들을 위해—조용히, 정중하게, 그리고 당신이 원하는 만큼 오래도록—유지하는 데 큰 힘이 됩니다.",
+    descriptionNameFallback: "고인",
+    filmInfoPremium:
+      "프리미엄 혜택인 5개의 AI 추모 영상(무빙 픽처 스타일, 각 약 10초)이 포함됩니다. 영상이 준비되는 대로 기념관과 대시보드에 자동으로 나타납니다.",
+    filmInfoPlus:
+      "Plus는 모든 사진과 이야기를 영구적으로 보존합니다. 나중에 프리미엄으로 업그레이드하면 약 10초 길이의 추모 클립 5개를 이용하실 수 있습니다.",
+    shareTitle: "기념관 공유하기",
+    invitationInfo: "출력용 초대장 · 9:16 · 잉크 절약 모드",
+    saveImage: "이미지 저장",
+    printPdf: "PDF 인쇄",
+    nextStepsTitle: "다음 단계",
+    step1: "프로그램이나 테이블 카드 등으로 활용할 수 있도록 초대장(9:16)을 저장하거나 인쇄하세요.",
+    step2: "가족 및 지인들과 링크를 공유하세요. 앱 설치 없이 누구나 어디서든 추억을 남길 수 있습니다.",
+    step3: "대시보드를 방문하여 상세 내용을 관리하고, 준비된 추모 영상을 확인하세요.",
+    btnViewMemorial: "기념관 보기",
+    btnDashboard: "대시보드 열기",
+    btnDownloadTribute: "추모 영상 열기 / 다운로드",
+    errorSession:
+      "유효한 결제 세션을 찾을 수 없습니다. 결제를 완료하셨다면 이메일의 링크를 사용하거나 기념관으로 돌아가 주세요.",
+    errorConfirm:
+      "결제를 아직 확인하지 못했습니다. 잠시 후 새로고침하거나, 문제가 계속되면 고객 지원에 문의해 주세요.",
+    errorTitle: "확인을 완료하지 못했습니다",
+    backToMemorial: "기념관으로 돌아가기",
+    suspenseLoading: "로딩 중…",
+    invitationPreparing: "초대장 준비 중…",
+    invitationShareTitle: "기념 초대장",
   },
 }
 
@@ -1508,6 +1608,8 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     notifyPlaceholder: "メールアドレス",
     returnHome: "ホームへ",
     noMemoriesYet: "まだ思い出が共有されていません。",
+    eternalFilmClipPhotoLimitAlert: "最高の品質を保つため、1枚から2枚の写真を選択してください。",
+    eternalFilmUploaderChoose: "写真を選ぶ",
     preserveLegacyHeader: "この遺産を保存する",
     trialGatheringTimerLabel: "思い出を綴る期限",
     trialCountdownFromMs: (ms: number) => {
@@ -1554,13 +1656,13 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     adminContributionsCollected: (count: number) => `${count}件の心のこもった寄稿`,
     adminPremiumStatusLine: (count: number) =>
       `現在のプラン / プレミアム / ${count}件の心のこもった寄稿`,
-    adminPremiumAiTitle: "動く写真トリビュート（5章）",
-    adminPremiumAiDescription: (min: number, max: number) =>
-      `承認済みの写真を${min}〜${max}枚選んでください。プレミアムは約10秒×5本のクリップ（Luma Ray 2）。訪問者のコメントと各写真の物語を重ね、魔法の写真のように温かくつなぎます。1本ずつ生成します。`,
-    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
-      `トリビュート用に選んだ写真: ${selected} / ${max} (最小${min}枚)`,
+    adminPremiumAiTitle: "プレミアム：エターナルフィルム生成（5クリップ）",
+    adminPremiumAiDescription:
+      "各クリップは約10秒です。Luma AIが、写真に穏やかな動きを添えます。\n1クリップにつき最適な写真を1〜2枚お選びください。各写真のエピソードと訪れた方のコメントをプロンプトに織り込み、いちばん温かい瞬間を引き出します。",
+    adminPremiumFilmSelectionSummary: (selected: number, max: number) =>
+      `選択中の写真: ${selected} / ${max}（最大${max}枚）`,
     adminPremiumGenerateFilmCta: "次のトリビュートクリップを生成（約10秒）",
-    adminPremiumSelectMinGuide: (min: number) => `続行するには、少なくとも${min}枚の写真を選択してください。`,
+    adminPremiumSelectMinGuide: "続行するには、写真を1枚以上選択してください。",
     adminPremiumFooterTagline: "Aeterna Memoir — 大切な思い出を永遠に保存します。",
     adminPremiumMaxPhotosHint: (max: number) => `トリビュートでは最大${max}枚まで選べます。`,
     adminPremiumFilmSelectRangeError: (min: number, max: number) =>
@@ -1576,18 +1678,16 @@ const JA_PATCH: DeepPartial<AppStrings> = {
       "下の「思い出」でゲストの写真を承認してから、ここに戻ってクリップを作成してください。",
     adminPremiumRemoveFromFilmAria: "AIトリビュートクリップの選択から外す",
     adminPremiumIncludeInFilmAria: "AIトリビュートクリップに含める",
-    adminPremiumClipsRemaining: (remaining: number, total: number) =>
-      `残りのトリビュートクリップ ${remaining} / ${total}`,
-    adminPremiumPhotoPickGuidance:
-      "5本すべてに最適なのは15〜20枚（必須10〜25枚）。訪問者のコメントと各写真の物語がナレーションに溶け込みます。",
+    adminPremiumClipsCompletedStatus: (completed: number, total: number) =>
+      `生成完了したクリップ: ${completed} / ${total}`,
     adminPremiumCompletedClipsLabel: "完成したトリビュートクリップ",
     adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
       `第${clipOneIndexed}章 · 約10秒 · 全${totalClips}本`,
     adminPremiumAllClipsComplete:
       "5章すべてのトリビュートが揃いました。上で再生するか、公開メモリアルでご覧ください。",
     adminPremiumNoClipCredits: "クリップのクレジットがありません。サポートへご連絡ください。",
-    adminPreserveForeverCta: "永遠に保存する — $19.99",
-    adminEternalFilmCta: "エターナルフィルム — $39.99",
+    adminPreserveForeverCta: "永遠に保存する",
+    adminEternalFilmCta: "エターナルフィルム",
     adminPlusPreservedBody:
       "あなたの想い出の場所は守られています。すべての物語と写真は、あなたが必要とする限り、いつまでもここに残り続けます。",
     adminProcessing: "処理中…",
@@ -1755,6 +1855,39 @@ const JA_PATCH: DeepPartial<AppStrings> = {
       },
     },
   },
+  paymentSuccessPage: {
+    loading: "ありがとうございます — お支払いを確認しています。",
+    loadingSub: "通常、数秒で完了します。",
+    kicker: "お支払いが完了しました",
+    subtitle: "大切な方の物語は、あなたと共に守られます。",
+    descriptionTemplate:
+      "この瞬間がどれほど大切であるか、私たちは理解しています。あなたのサポートは、[Name]さんの記念館を、愛するすべての人々のために—静かに、敬意を持って、そしてあなたが望む限り長く—維持するための大きな力となります。",
+    descriptionNameFallback: "ご逝去の方",
+    filmInfoPremium:
+      "プレミアム特典として、5つのAI追悼動画（ムービングピクチャースタイル、各約10秒）が含まれています。動画の準備ができ次第、記念館とダッシュボードに表示されます。",
+    filmInfoPlus:
+      "Plusプランはすべての写真と物語を永久に保存します。後からプレミアムにアップグレードすれば、約10秒の追悼動画を5本ご利用いただけます。",
+    shareTitle: "記念館を共有する",
+    invitationInfo: "印刷用招待状 · 9:16 · インク節約モード",
+    saveImage: "画像を保存",
+    printPdf: "PDFを印刷",
+    nextStepsTitle: "次のステップ",
+    step1: "プログラムやテーブルカードとして活用できるよう、招待状(9:16)を保存または印刷してください。",
+    step2: "家族や友人とリンクを共有しましょう。アプリのインストールなしで、誰でもどこからでも思い出を投稿できます。",
+    step3: "ダッシュボードにアクセスして詳細を管理し、準備が整った追悼動画を確認してください。",
+    btnViewMemorial: "記念館を見る",
+    btnDashboard: "ダッシュボードを開く",
+    btnDownloadTribute: "トリビュートを開く / ダウンロード",
+    errorSession:
+      "有効な決済セッションが見つかりませんでした。お支払いが完了している場合は、メールのリンクをご利用いただくか、記念館に戻ってください。",
+    errorConfirm:
+      "お支払いの確認がまだ完了していません。しばらくしてから更新するか、解決しない場合はサポートにお問い合わせください。",
+    errorTitle: "確認を完了できませんでした",
+    backToMemorial: "記念館に戻る",
+    suspenseLoading: "読み込み中…",
+    invitationPreparing: "招待状を準備しています…",
+    invitationShareTitle: "記念招待状",
+  },
 }
 
 const FR_PATCH: DeepPartial<AppStrings> = {
@@ -1813,6 +1946,39 @@ const FR_PATCH: DeepPartial<AppStrings> = {
     errorFallback: "Veuillez réessayer.",
     somethingWrong: "Une erreur s’est produite",
   },
+  paymentSuccessPage: {
+    loading: "Merci — nous confirmons votre paiement.",
+    loadingSub: "Cela ne prend généralement que quelques secondes.",
+    kicker: "Paiement reçu",
+    subtitle: "Leur histoire est en sécurité avec vous.",
+    descriptionTemplate:
+      "Nous savons à quel point ce moment est délicat. Votre soutien aide à maintenir le mémorial de [Name] pour tous ceux qui l'ont aimé — calmement, respectueusement, et aussi longtemps que vous le choisirez.",
+    descriptionNameFallback: "votre proche",
+    filmInfoPremium:
+      "Le forfait Premium inclut cinq clips hommage IA de ~10s (style photo animée). Dès qu'un clip est prêt, il apparaît sur le mémorial et dans votre tableau de bord.",
+    filmInfoPlus:
+      "Plus conserve chaque photo et chaque histoire pour toujours. Vous pourrez passer à Premium plus tard pour les cinq clips hommage d’environ 10 s.",
+    shareTitle: "Partager le mémorial",
+    invitationInfo: "Invitation imprimable · 9:16 · économe en encre",
+    saveImage: "Enregistrer l'image",
+    printPdf: "Imprimer le PDF",
+    nextStepsTitle: "Prochaines étapes",
+    step1: "Enregistrez ou imprimez votre invitation (9:16) pour un programme, un marque-place ou un souvenir.",
+    step2: "Partagez le lien avec la famille et les amis — ils peuvent contribuer depuis n'importe quel téléphone, sans application.",
+    step3: "Visitez votre tableau de bord pour gérer les détails et voir votre film hommage une fois prêt.",
+    btnViewMemorial: "Voir le mémorial",
+    btnDashboard: "Ouvrir le tableau de bord",
+    btnDownloadTribute: "Ouvrir l'hommage / télécharger",
+    errorSession:
+      "Nous n'avons pas trouvé de session de paiement valide. Si vous avez terminé le paiement, utilisez le lien reçu par e-mail ou revenez au mémorial.",
+    errorConfirm:
+      "Nous n'avons pas encore pu confirmer votre paiement. Patientez un instant et actualisez, ou contactez le support si le problème persiste.",
+    errorTitle: "Impossible de terminer la confirmation",
+    backToMemorial: "Retour au mémorial",
+    suspenseLoading: "Chargement…",
+    invitationPreparing: "Préparation de l'invitation…",
+    invitationShareTitle: "Invitation mémorial",
+  },
 }
 
 const ES_PATCH: DeepPartial<AppStrings> = {
@@ -1868,6 +2034,39 @@ const ES_PATCH: DeepPartial<AppStrings> = {
     errorTitle: "Algo salió mal",
     errorFallback: "Inténtalo de nuevo.",
     somethingWrong: "Algo salió mal",
+  },
+  paymentSuccessPage: {
+    loading: "Gracias — estamos confirmando su pago.",
+    loadingSub: "Suele tardar solo unos segundos.",
+    kicker: "Pago recibido",
+    subtitle: "Su historia está segura con usted.",
+    descriptionTemplate:
+      "Sabemos lo delicado que es este momento. Su apoyo ayuda a mantener el memorial de [Name] para todos los que le amaron — en silencio, con respeto y durante el tiempo que usted elija.",
+    descriptionNameFallback: "su ser querido",
+    filmInfoPremium:
+      "El plan Premium incluye cinco clips de tributo IA de ~10s (estilo de imagen en movimiento). A medida que cada clip esté listo, aparecerá en el memorial y en su panel de control.",
+    filmInfoPlus:
+      "Plus conserva permanentemente cada foto e historia. Puede actualizar a Premium más adelante para los cinco clips de tributo de ~10 s.",
+    shareTitle: "Compartir el memorial",
+    invitationInfo: "Invitación imprimible · 9:16 · ahorro de tinta",
+    saveImage: "Guardar imagen",
+    printPdf: "Imprimir PDF",
+    nextStepsTitle: "Próximos pasos",
+    step1: "Guarde o imprima su invitación (9:16) para un programa, tarjeta de mesa o recuerdo.",
+    step2: "Comparta el enlace con familiares y amigos; pueden contribuir desde cualquier teléfono, sin necesidad de aplicación.",
+    step3: "Visite su panel de control para gestionar detalles y ver su película de tributo cuando esté lista.",
+    btnViewMemorial: "Ver memorial",
+    btnDashboard: "Abrir panel de control",
+    btnDownloadTribute: "Abrir tributo / descargar",
+    errorSession:
+      "No encontramos una sesión de pago válida. Si completó el pago, use el enlace de su correo o vuelva al memorial.",
+    errorConfirm:
+      "Aún no pudimos confirmar su pago. Espere un momento y actualice, o contacte a soporte si continúa.",
+    errorTitle: "No pudimos terminar de confirmar",
+    backToMemorial: "Volver al memorial",
+    suspenseLoading: "Cargando…",
+    invitationPreparing: "Preparando invitación…",
+    invitationShareTitle: "Invitación del memorial",
   },
 }
 
@@ -1926,6 +2125,39 @@ const AR_PATCH: DeepPartial<AppStrings> = {
     errorFallback: "حاول مرة أخرى.",
     somethingWrong: "حدث خطأ",
   },
+  paymentSuccessPage: {
+    loading: "شكرًا — نؤكد دفعتك الآن.",
+    loadingSub: "يستغرق ذلك عادةً بضع ثوانٍ فقط.",
+    kicker: "تم استلام الدفعة",
+    subtitle: "قصتهم في أمان معك.",
+    descriptionTemplate:
+      "نحن نعلم مدى خصوصية هذه اللحظة. يساعد دعمك في إبقاء النصب التذكاري لـ [Name] متاحًا لكل من أحبهم — بهدوء وباحترام، وللمدة التي تختارها.",
+    descriptionNameFallback: "من تحب",
+    filmInfoPremium:
+      "تتضمن الباقة المميزة خمسة مقاطع تكريمية بالذكاء الاصطناعي مدتها ~10 ثوانٍ (بأسلوب الصور المتحركة). وبمجرد جاهزية كل مقطع، سيظهر في النصب التذكاري وفي لوحة التحكم الخاصة بك.",
+    filmInfoPlus:
+      "تحافظ باقة Plus على كل الصور والذكريات بشكل دائم. يمكنك الترقية إلى Premium لاحقًا للحصول على خمسة مقاطع تكريمية مدتها ~10 ثوانٍ.",
+    shareTitle: "مشاركة النصب التذكاري",
+    invitationInfo: "دعوة قابلة للطباعة · 9:16 · موفرة للحبر",
+    saveImage: "حفظ الصورة",
+    printPdf: "طباعة PDF",
+    nextStepsTitle: "الخطوات التالية",
+    step1: "احفظ أو اطبع دعوة النصب التذكاري (9:16) لاستخدامها في برنامج الحفل أو كبطاقة طاولة أو ذكرى.",
+    step2: "شارك الرابط مع العائلة والأصدقاء — يمكنهم المشاركة من أي هاتف، دون الحاجة إلى تطبيق.",
+    step3: "قم بزيارة لوحة التحكم لإدارة التفاصيل، وعندما يكون جاهزاً، شاهد فيلم التكريم الخاص بك.",
+    btnViewMemorial: "عرض النصب التذكاري",
+    btnDashboard: "فتح لوحة التحكم",
+    btnDownloadTribute: "فتح التكريم / تنزيل",
+    errorSession:
+      "تعذر العثور على جلسة دفع صالحة. إذا أكملت الدفع، استخدم الرابط من بريدك الإلكتروني أو عد إلى النصب التذكاري.",
+    errorConfirm:
+      "لم نتمكن من تأكيد دفعتك بعد. يرجى الانتظار لحظة وتحديث الصفحة، أو الاتصال بالدعم إذا استمرت المشكلة.",
+    errorTitle: "تعذر إتمام التأكيد",
+    backToMemorial: "العودة إلى النصب التذكاري",
+    suspenseLoading: "جاري التحميل…",
+    invitationPreparing: "جاري تجهيز الدعوة…",
+    invitationShareTitle: "دعوة النصب التذكاري",
+  },
 }
 
 const ZH_PATCH: DeepPartial<AppStrings> = {
@@ -1982,6 +2214,39 @@ const ZH_PATCH: DeepPartial<AppStrings> = {
     errorTitle: "發生錯誤",
     errorFallback: "請再試一次。",
     somethingWrong: "發生錯誤",
+  },
+  paymentSuccessPage: {
+    loading: "感謝您 — 我們正在確認您的付款。",
+    loadingSub: "通常只需幾秒鐘。",
+    kicker: "付款成功",
+    subtitle: "他們的故事將與您一同永恆守護。",
+    descriptionTemplate:
+      "我們深知這一刻的珍貴。您的支持將幫助 [Name] 的紀念館為所有愛他們的人—安靜地、莊重地、且依您所願地長久保存。",
+    descriptionNameFallback: "摯愛",
+    filmInfoPremium:
+      "進階版包含 5 個 AI 追思影片（動態照片風格，每個約 10 秒）。影片製作完成後，將自動顯示在紀念館和您的控制面板中。",
+    filmInfoPlus:
+      "進階版永久保存所有照片與故事。日後可升級至 Premium 以取得五個約 10 秒的追思影片。",
+    shareTitle: "分享紀念館",
+    invitationInfo: "可打印邀請函 · 9:16 · 省墨模式",
+    saveImage: "儲存圖片",
+    printPdf: "列印 PDF",
+    nextStepsTitle: "後續步驟",
+    step1: "儲存或列印您的紀念館邀請函 (9:16)，可用於儀式手冊、桌卡或留念。",
+    step2: "與親友分享連結——無需安裝 App，任何人都可以從手機分享回憶。",
+    step3: "訪問您的控制面板來管理細節，並在影片準備就緒時進行查看。",
+    btnViewMemorial: "查看紀念館",
+    btnDashboard: "打開控制面板",
+    btnDownloadTribute: "開啟追思影片 / 下載",
+    errorSession:
+      "找不到有效的付款工作階段。若您已完成付款，請使用電子郵件中的連結或返回紀念頁。",
+    errorConfirm:
+      "我們尚無法確認您的付款。請稍候再重新整理，若仍持續發生請聯絡客服。",
+    errorTitle: "無法完成確認",
+    backToMemorial: "返回紀念頁",
+    suspenseLoading: "載入中…",
+    invitationPreparing: "正在準備邀請函…",
+    invitationShareTitle: "紀念館邀請函",
   },
 }
 

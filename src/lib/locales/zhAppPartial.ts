@@ -132,6 +132,8 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
     notifyFilmTitle: "影片完成時通知我",
     notifyFilmThanks: "感謝。備妥後將通知您。",
     noMemoriesYet: "目前尚無分享的回憶。",
+    eternalFilmClipPhotoLimitAlert: "為了確保最佳影片品質，每段影片建議使用 1 至 2 張照片。",
+    eternalFilmUploaderChoose: "選擇照片",
     preserveLegacyHeader: "永恒保存這份傳承",
     trialGatheringTimerLabel: "距離回憶收集結束還剩",
     trialCountdownFromMs: (ms: number) => {
@@ -176,13 +178,13 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
     adminContributionsCollected: (count: number) => `已收集 ${count} 份真摯的回憶`,
     adminPremiumStatusLine: (count: number) =>
       `目前方案 / 尊榮版 (Premium) / 已收集 ${count} 份真摯的回憶`,
-    adminPremiumAiTitle: "會動的追思畫面（五章）",
-    adminPremiumAiDescription: (min: number, max: number) =>
-      `請選擇 ${min}–${max} 張已核准的照片。進階方案含五段獨立短片（各約 10 秒，Luma Ray 2）— 如珍藏相片輕輕甦醒，並融入訪客留言與每張照片背後的故事。每次生成一段，每段使用一個額度。`,
-    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
-      `獻禮素材池內照片：${selected} / ${max}（至少 ${min} 張）`,
+    adminPremiumAiTitle: "Premium：永恆影片生成（5 段短片）",
+    adminPremiumAiDescription:
+      "每段約 10 秒，由 Luma AI 為畫面帶來輕柔動感。\n每段請選 1–2 張最合適的照片。我們會把照片故事與訪客留言寫進提示詞，呈現最溫暖的瞬間。",
+    adminPremiumFilmSelectionSummary: (selected: number, max: number) =>
+      `已選照片：${selected} / ${max}（最多 ${max} 張）`,
     adminPremiumGenerateFilmCta: "生成下一段追思短片（約 10 秒）",
-    adminPremiumSelectMinGuide: (min: number) => `請至少選擇 ${min} 張照片以繼續。`,
+    adminPremiumSelectMinGuide: "請至少選擇一張照片以繼續。",
     adminPremiumFooterTagline: "Aeterna Memoir — 永恒守護您的珍貴回憶。",
     adminPremiumMaxPhotosHint: (max: number) => `影片最多可選 ${max} 張照片。`,
     adminPremiumFilmSelectRangeError: (min: number, max: number) =>
@@ -198,18 +200,16 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
       "請先在下方「回憶」區核准訪客照片，再返回此處生成短片。",
     adminPremiumRemoveFromFilmAria: "從 AI 追思短片選材中移除",
     adminPremiumIncludeInFilmAria: "加入 AI 追思短片選材",
-    adminPremiumClipsRemaining: (remaining: number, total: number) =>
-      `尚可生成 ${remaining} / ${total} 段追思短片`,
-    adminPremiumPhotoPickGuidance:
-      "五段短片整體效果最佳建議選 15–20 張（必填 10–25 張）。訪客留言與每則故事會融入敘事。",
+    adminPremiumClipsCompletedStatus: (completed: number, total: number) =>
+      `已生成短片：${completed} / ${total}`,
     adminPremiumCompletedClipsLabel: "已完成的追思短片",
     adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
       `第 ${clipOneIndexed} 章 · 約 10 秒 · 共 ${totalClips} 段`,
     adminPremiumAllClipsComplete:
       "五章追思短片皆已就緒。您可於上方重播，或至公開紀念頁觀看。",
     adminPremiumNoClipCredits: "短片額度已用完。如需協助請聯絡客服。",
-    adminPreserveForeverCta: "永久保存 — $19.99",
-    adminEternalFilmCta: "永恆影片 — $39.99",
+    adminPreserveForeverCta: "永久保存",
+    adminEternalFilmCta: "永恆影片",
     adminPlusPreservedBody:
       "您的紀念館將得到妥善保存。只要您需要，所有的故事和照片都將永遠留在這裡。",
     adminProcessing: "處理中…",

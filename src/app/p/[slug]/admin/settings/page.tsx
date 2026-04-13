@@ -160,7 +160,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
             </svg>
             {ap.backToAdmin}
           </Link>
-          <h1 className="text-xs font-normal text-[var(--aeterna-gold-muted)] uppercase tracking-wider text-center px-12 [font-family:var(--font-sans)]">
+          <h1 className="text-sm font-normal text-white uppercase tracking-wider text-center px-12 [font-family:var(--font-sans)]">
             {ap.pageTitle}
           </h1>
         </div>
@@ -339,7 +339,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 {profileError}
               </p>
             )}
-            <div>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center">
               <button
                 type="submit"
                 disabled={savingProfile}
@@ -347,6 +347,12 @@ export default function AdminSettingsPage({ params }: PageProps) {
               >
                 {savingProfile ? ap.saving : ap.saveProfile}
               </button>
+              <Link
+                href={`/p/${encodeURIComponent(slug)}/admin`}
+                className="inline-flex min-h-[48px] w-full sm:w-auto items-center justify-center rounded-xl border border-white/[0.15] px-6 text-sm font-medium tracking-[0.04em] text-[var(--landing-text-hero)] hover:bg-white/[0.06] transition-colors"
+              >
+                {ap.backToAdmin}
+              </Link>
             </div>
             {invitePdfHref ? (
               <p className="text-right">

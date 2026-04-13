@@ -4,10 +4,10 @@ import { getAppBaseUrl } from "@/lib/appUrl"
 import { buildTributeClipPrompt, type StorySnippetForFilm } from "@/lib/memorialFilmPrompt"
 import { notifyAdmin } from "@/lib/notifyAdmin"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
-import { sliceStoriesForClip } from "@/lib/tributeClipPhotos"
 import {
   normalizeTributeSlots,
   TRIBUTE_CLIP_COUNT,
+  TRIBUTE_CLIP_MAX_IMAGES,
   TRIBUTE_FILM_MAX_PHOTOS,
   TRIBUTE_FILM_MIN_PHOTOS,
 } from "@/lib/tributeFilmConfig"
@@ -115,7 +115,7 @@ export async function attemptTributeClipGenerationForEvent(
     return { ok: false, error: msg, code: "skip" }
   }
 
-  const clipStories = sliceStoriesForClip(pool, clipIndex, TRIBUTE_CLIP_COUNT)
+  const clipStories = pool.slice(0, TRIBUTE_CLIP_MAX_IMAGES)
   const imageUrls = clipStories.map((s) => s.image_url!).filter(Boolean)
   if (imageUrls.length === 0) {
     return { ok: false, error: "No images available for this clip. Try selecting more photos." }

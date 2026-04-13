@@ -78,14 +78,13 @@ export function getPaymentMethods(
   const isKrw = cur === "krw"
   const isJpy = cur === "jpy"
   const isEur = cur === "eur"
-  const korean = isKoreanPaymentContext(effectiveLocale, opts.currency)
 
   const parts: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = []
 
   switch (region) {
     case "ko":
-      // Kakao Pay first (trust); card = Apple/Google Pay + cards; Link last
-      if (isKrw || korean) {
+      // Kakao / Naver / Samsung wallets only settle in KRW — do not enable with USD checkout.
+      if (isKrw) {
         parts.push("kakao_pay", "card", "naver_pay", "samsung_pay")
       } else {
         parts.push("card")

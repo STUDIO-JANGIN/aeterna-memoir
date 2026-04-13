@@ -1303,8 +1303,10 @@ export default function GuestFeedPage({ params }: PageProps) {
       {/* Memory grid — flat gallery */}
       <main className="animate-[fadeInUp_0.85s_ease-out_both] border-t border-white/[0.06] pb-[max(6.5rem,env(safe-area-inset-bottom))] pt-1 [animation-delay:0.18s]">
         {stories.length === 0 ? (
-          <div className="mx-auto max-w-xl bg-landing px-4 py-10">
-            <p className="text-center text-sm tracking-wide text-[var(--landing-text-muted)]">{tx.memorial.noMemoriesYet}</p>
+          <div className="w-full bg-landing px-4 py-10">
+            <p className="mx-auto max-w-xl text-center text-sm tracking-wide text-[var(--landing-text-muted)]">
+              {tx.memorial.noMemoriesYet}
+            </p>
           </div>
         ) : (
           <>

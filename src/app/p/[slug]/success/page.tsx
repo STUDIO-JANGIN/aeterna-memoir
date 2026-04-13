@@ -8,6 +8,7 @@ import { getPaymentSuccessAction } from "@/app/actions/getPaymentSuccess"
 import { getInvitationCardDataAction, type InvitationCardData } from "@/app/actions/getInvitationCardData"
 import { MemorialInvitationCard } from "@/components/MemorialInvitationCard"
 import { MemorialShareActions } from "@/components/MemorialShareActions"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { supabase } from "@/lib/supabase/browser"
 import { isMemorialOwner } from "@/lib/memorialOwnership"
@@ -17,7 +18,18 @@ type PageProps = {
   params: Promise<{ slug: string }>
 }
 
+function SuccessSuspenseFallback() {
+  const { app } = useLandingLocale()
+  return (
+    <div className="min-h-dvh bg-[color:var(--landing-bg)] flex items-center justify-center">
+      <p className="text-[#737373] text-sm tracking-wide">{app.paymentSuccessPage.suspenseLoading}</p>
+    </div>
+  )
+}
+
 function SuccessContent({ slug }: { slug: string }) {
+  const { app: tx } = useLandingLocale()
+  const ps = tx.paymentSuccessPage
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
 
@@ -71,7 +83,7 @@ function SuccessContent({ slug }: { slug: string }) {
   useEffect(() => {
     if (!sessionId?.trim()) {
       setStatus("error")
-      setErrorMessage("We couldn’t find a valid payment session. If you completed checkout, use the link from your email or return to your memorial.")
+      setErrorMessage(ps.errorSession)
       return
     }
 
@@ -98,7 +110,7 @@ function SuccessContent({ slug }: { slug: string }) {
         if (isRetryable && attemptNumber < maxAttempts) {
           setTimeout(() => attempt(attemptNumber + 1), delayMs)
         } else {
-          setErrorMessage(result.error ?? "We couldn’t confirm your payment yet. Please wait a moment and refresh, or contact support if this continues.")
+          setErrorMessage(result.error ?? ps.errorConfirm)
           setStatus("error")
         }
       })
@@ -108,7 +120,7 @@ function SuccessContent({ slug }: { slug: string }) {
     return () => {
       cancelled = true
     }
-  }, [sessionId, slug])
+  }, [sessionId, slug, ps.errorSession, ps.errorConfirm])
 
   useEffect(() => {
     if (status !== "success") return
@@ -138,8 +150,8 @@ function SuccessContent({ slug }: { slug: string }) {
     return () => cancelAnimationFrame(id)
   }, [status])
 
-  const displayName = eventName?.trim() || "your loved one"
-  const inviteName = eventName?.trim() || "Your loved one"
+  const nameForCopy = eventName?.trim() || ps.descriptionNameFallback
+  const description = ps.descriptionTemplate.replace(/\[Name\]/g, nameForCopy)
   const baseUrl = getAppBaseUrl()
   const guestUrl = `${baseUrl}/p/${slug}`
 
@@ -149,38 +161,32 @@ function SuccessContent({ slug }: { slug: string }) {
         {status === "loading" && (
           <>
             <p className="font-[var(--font-serif)] text-lg text-[#a3a3a3] leading-relaxed">
-              Thank you — we&apos;re confirming your payment.
+              {ps.loading}
             </p>
-            <p className="mt-4 text-sm text-[#737373]">This usually takes just a few seconds.</p>
+            <p className="mt-4 text-sm text-[#737373]">{ps.loadingSub}</p>
           </>
         )}
 
         {status === "success" && (
           <>
-            <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">Payment received</p>
+            <p className="text-[10px] tracking-[0.35em] uppercase text-[#737373] mb-4">{ps.kicker}</p>
             <h1 className="font-[var(--font-serif)] text-2xl md:text-3xl font-normal text-[#f4f1ea] leading-snug tracking-tight">
-              Their story is safe with you.
+              {ps.subtitle}
             </h1>
-            <p className="mt-6 text-sm md:text-base text-[#a3a3a3] leading-relaxed max-w-md">
-              We know how tender this moment is. Your support helps keep {displayName}&apos;s memorial present for everyone who loved them — quietly, respectfully, and for as long as you choose.
-            </p>
+            <p className="mt-6 text-sm md:text-base text-[#a3a3a3] leading-relaxed max-w-md">{description}</p>
 
             {tier === "premium" && (
-              <p className="mt-4 text-sm text-[#8a8a8a] max-w-md">
-                <span className="text-[var(--aeterna-gold)]">Premium</span> includes five ~10s AI tribute clips (moving-picture style). As each clip is ready, it appears on the memorial and in your dashboard.
-              </p>
+              <p className="mt-4 text-sm text-[#8a8a8a] max-w-md">{ps.filmInfoPremium}</p>
             )}
             {tier === "plus" && (
-              <p className="mt-4 text-sm text-[#8a8a8a] max-w-md">
-                <span className="text-[var(--aeterna-gold)]">Plus</span> preserves every photo and story permanently. You can upgrade to Premium later for the five ~10s tribute clips.
-              </p>
+              <p className="mt-4 text-sm text-[#8a8a8a] max-w-md">{ps.filmInfoPlus}</p>
             )}
 
             <div className="mt-10 flex w-full flex-col items-center border-t border-white/[0.08] pt-10">
-              <p className="text-[11px] tracking-[0.2em] uppercase text-[#737373] mb-6 shrink-0">Share the memorial</p>
-              <MemorialShareActions name={inviteName} guestUrl={guestUrl} className="mx-auto mb-10 shrink-0" />
+              <p className="text-[11px] tracking-[0.2em] uppercase text-[#737373] mb-6 shrink-0">{ps.shareTitle}</p>
+              <MemorialShareActions name={nameForCopy} guestUrl={guestUrl} className="mx-auto mb-10 shrink-0" />
               <MemorialInvitationCard
-                name={inviteMeta?.name?.trim() || inviteName}
+                name={inviteMeta?.name?.trim() || nameForCopy}
                 slug={slug}
                 guestUrl={guestUrl}
                 className="mx-auto w-full"
@@ -191,15 +197,20 @@ function SuccessContent({ slug }: { slug: string }) {
                 fundLink={inviteMeta?.flower_link ?? undefined}
                 profileImageUrl={inviteMeta?.profile_image ?? undefined}
                 remembranceBio={inviteMeta?.invitation_bio ?? undefined}
+                invitationInfo={ps.invitationInfo}
+                saveImageLabel={ps.saveImage}
+                printPdfLabel={ps.printPdf}
+                preparingLabel={ps.invitationPreparing}
+                invitationShareTitle={ps.invitationShareTitle}
               />
             </div>
 
             <div className="mt-10 w-full text-left max-w-md mx-auto">
-              <p className="text-[11px] tracking-[0.2em] uppercase text-[#737373] mb-4">Next steps</p>
+              <p className="text-[11px] tracking-[0.2em] uppercase text-[#737373] mb-4">{ps.nextStepsTitle}</p>
               <ol className="space-y-4 text-sm text-[#a3a3a3] leading-relaxed list-decimal list-inside marker:text-[var(--aeterna-gold)]">
-                <li>Save or print your memorial invitation (9:16) for a program, table card, or keepsake.</li>
-                <li>Share the link with family and friends — they can contribute from any phone, no app required.</li>
-                <li>Visit your dashboard to manage details and, when it&apos;s ready, your tribute film.</li>
+                <li>{ps.step1}</li>
+                <li>{ps.step2}</li>
+                <li>{ps.step3}</li>
               </ol>
             </div>
 
@@ -210,7 +221,7 @@ function SuccessContent({ slug }: { slug: string }) {
                 rel="noopener noreferrer"
                 className="mt-8 inline-flex min-h-[48px] items-center justify-center rounded-full border border-[var(--aeterna-gold)]/50 px-8 text-xs tracking-[0.16em] uppercase text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold)]/10 transition-colors"
               >
-                Open tribute / download
+                {ps.btnDownloadTribute}
               </a>
             ) : null}
 
@@ -219,14 +230,14 @@ function SuccessContent({ slug }: { slug: string }) {
                 href={`/p/${slug}`}
                 className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#030303] px-8 text-[11px] font-medium tracking-[0.18em] uppercase text-[#f5f5f4] border border-white/10 hover:bg-[#0c0c0c] transition-colors duration-300 ease-in-out"
               >
-                View memorial
+                {ps.btnViewMemorial}
               </Link>
               {isOwner && (
                 <Link
                   href={`/p/${slug}/admin`}
                   className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/[0.15] px-8 text-[11px] tracking-[0.16em] uppercase text-[#a3a3a3] hover:bg-white/[0.04] transition-colors"
                 >
-                  Open dashboard
+                  {ps.btnDashboard}
                 </Link>
               )}
             </div>
@@ -235,13 +246,13 @@ function SuccessContent({ slug }: { slug: string }) {
 
         {status === "error" && (
           <>
-            <h1 className="font-[var(--font-serif)] text-xl text-[#f4f1ea] mb-4">We couldn&apos;t finish confirming</h1>
+            <h1 className="font-[var(--font-serif)] text-xl text-[#f4f1ea] mb-4">{ps.errorTitle}</h1>
             <p className="text-sm text-[#a3a3a3] leading-relaxed mb-8 max-w-md">{errorMessage}</p>
             <Link
               href={`/p/${slug}`}
               className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[var(--aeterna-gold)]/50 px-8 text-xs tracking-[0.16em] uppercase text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold)]/10 transition-colors"
             >
-              Back to memorial
+              {ps.backToMemorial}
             </Link>
           </>
         )}
@@ -255,14 +266,14 @@ function SuccessContent({ slug }: { slug: string }) {
               href={`/p/${slug}`}
               className="flex w-full min-h-[52px] items-center justify-center rounded-full bg-[#030303] text-[#f5f5f4] text-[11px] font-medium tracking-[0.18em] uppercase border border-white/10 hover:bg-[#0c0c0c] transition-colors duration-300 ease-in-out"
             >
-              View memorial
+              {ps.btnViewMemorial}
             </Link>
             {isOwner && (
               <Link
                 href={`/p/${slug}/admin`}
                 className="flex w-full min-h-[48px] items-center justify-center rounded-full text-[11px] tracking-[0.16em] uppercase text-[#a3a3a3] hover:text-[#e8e4dc] transition-colors"
               >
-                Open dashboard
+                {ps.btnDashboard}
               </Link>
             )}
           </div>
@@ -277,13 +288,7 @@ export default function SuccessPage({ params }: PageProps) {
   const slug = resolvedParams.slug
 
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-dvh bg-[color:var(--landing-bg)] flex items-center justify-center">
-          <p className="text-[#737373] text-sm tracking-wide">Loading…</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<SuccessSuspenseFallback />}>
       <SuccessContent slug={slug} />
     </Suspense>
   )

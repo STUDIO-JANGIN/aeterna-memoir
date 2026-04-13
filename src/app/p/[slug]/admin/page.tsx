@@ -2,7 +2,6 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { Video } from "lucide-react"
 import {
   MemorialTrialCountdown,
   type MemorialTrialBannerCopy,
@@ -25,14 +24,13 @@ import { requestFullFilmAction } from "@/app/actions/requestFullFilm"
 import { updateEventBySlugAction } from "@/app/actions/updateEventBySlug"
 import { generatePreviewVideo } from "@/lib/generatePreviewVideo"
 import { getMemorialFundTotalBySlugAction } from "@/app/actions/getMemorialFundTotal"
+import { AdminVideoGeneration } from "@/components/memorial/AdminVideoGeneration"
 import { InvitationActionSheet } from "@/components/memorial/InvitationActionSheet"
+import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
+import { getAppPricingFootnote } from "@/lib/appTranslations"
+import { formatMemorialAdminCheckoutCta } from "@/lib/landingPricing"
 import { supabase } from "@/lib/supabase/browser"
-import {
-  normalizeTributeSlots,
-  TRIBUTE_CLIP_COUNT,
-  TRIBUTE_FILM_MAX_PHOTOS,
-  TRIBUTE_FILM_MIN_PHOTOS,
-} from "@/lib/tributeFilmConfig"
+import { normalizeTributeSlots, TRIBUTE_FILM_MAX_PHOTOS, TRIBUTE_FILM_MIN_PHOTOS } from "@/lib/tributeFilmConfig"
 
 const MIN_FILM_PHOTOS = TRIBUTE_FILM_MIN_PHOTOS
 const MAX_FILM_PHOTOS = TRIBUTE_FILM_MAX_PHOTOS
@@ -46,6 +44,15 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   const resolvedParams = use(params)
   const slug = typeof resolvedParams?.slug === "string" ? resolvedParams.slug.trim() : ""
   const { app: tx, locale } = useLandingLocale()
+  const pricingCurrency = usePersistedPricingCurrencyForCreate(locale, null)
+  const adminPlusCheckoutLabel = useMemo(
+    () => formatMemorialAdminCheckoutCta(tx.memorial.adminPreserveForeverCta, 1, pricingCurrency),
+    [pricingCurrency, tx.memorial.adminPreserveForeverCta],
+  )
+  const adminPremiumCheckoutLabel = useMemo(
+    () => formatMemorialAdminCheckoutCta(tx.memorial.adminEternalFilmCta, 2, pricingCurrency),
+    [pricingCurrency, tx.memorial.adminEternalFilmCta],
+  )
   const memorialTrialBannerCopy = useMemo<MemorialTrialBannerCopy>(
     () => ({
       preserveLegacyHeader: tx.memorial.preserveLegacyHeader,
@@ -122,7 +129,6 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
         )
       : approvedRaw
   const selectedCount = approved.filter((s) => s.is_selected === true).length
-  const selectedForVideo = approved.filter((s) => s.is_selected === true)
   const currentTier = (event?.tier ?? "free") as "free" | "plus" | "premium"
   const isPlusOrPremium = currentTier === "plus" || currentTier === "premium"
   /** Paid via Stripe (Eternal Legacy / Eternal Film) — hide free-tier countdown even if tier column lags. */
@@ -179,14 +185,21 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   }, [filmProcessing, slug, loadData])
 
   // Payment-related `as any` is used to avoid strict return-type friction.
+  const checkoutSessionOptions = useMemo(
+    () => ({
+      checkoutLocale: locale,
+      pricingCurrency,
+      checkoutNavigatorLanguage: typeof navigator !== "undefined" ? navigator.language : undefined,
+    }),
+    [locale, pricingCurrency],
+  )
+
   const handlePlusCheckout = async () => {
     if (!event || !slug) return
     setPlusCheckoutLoading(true)
     setPlusCheckoutError(null)
     setPremiumCheckoutError(null)
-    const result: any = await createPlusCheckoutSessionAction(event.id, slug, {
-      checkoutLocale: locale,
-    })
+    const result: any = await createPlusCheckoutSessionAction(event.id, slug, checkoutSessionOptions)
     setPlusCheckoutLoading(false)
     if (result.ok && result.url) {
       window.location.href = result.url
@@ -200,9 +213,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     setPremiumCheckoutLoading(true)
     setPremiumCheckoutError(null)
     setPlusCheckoutError(null)
-    const result: any = await createPremiumTierCheckoutSessionAction(event.id, slug, {
-      checkoutLocale: locale,
-    })
+    const result: any = await createPremiumTierCheckoutSessionAction(event.id, slug, checkoutSessionOptions)
     setPremiumCheckoutLoading(false)
     if (result.ok && result.url) {
       window.location.href = result.url
@@ -311,7 +322,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
           <MemorialTrialCountdown
             remainingMs={trialRemainingMs}
             className="w-full"
-            upgradeHref={`/p/${encodeURIComponent(slug)}/admin#memorial-preserve-upgrade`}
+            upgradeHref={`/?locale=${encodeURIComponent(locale)}#pricing`}
             copy={memorialTrialBannerCopy}
           />
         </div>
@@ -323,7 +334,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
             <p className="text-landing-label mb-5">{tx.memorial.adminDashboardKicker}</p>
             <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
               <div className="space-y-2 min-w-0 flex-1">
-                <h1 className="font-[var(--font-serif)] text-[clamp(1.5rem,4vw,2.125rem)] font-normal leading-tight tracking-[-0.02em] text-[var(--landing-text-title)]">
+                <h1 className="font-[var(--font-serif)] text-base sm:text-lg font-normal tracking-[-0.02em] text-[var(--landing-text-title)]">
                   {event.name}
                 </h1>
                 <p className="text-landing-body pt-1 max-w-xl leading-relaxed">{tx.memorial.adminDashboardWelcome}</p>
@@ -355,9 +366,17 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
 
         <div className="card-landing-airy p-6 md:p-10 mb-10 md:mb-12">
           {currentTier === "premium" ? (
-            <p className="text-landing-body mb-8 max-w-2xl leading-relaxed">
-              {tx.memorial.adminPremiumStatusLine(stories.length)}
-            </p>
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/[0.08]">
+                <span className="text-landing-label">{tx.memorial.adminCurrentPlan}</span>
+                <span className="inline-flex items-center justify-center min-h-[36px] px-4 py-1.5 bg-[var(--aeterna-gold)]/12 text-[var(--aeterna-gold)] text-[10px] font-medium rounded-full uppercase tracking-[0.2em] ring-1 ring-[var(--aeterna-gold)]/35">
+                  {tierLabel}
+                </span>
+              </div>
+              <p className="text-landing-body mb-8 max-w-2xl leading-relaxed">
+                {tx.memorial.adminPremiumStatusLine(stories.length)}
+              </p>
+            </>
           ) : (
             <>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/[0.08]">
@@ -374,28 +393,33 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
           )}
 
           {currentTier === "free" && (
-            <div
-              id="memorial-preserve-upgrade"
-              tabIndex={-1}
-              className="scroll-mt-8 flex flex-col sm:flex-row gap-3 items-stretch justify-center w-full max-w-2xl mx-auto"
-            >
-              <button
-                type="button"
-                onClick={handlePlusCheckout}
-                disabled={plusCheckoutLoading || premiumCheckoutLoading}
-                className="flex-1 min-w-0 min-h-[52px] items-center justify-center px-4 sm:px-6 btn-landing-gold disabled:pointer-events-none inline-flex text-center"
+            <>
+              <div
+                id="memorial-preserve-upgrade"
+                tabIndex={-1}
+                className="scroll-mt-8 flex flex-col sm:flex-row gap-3 items-stretch justify-center w-full max-w-2xl mx-auto"
               >
-                {plusCheckoutLoading ? tx.memorial.adminProcessing : tx.memorial.adminPreserveForeverCta}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handlePremiumFilmCheckout()}
-                disabled={plusCheckoutLoading || premiumCheckoutLoading}
-                className="flex-1 min-w-0 min-h-[52px] items-center justify-center px-4 sm:px-6 btn-landing-outline-gold disabled:pointer-events-none disabled:opacity-60 inline-flex text-center"
-              >
-                {premiumCheckoutLoading ? tx.memorial.adminProcessing : tx.memorial.adminEternalFilmCta}
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={handlePlusCheckout}
+                  disabled={plusCheckoutLoading || premiumCheckoutLoading}
+                  className="flex-1 min-w-0 min-h-[52px] items-center justify-center px-4 sm:px-6 btn-landing-gold disabled:pointer-events-none inline-flex text-center"
+                >
+                  {plusCheckoutLoading ? tx.memorial.adminProcessing : adminPlusCheckoutLabel}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handlePremiumFilmCheckout()}
+                  disabled={plusCheckoutLoading || premiumCheckoutLoading}
+                  className="flex-1 min-w-0 min-h-[52px] items-center justify-center px-4 sm:px-6 btn-landing-outline-gold disabled:pointer-events-none disabled:opacity-60 inline-flex text-center"
+                >
+                  {premiumCheckoutLoading ? tx.memorial.adminProcessing : adminPremiumCheckoutLabel}
+                </button>
+              </div>
+              <p className="mt-3 text-center text-[10px] leading-relaxed text-[var(--aeterna-gold-muted)] max-w-2xl mx-auto">
+                {getAppPricingFootnote(tx, pricingCurrency)}
+              </p>
+            </>
           )}
 
           {currentTier === "plus" && (
@@ -411,174 +435,24 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
           ) : null}
         </div>
 
-        {currentTier === "premium" && (
-          <section
-            className="card-landing-airy p-6 md:p-10 mb-10 md:mb-12 ring-1 ring-[var(--aeterna-gold)]/20"
-            aria-labelledby="ai-tribute-heading"
-          >
-            <div className="mb-8 pb-6 border-b border-white/[0.08]">
-              <p className="text-landing-label mb-2">{tx.memorial.adminTierLabelPremium}</p>
-              <h2
-                id="ai-tribute-heading"
-                className="font-[var(--font-serif)] text-2xl md:text-[1.75rem] font-normal tracking-[-0.02em] text-[var(--landing-text-title)]"
-              >
-                {tx.memorial.adminPremiumAiTitle}
-              </h2>
-              <p className="text-landing-body mt-3 max-w-2xl leading-relaxed">
-                {tx.memorial.adminPremiumAiDescription(MIN_FILM_PHOTOS, MAX_FILM_PHOTOS)}
-              </p>
-              <p className="text-landing-body mt-4 text-[var(--aeterna-gold)] font-medium tabular-nums">
-                {tx.memorial.adminPremiumClipsRemaining(clipCreditsRemaining, TRIBUTE_CLIP_COUNT)}
-              </p>
-              <p className="text-sm text-[var(--landing-text-muted)] mt-2 max-w-2xl leading-relaxed">
-                {tx.memorial.adminPremiumPhotoPickGuidance}
-              </p>
-            </div>
-
-            {tributeSlots.some((u) => u != null && String(u).length > 0) ? (
-              <div className="space-y-6 mb-8">
-                <p className="text-landing-label">{tx.memorial.adminPremiumCompletedClipsLabel}</p>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {tributeSlots.map((url, i) =>
-                    url != null && String(url).length > 0 ? (
-                      <div
-                        key={`clip-${i}`}
-                        className="rounded-2xl overflow-hidden border border-white/[0.08] ring-1 ring-[var(--aeterna-gold)]/15 bg-[#030303]/50"
-                      >
-                        <video
-                          src={String(url)}
-                          controls
-                          playsInline
-                          className="w-full max-h-[min(40vh,360px)] object-contain bg-[#030303]"
-                        >
-                          {tx.memorial.videoUnsupported}
-                        </video>
-                        <p className="text-center text-[11px] text-[var(--landing-text-muted)] py-2 tracking-wide uppercase">
-                          {tx.memorial.adminPremiumClipLabel(i + 1, TRIBUTE_CLIP_COUNT)}
-                        </p>
-                      </div>
-                    ) : null
-                  )}
-                </div>
-                <Link
-                  href={`/p/${slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-landing-gold inline-flex min-h-[52px] w-full max-w-md mx-auto justify-center text-center"
-                >
-                  {tx.memorial.adminPremiumPreviewOnMemorialCta}
-                </Link>
-              </div>
-            ) : null}
-
-            {filmProcessing || generateFilmLoading ? (
-              <div className="space-y-6 max-w-xl">
-                <p className="font-[var(--font-serif)] text-lg text-[var(--landing-text-hero)] leading-relaxed">
-                  {tx.memorial.adminPremiumFilmCraftingTitle}
-                </p>
-                <p className="text-landing-body leading-relaxed">
-                  {tx.memorial.adminPremiumFilmCraftingSubtitle}
-                </p>
-                <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden ring-1 ring-white/[0.06]">
-                  <div className="h-full w-[38%] rounded-full bg-gradient-to-r from-[var(--aeterna-gold)] via-[var(--aeterna-gold-light)] to-[var(--aeterna-gold)] animate-[goldLoad_2.5s_ease-in-out_infinite]" />
-                </div>
-              </div>
-            ) : event.video_status === "failed" ? (
-              <p className="text-sm text-[var(--aeterna-gold-muted)]">{tx.memorial.adminPremiumFilmFailed}</p>
-            ) : allTributeClipsComplete ? (
-              <p className="text-landing-body max-w-2xl leading-relaxed">{tx.memorial.adminPremiumAllClipsComplete}</p>
-            ) : (
-              <div className="space-y-8">
-                {approvedRaw.filter((s) => s.image_url).length === 0 ? (
-                  <p className="text-landing-body text-[var(--landing-text-muted)] leading-relaxed">
-                    {tx.memorial.adminPremiumApprovePhotosFirst}
-                  </p>
-                ) : (
-                  <>
-                    <p className="text-landing-body tabular-nums">
-                      {tx.memorial.adminPremiumFilmSelectionSummary(
-                        selectedCount,
-                        MAX_FILM_PHOTOS,
-                        MIN_FILM_PHOTOS,
-                      )}
-                    </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-                      {approvedRaw
-                        .filter((s) => s.image_url)
-                        .map((story) => {
-                          const selected = story.is_selected === true
-                          return (
-                            <button
-                              key={story.id}
-                              type="button"
-                              onClick={() => void handleFilmPhotoToggle(story)}
-                              aria-pressed={selected}
-                              aria-label={
-                                selected
-                                  ? tx.memorial.adminPremiumRemoveFromFilmAria
-                                  : tx.memorial.adminPremiumIncludeInFilmAria
-                              }
-                              className={`relative aspect-square rounded-2xl overflow-hidden border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--aeterna-gold)] bg-app-soft-surface ${
-                                selected
-                                  ? "ring-2 ring-[var(--aeterna-gold)] border-[var(--aeterna-gold)]/60 shadow-[0_0_32px_-8px_rgba(197,160,89,0.45)]"
-                                  : "border-white/[0.08] hover:border-[var(--aeterna-gold)]/35 opacity-95 hover:opacity-100"
-                              }`}
-                            >
-                              <img src={story.image_url || ""} alt="" className="h-full w-full object-cover" />
-                              <span
-                                className={`absolute top-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-full shadow-lg backdrop-blur-md ${
-                                  selected
-                                    ? "bg-[var(--aeterna-gold)] text-[#0a0a0a]"
-                                    : "bg-[#030303]/50 text-white/90 border border-white/20"
-                                }`}
-                              >
-                                <Video
-                                  className="h-4 w-4 shrink-0"
-                                  strokeWidth={selected ? 2.25 : 1.75}
-                                  aria-hidden
-                                />
-                              </span>
-                            </button>
-                          )
-                        })}
-                    </div>
-                    {(filmSelectionHint || generateFilmError) && (
-                      <p
-                        className={`text-sm ${generateFilmError ? "text-[var(--aeterna-gold-muted)]" : "text-[var(--landing-text-muted)]"}`}
-                        role="status"
-                      >
-                        {filmSelectionHint || generateFilmError}
-                      </p>
-                    )}
-                    <div className="flex flex-col items-center gap-4 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => void handleGenerateFilm()}
-                        disabled={
-                          generateFilmLoading ||
-                          clipCreditsRemaining <= 0 ||
-                          selectedCount < MIN_FILM_PHOTOS ||
-                          selectedCount > MAX_FILM_PHOTOS
-                        }
-                        className="btn-landing-gold min-h-[56px] w-full max-w-md px-8 text-[11px] tracking-[0.18em] disabled:opacity-40 disabled:pointer-events-none shadow-[0_16px_48px_-12px_rgba(197,160,89,0.4)]"
-                      >
-                        {tx.memorial.adminPremiumGenerateFilmCta}
-                      </button>
-                      {selectedCount < MIN_FILM_PHOTOS && (
-                        <p className="text-center text-[var(--landing-text-muted)] text-sm">
-                          {tx.memorial.adminPremiumSelectMinGuide(MIN_FILM_PHOTOS)}
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-            <p className="text-center text-[11px] text-[var(--landing-text-muted)] pt-6 mt-2 border-t border-white/[0.06]">
-              {tx.memorial.adminPremiumFooterTagline}
-            </p>
-          </section>
-        )}
+        {currentTier === "premium" && event ? (
+          <AdminVideoGeneration
+            memorial={tx.memorial}
+            slug={slug}
+            tributeSlots={tributeSlots}
+            clipCreditsRemaining={clipCreditsRemaining}
+            allTributeClipsComplete={allTributeClipsComplete}
+            filmProcessing={filmProcessing}
+            generateFilmLoading={generateFilmLoading}
+            generateFilmError={generateFilmError}
+            videoStatusFailed={event.video_status === "failed"}
+            approvedWithImage={approvedRaw.filter((s) => s.image_url)}
+            selectedCount={selectedCount}
+            filmSelectionHint={filmSelectionHint}
+            onFilmPhotoToggle={handleFilmPhotoToggle}
+            onGenerateFilm={handleGenerateFilm}
+          />
+        ) : null}
 
         <div className="card-landing-airy p-6 md:p-8 mb-6 md:mb-8">
           <h2 className="text-landing-label mb-6">

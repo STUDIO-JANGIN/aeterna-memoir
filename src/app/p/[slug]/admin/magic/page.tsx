@@ -147,8 +147,8 @@ export default function MagicFilmStudioPage({ params }: PageProps) {
                       Upgrade to Premium to create films like this for your family.
                     </p>
                     <p className="text-xs text-[var(--landing-text-body)] mb-3 max-w-sm">
-                      Gather 15–20 photos (10–25 supported), then on the admin page generate five ~10s tribute clips — one
-                      credit per clip, five credits included with Premium.
+                      On the admin page, choose 1–2 approved photos per ~10s clip and generate each tribute clip — one credit
+                      per clip, five credits included with Premium.
                     </p>
                     <Link
                       href={slug ? `/p/${slug}/admin` : "/"}

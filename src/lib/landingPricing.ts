@@ -182,6 +182,17 @@ export function formatLandingTierPrice(
   return { primary: `${(u / 100).toFixed(0)}`, suffix: "SAR" }
 }
 
+/** `/p/[slug]/admin` free-tier upgrade buttons — title + regional price (matches landing `TIER_STRIPE_UNITS`). */
+export function formatMemorialAdminCheckoutCta(
+  title: string,
+  tierIndex: 1 | 2,
+  currencyId: PricingCurrencyId,
+): string {
+  const { primary, suffix } = formatLandingTierPrice(currencyId, tierIndex)
+  const pricePart = suffix ? `${primary} ${suffix}` : primary
+  return `${title} — ${pricePart}`
+}
+
 export function landingPlanHref(
   tierIndex: 0 | 1 | 2,
   locale: LandingLocale,

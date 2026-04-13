@@ -10,10 +10,15 @@ import { type LandingLocale, LANDING_LOCALES } from "@/lib/landingTranslations"
 export type GenerateInvitePdfOptions = {
   locale?: LandingLocale
   allLocales?: boolean
+  /**
+   * When set, the success payload includes a base64-encoded PDF for this locale so the
+   * client can build a `Blob` without `fetch()`ing the storage public URL (avoids CORS).
+   */
+  returnBase64ForLocale?: LandingLocale
 }
 
 export type GenerateInvitePdfResult =
-  | { ok: true; url: string; urls?: InvitePdfUrlsMap }
+  | { ok: true; url: string; urls?: InvitePdfUrlsMap; pdfBase64?: string }
   | { ok: false; error: string }
 
 export async function generateInvitePdfAction(
@@ -42,6 +47,7 @@ export async function generateInvitePdfAction(
     (event.invite_pdf_urls as InvitePdfUrlsMap | null | undefined) ?? {}
 
   const newUrls: InvitePdfUrlsMap = { ...existingUrls }
+  let pdfBase64Out: string | undefined
 
   try {
     for (const locale of locales) {
@@ -78,6 +84,9 @@ export async function generateInvitePdfAction(
         return { ok: false, error: "Failed to get public URL for PDF." }
       }
       newUrls[locale] = pdfUrl
+      if (options?.returnBase64ForLocale === locale) {
+        pdfBase64Out = Buffer.from(pdfBytes).toString("base64")
+      }
     }
 
     const primaryUrl = newUrls.en ?? newUrls[locales[0]] ?? Object.values(newUrls)[0] ?? ""
@@ -90,7 +99,7 @@ export async function generateInvitePdfAction(
       })
       .eq("id", event.id)
 
-    return { ok: true, url: primaryUrl, urls: newUrls }
+    return { ok: true, url: primaryUrl, urls: newUrls, pdfBase64: pdfBase64Out }
   } catch (err) {
     console.error("[generateInvitePdf]", err)
     return { ok: false, error: err instanceof Error ? err.message : "Failed to generate PDF." }

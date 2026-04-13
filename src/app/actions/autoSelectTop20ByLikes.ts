@@ -3,16 +3,15 @@
 import { eventRowIsPaidMemorial } from "@/lib/paidMemorialDeadlines"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { revalidatePath } from "next/cache"
+import { TRIBUTE_FILM_MAX_PHOTOS } from "@/lib/tributeFilmConfig"
 
 export type AutoSelectResult =
   | { ok: true; selectedCount: number }
   | { ok: false; error: string }
 
-const TOP_N = 15
-
 /**
- * For closed events, auto-select top 15 liked photos as AI film candidates (is_selected).
- * Runs only after closure and is idempotent.
+ * For closed events, auto-select top liked photos as AI film candidates (is_selected).
+ * Count matches the per-clip Eternal Film selection cap. Runs only after closure and is idempotent.
  */
 export async function autoSelectTop20ByLikesAction(
   slug: string
@@ -45,7 +44,7 @@ export async function autoSelectTop20ByLikesAction(
     .eq("event_id", event.id)
     .eq("is_approved", true)
     .order("likes_count", { ascending: false, nullsFirst: false })
-    .limit(TOP_N)
+    .limit(TRIBUTE_FILM_MAX_PHOTOS)
 
   if (listErr) {
     return { ok: false, error: listErr.message }

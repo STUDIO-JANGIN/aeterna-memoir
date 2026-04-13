@@ -140,6 +140,9 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
     notifyFilmTitle: "Avísenme cuando la película esté lista",
     notifyFilmThanks: "Gracias. Le avisaremos cuando esté lista.",
     noMemoriesYet: "Aún no se han compartido recuerdos.",
+    eternalFilmClipPhotoLimitAlert:
+      "Para obtener la mejor calidad de IA, use de 1 a 2 fotos por clip.",
+    eternalFilmUploaderChoose: "Elegir fotos",
     preserveLegacyHeader: "Preservar este legado",
     trialGatheringTimerLabel: "Tiempo restante en esta ventana de reunión",
     trialCountdownFromMs: (ms: number) => {
@@ -186,13 +189,13 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
     adminContributionsCollected: (count: number) => `${count} contribuciones sinceras recolectadas`,
     adminPremiumStatusLine: (count: number) =>
       `Plan actual / Premium / ${count} contribuciones sinceras recolectadas`,
-    adminPremiumAiTitle: "Homenaje «fotos vivas» (cinco capítulos)",
-    adminPremiumAiDescription: (min: number, max: number) =>
-      `Elija entre ${min} y ${max} fotos aprobadas. Premium incluye cinco clips separados de ~10 s (Luma Ray 2): recuerdos que se animan con suavidad, entretejidos con los comentarios de los visitantes y la historia de cada foto. Genere un clip a la vez; cada uno usa un crédito.`,
-    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
-      `Fotos en su selección homenaje: ${selected} / ${max} (mínimo ${min})`,
+    adminPremiumAiTitle: "Premium: generación de Eternal Film (5 clips)",
+    adminPremiumAiDescription:
+      "Cada clip dura unos 10 segundos. Luma AI añade un movimiento suave y casi mágico.\nPara cada clip, elija 1 o 2 fotos. Integramos la historia de cada foto y las palabras de los visitantes (comentarios) en el prompt para captar los momentos más cálidos.",
+    adminPremiumFilmSelectionSummary: (selected: number, max: number) =>
+      `Fotos seleccionadas: ${selected} / ${max} (máx. ${max})`,
     adminPremiumGenerateFilmCta: "Generar siguiente clip homenaje (~10 s)",
-    adminPremiumSelectMinGuide: (min: number) => `Seleccione al menos ${min} fotos para continuar.`,
+    adminPremiumSelectMinGuide: "Seleccione al menos una foto para continuar.",
     adminPremiumFooterTagline: "Aeterna Memoir — Preservando sus recuerdos más preciados.",
     adminPremiumMaxPhotosHint: (max: number) =>
       `Puede elegir hasta ${max} fotos para el homenaje.`,
@@ -210,18 +213,16 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
       "Apruebe primero las fotos de los invitados en Recuerdos abajo y vuelva aquí para generar clips.",
     adminPremiumRemoveFromFilmAria: "Quitar de la selección homenaje con IA",
     adminPremiumIncludeInFilmAria: "Incluir en la selección homenaje con IA",
-    adminPremiumClipsRemaining: (remaining: number, total: number) =>
-      `Le quedan ${remaining} de ${total} clips homenaje por generar`,
-    adminPremiumPhotoPickGuidance:
-      "Para un buen resultado en los cinco clips, elija 15–20 fotos (obligatorio: 10–25). Los comentarios y cada historia se integran en la narración.",
+    adminPremiumClipsCompletedStatus: (completed: number, total: number) =>
+      `Clips completados: ${completed} / ${total}`,
     adminPremiumCompletedClipsLabel: "Sus clips homenaje",
     adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
       `Capítulo ${clipOneIndexed} · ~10 s · ${totalClips} en total`,
     adminPremiumAllClipsComplete:
       "Los cinco capítulos están listos. Vuelva a verlos arriba o en el memorial público.",
     adminPremiumNoClipCredits: "No le quedan créditos de clip. Contacte a soporte si necesita ayuda.",
-    adminPreserveForeverCta: "Preservar para siempre — $19.99",
-    adminEternalFilmCta: "Película eterna — $39.99",
+    adminPreserveForeverCta: "Preservar para siempre",
+    adminEternalFilmCta: "Película eterna",
     adminPlusPreservedBody:
       "Su espacio conmemorativo está preservado. Cada historia y foto permanecerá aquí por todo el tiempo que lo necesite.",
     adminProcessing: "Procesando…",

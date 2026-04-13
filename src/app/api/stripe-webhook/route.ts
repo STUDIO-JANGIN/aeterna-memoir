@@ -89,6 +89,25 @@ export async function POST(req: NextRequest) {
       const currency = session.currency ?? "usd"
       const customerEmail = (session.customer_details?.email || session.customer_email) ?? null
 
+      /** Plus & Premium checkouts must carry eventId — otherwise we cannot attribute revenue or unlock the memorial. */
+      if (purpose === "premium_film" && !eventId) {
+        console.error(
+          "[stripe-webhook] checkout.session.completed premium_film missing eventId/memorialId:",
+          session.id,
+        )
+        await notifyAdmin(
+          `🚨 [stripe-webhook] Paid Premium/Plus checkout missing eventId in metadata — fix Stripe metadata or reconcile manually`,
+          {
+            alert: "premium_film_missing_event_id",
+            stripe_session_id: session.id,
+            amount_cents: amountTotal,
+            currency,
+            customerEmail,
+            metadata: session.metadata ?? {},
+          },
+        )
+      }
+
       /** `eventId` in metadata scopes Plus/Premium to a single memorial row — never shared across a user’s events. */
       if (purpose === "premium_film" && eventId && supabase) {
         const tierFromMeta = session.metadata?.tier as string | undefined
@@ -101,49 +120,80 @@ export async function POST(req: NextRequest) {
           )
         }
 
-        await supabase.from("payments").upsert(
-          {
-            event_id: eventId,
-            stripe_session_id: session.id,
-            user_email: customerEmail,
-            status: "completed",
-            purpose: "premium_film",
-            amount_cents: amountTotal,
-            currency,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "stripe_session_id" }
-        )
+        const revenueLabel = formatCheckoutAmount(amountTotal, currency)
+        const dbIssues: string[] = []
 
-        const deadlines = paidMemorialDeadlineFields()
-        // For Premium payments, set video_credits to five (~10s tribute clips each).
-        if (tier === "premium") {
-          await supabase
-            .from("events")
-            .update({
-              is_paid: true,
-              tier,
-              is_premium: true,
-              video_credits: 5,
-              ...deadlines,
-            })
-            .eq("id", eventId)
-        } else {
-          await supabase
-            .from("events")
-            .update({
-              is_paid: true,
-              tier,
-              is_premium: true,
-              ...deadlines,
-            })
-            .eq("id", eventId)
+        try {
+          const { error: payErr } = await supabase.from("payments").upsert(
+            {
+              event_id: eventId,
+              stripe_session_id: session.id,
+              user_email: customerEmail,
+              status: "completed",
+              purpose: "premium_film",
+              amount_cents: amountTotal,
+              currency,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "stripe_session_id" }
+          )
+          if (payErr) {
+            dbIssues.push(`payments: ${payErr.message}`)
+            console.error("[stripe-webhook] payments upsert failed:", payErr.message)
+          }
+        } catch (e) {
+          const m = e instanceof Error ? e.message : String(e)
+          dbIssues.push(`payments (exception): ${m}`)
+          console.error("[stripe-webhook] payments upsert exception:", e)
         }
 
-        // One Slack message per successful payment (tier + revenue); Premium also gets optional Resend email.
         try {
-          const revenueLabel = formatCheckoutAmount(amountTotal, currency)
+          const deadlines = paidMemorialDeadlineFields()
+          const eventPayload =
+            tier === "premium"
+              ? {
+                  is_paid: true,
+                  tier,
+                  is_premium: true,
+                  video_credits: 5,
+                  ...deadlines,
+                }
+              : {
+                  is_paid: true,
+                  tier,
+                  is_premium: true,
+                  ...deadlines,
+                }
 
+          const { error: evErr } = await supabase.from("events").update(eventPayload).eq("id", eventId)
+          if (evErr) {
+            dbIssues.push(`events: ${evErr.message}`)
+            console.error("[stripe-webhook] events update failed:", evErr.message)
+          }
+        } catch (e) {
+          const m = e instanceof Error ? e.message : String(e)
+          dbIssues.push(`events (exception): ${m}`)
+          console.error("[stripe-webhook] events update exception:", e)
+        }
+
+        if (dbIssues.length > 0) {
+          await notifyAdmin(
+            `🚨 [stripe-webhook] Database error after Stripe payment succeeded — reconcile Supabase (payments/events)`,
+            {
+              alert: "stripe_db_partial_failure",
+              eventId,
+              stripe_session_id: session.id,
+              tier,
+              issues: dbIssues,
+              amount_cents: amountTotal,
+              currency,
+              customerEmail,
+            }
+          )
+        }
+
+        // Slack + email: always attempt — Stripe already captured funds even if DB writes failed above.
+        try {
           const { data: eventRow } = await supabase
             .from("events")
             .select("name, slug")
@@ -168,6 +218,7 @@ export async function POST(req: NextRequest) {
               revenueLabel,
               customerEmail,
               stripe_session_id: session.id,
+              dbPersisted: dbIssues.length === 0,
             }
           )
 
@@ -210,19 +261,39 @@ export async function POST(req: NextRequest) {
       }
 
       if (purpose === "platform_tip" && eventId && supabase) {
-        await supabase.from("payments").upsert(
-          {
-            event_id: eventId,
+        let platformTipDbError: string | null = null
+        try {
+          const { error } = await supabase.from("payments").upsert(
+            {
+              event_id: eventId,
+              stripe_session_id: session.id,
+              user_email: customerEmail,
+              status: "completed",
+              purpose: "platform_tip",
+              amount_cents: amountTotal,
+              currency,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "stripe_session_id" }
+          )
+          if (error) {
+            platformTipDbError = error.message
+            console.error("[stripe-webhook] platform_tip payments upsert failed:", error.message)
+          }
+        } catch (e) {
+          platformTipDbError = e instanceof Error ? e.message : String(e)
+          console.error("[stripe-webhook] platform_tip payments upsert exception:", e)
+        }
+
+        if (platformTipDbError) {
+          await notifyAdmin(`🚨 [stripe-webhook] payments upsert failed (platform_tip): ${platformTipDbError}`, {
+            eventId,
             stripe_session_id: session.id,
-            user_email: customerEmail,
-            status: "completed",
-            purpose: "platform_tip",
             amount_cents: amountTotal,
             currency,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "stripe_session_id" }
-        )
+          })
+        }
+
         try {
           const { data: er } = await supabase.from("events").select("name, slug").eq("id", eventId).maybeSingle()
           const amt = formatCheckoutAmount(amountTotal, currency)
@@ -235,6 +306,7 @@ export async function POST(req: NextRequest) {
               currency,
               customerEmail,
               stripe_session_id: session.id,
+              dbPersisted: !platformTipDbError,
             }
           )
         } catch (e) {
@@ -243,19 +315,39 @@ export async function POST(req: NextRequest) {
       }
 
       if (purpose === "support_family" && eventId && supabase) {
-        await supabase.from("payments").upsert(
-          {
-            event_id: eventId,
+        let supportDbError: string | null = null
+        try {
+          const { error } = await supabase.from("payments").upsert(
+            {
+              event_id: eventId,
+              stripe_session_id: session.id,
+              user_email: customerEmail,
+              status: "completed",
+              purpose: "support_family",
+              amount_cents: amountTotal,
+              currency,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "stripe_session_id" }
+          )
+          if (error) {
+            supportDbError = error.message
+            console.error("[stripe-webhook] support_family payments upsert failed:", error.message)
+          }
+        } catch (e) {
+          supportDbError = e instanceof Error ? e.message : String(e)
+          console.error("[stripe-webhook] support_family payments upsert exception:", e)
+        }
+
+        if (supportDbError) {
+          await notifyAdmin(`🚨 [stripe-webhook] payments upsert failed (support_family): ${supportDbError}`, {
+            eventId,
             stripe_session_id: session.id,
-            user_email: customerEmail,
-            status: "completed",
-            purpose: "support_family",
             amount_cents: amountTotal,
             currency,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "stripe_session_id" }
-        )
+          })
+        }
+
         try {
           const { data: er } = await supabase.from("events").select("name, slug").eq("id", eventId).maybeSingle()
           const amt = formatCheckoutAmount(amountTotal, currency)
@@ -268,6 +360,7 @@ export async function POST(req: NextRequest) {
               currency,
               customerEmail,
               stripe_session_id: session.id,
+              dbPersisted: !supportDbError,
             }
           )
         } catch (e) {

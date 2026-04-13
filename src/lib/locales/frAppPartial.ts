@@ -140,6 +140,9 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     notifyFilmTitle: "Prévenez-moi lorsque les clips sont prêts",
     notifyFilmThanks: "Merci. Nous vous écrirons dès qu’ils seront prêts.",
     noMemoriesYet: "Aucun souvenir partagé pour le moment.",
+    eternalFilmClipPhotoLimitAlert:
+      "Pour une qualité IA optimale, veuillez utiliser 1 à 2 photos par clip.",
+    eternalFilmUploaderChoose: "Choisir des photos",
     preserveLegacyHeader: "Préserver cet héritage",
     trialGatheringTimerLabel: "Temps restant pour recueillir les souvenirs",
     trialCountdownFromMs: (ms: number) => {
@@ -186,13 +189,13 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     adminContributionsCollected: (count: number) => `${count} contributions sincères collectées`,
     adminPremiumStatusLine: (count: number) =>
       `Forfait actuel / Premium / ${count} contributions sincères collectées`,
-    adminPremiumAiTitle: "Hommage « images mouvantes » (cinq chapitres)",
-    adminPremiumAiDescription: (min: number, max: number) =>
-      `Choisissez entre ${min} et ${max} photos approuvées. Premium comprend cinq clips séparés d’environ 10 s (Luma Ray 2) — comme des photographies précieuses qui s’animent doucement, tissées avec les commentaires des proches et l’histoire derrière chaque image. Générez un clip à la fois ; chaque clip utilise un crédit.`,
-    adminPremiumFilmSelectionSummary: (selected: number, max: number, min: number) =>
-      `Photos dans votre sélection hommage : ${selected} / ${max} (minimum ${min})`,
+    adminPremiumAiTitle: "Premium : génération Eternal Film (5 clips)",
+    adminPremiumAiDescription:
+      "Chaque clip dure environ 10 secondes. Luma AI y ajoute un mouvement doux et magique.\nPour chaque clip, choisissez 1 à 2 photos. Nous intégrons l’histoire de chaque photo et les mots des visiteurs (commentaires) dans le prompt pour des instants les plus chaleureux.",
+    adminPremiumFilmSelectionSummary: (selected: number, max: number) =>
+      `Photos sélectionnées : ${selected} / ${max} (maximum ${max})`,
     adminPremiumGenerateFilmCta: "Générer le prochain clip hommage (~10 s)",
-    adminPremiumSelectMinGuide: (min: number) => `Sélectionnez au moins ${min} photos pour continuer.`,
+    adminPremiumSelectMinGuide: "Sélectionnez au moins une photo pour continuer.",
     adminPremiumFooterTagline: "Aeterna Memoir — Préserver vos précieux souvenirs.",
     adminPremiumMaxPhotosHint: (max: number) =>
       `Vous pouvez choisir jusqu’à ${max} photos pour l’hommage.`,
@@ -210,18 +213,16 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
       "Approuvez d’abord les photos des invités dans la section Souvenirs ci-dessous, puis revenez ici pour créer vos clips.",
     adminPremiumRemoveFromFilmAria: "Retirer de la sélection hommage IA",
     adminPremiumIncludeInFilmAria: "Inclure dans la sélection hommage IA",
-    adminPremiumClipsRemaining: (remaining: number, total: number) =>
-      `${remaining} sur ${total} clips hommage restants à générer`,
-    adminPremiumPhotoPickGuidance:
-      "Pour un résultat optimal sur les cinq clips, choisissez 15 à 20 photos (obligatoire : 10–25). Les commentaires des visiteurs et le récit de chaque photo nourrissent la narration.",
+    adminPremiumClipsCompletedStatus: (completed: number, total: number) =>
+      `Clips terminés : ${completed} / ${total}`,
     adminPremiumCompletedClipsLabel: "Vos clips hommage",
     adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) =>
       `Chapitre ${clipOneIndexed} · ~10 s · ${totalClips} au total`,
     adminPremiumAllClipsComplete:
       "Les cinq chapitres sont prêts. Retrouvez-les ci-dessus ou sur le mémorial public.",
     adminPremiumNoClipCredits: "Plus de crédits clip. Contactez le support si besoin.",
-    adminPreserveForeverCta: "Préserver à jamais — $19.99",
-    adminEternalFilmCta: "Film éternel — $39.99",
+    adminPreserveForeverCta: "Préserver à jamais",
+    adminEternalFilmCta: "Film éternel",
     adminPlusPreservedBody:
       "Votre espace commémoratif est préservé. Chaque récit et chaque photo resteront ici aussi longtemps que vous le souhaiterez.",
     adminProcessing: "Traitement…",

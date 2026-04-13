@@ -10,6 +10,7 @@ export function bcp47ForLandingLocale(locale: LandingLocale): string {
     es: "es-ES",
     ar: "ar-SA",
     zh: "zh-TW",
+    "zh-hk": "zh-HK",
   }
   return m[locale]
 }

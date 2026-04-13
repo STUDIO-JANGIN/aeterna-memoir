@@ -11,7 +11,10 @@ import {
   getStoryCommentsAction,
   type StoryCommentPublic,
 } from "@/app/actions/storyComments"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import { LegalFormCaption } from "@/components/LegalFormCaption"
+import { formatMemorialCommentTime } from "@/lib/formatDate"
+import { bcp47ForLandingLocale } from "@/lib/invitePdfLocale"
 import { coerceIdString, parseUuidString } from "@/lib/uuid"
 
 type Story = {
@@ -20,18 +23,6 @@ type Story = {
   story_text: string | null
   image_url: string | null
   thumb_url?: string | null
-}
-
-function formatShortTime(iso: string): string {
-  const d = new Date(iso)
-  const diff = Date.now() - d.getTime()
-  const sec = Math.floor(diff / 1000)
-  if (sec < 45) return "now"
-  const m = Math.floor(sec / 60)
-  if (m < 60) return `${m}m`
-  const h = Math.floor(m / 60)
-  if (h < 48) return `${h}h`
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
 const DRAG_CLOSE = 100
@@ -62,6 +53,11 @@ export function StoryMemoryDrawer({
   /** localStorage key for default commenter name, e.g. memorial slug */
   nameStorageKey: string
 }) {
+  const { app, locale } = useLandingLocale()
+  const m = app.memorial
+  const common = app.common
+  const localeTag = bcp47ForLandingLocale(locale)
+
   const [isDesktop, setIsDesktop] = useState(false)
   const [comments, setComments] = useState<StoryCommentPublic[]>([])
   const [commentsLoading, setCommentsLoading] = useState(true)
@@ -215,7 +211,7 @@ export function StoryMemoryDrawer({
     setSendError(null)
     setSending(true)
     const visitorName =
-      authorName.trim() || (sessionUser ? "Guest" : "Anonymous")
+      authorName.trim() || (sessionUser ? m.storyDrawerGuestName : m.storyDrawerAnonymous)
     try {
       const res = await addStoryCommentAction(photoId, evId, visitorName, body)
       if (res.ok) {
@@ -234,7 +230,7 @@ export function StoryMemoryDrawer({
     } finally {
       setSending(false)
     }
-  }, [photoStoryId, memorialEventId, authorName, body, persistName, sessionUser, loadComments])
+  }, [photoStoryId, memorialEventId, authorName, body, persistName, sessionUser, loadComments, m])
 
   const handleCommentHeart = useCallback(
     async (commentId: string) => {
@@ -280,7 +276,7 @@ export function StoryMemoryDrawer({
       <button
         type="button"
         className="absolute inset-0 bg-[#030303]/65 backdrop-blur-[3px]"
-        aria-label="Close"
+        aria-label={common.close}
         onClick={onClose}
       />
 
@@ -312,13 +308,13 @@ export function StoryMemoryDrawer({
             {/* Header — close (desktop inline; mobile top-right) */}
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border-gold-subtle)]/30 px-3 py-2 md:px-4">
               <p id="memory-drawer-title" className="truncate font-[var(--font-serif)] text-sm text-[var(--aeterna-gold)]">
-                Memory
+                {m.storyDrawerTitle}
               </p>
               <button
                 type="button"
                 onClick={onClose}
                 className="rounded-full p-2 text-[var(--once-text-secondary)] hover:bg-white/10 hover:text-[var(--once-text-primary)]"
-                aria-label="Close"
+                aria-label={common.close}
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -338,13 +334,17 @@ export function StoryMemoryDrawer({
                   draggable={false}
                 />
               ) : (
-                <div className="flex h-36 items-center justify-center text-sm text-[var(--aeterna-body)]">No image</div>
+                <div className="flex h-36 items-center justify-center text-sm text-[var(--aeterna-body)]">
+                  {m.storyDrawerNoImage}
+                </div>
               )}
             </div>
 
             {/* Scroll: story, hearts, and shared memories — scroll-touch + touch-pan-y for smooth mobile momentum */}
             <div className="scroll-touch memorial-drawer-scroll min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain px-4 pb-2 pt-3">
-              <p className="font-[var(--font-serif)] text-base text-[var(--aeterna-gold)]">{story.author_name ?? "Anonymous"}</p>
+              <p className="font-[var(--font-serif)] text-base text-[var(--aeterna-gold)]">
+                {story.author_name ?? m.storyDrawerAnonymous}
+              </p>
               <p className="mt-1 text-sm leading-relaxed text-[var(--once-text-primary)]">{story.story_text ?? ""}</p>
 
               <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--border-gold-subtle)]/50 bg-[#030303]/20 px-3 py-2.5">
@@ -354,7 +354,7 @@ export function StoryMemoryDrawer({
                   disabled={heartBusy}
                   className={`rounded-full p-2 disabled:opacity-50 ${isHearted ? "text-red-400" : "text-[var(--once-text-secondary)] hover:text-red-400/90"}`}
                   whileTap={{ scale: heartBusy ? 1 : 1.15 }}
-                  aria-label={isHearted ? "Remove heart" : "Heart this memory"}
+                  aria-label={isHearted ? m.storyDrawerHeartAriaRemove : m.storyDrawerHeartAriaAdd}
                 >
                   <svg className="h-7 w-7" fill={isHearted ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -362,24 +362,26 @@ export function StoryMemoryDrawer({
                 </motion.button>
                 <div>
                   <p className="text-2xl font-semibold tabular-nums text-[var(--once-text-primary)]">{likesCount}</p>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">Hearts</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">
+                    {m.storyDrawerHeartsLabel}
+                  </p>
                 </div>
                 {showAiFilmMessaging && (
                   <p className="ml-auto max-w-[12rem] text-[10px] leading-snug text-[var(--aeterna-gold-muted)]">
-                    Loved photos may be featured in the film.
+                    {m.storyDrawerAiFilmHint}
                   </p>
                 )}
               </div>
 
               <div className="mt-5">
                 <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--aeterna-gold-muted)]">
-                  Share a memory
+                  {m.storyDrawerCommentsHeading}
                 </p>
                 {commentsLoading ? (
-                  <p className="text-xs text-[var(--once-text-muted)]">Loading…</p>
+                  <p className="text-xs text-[var(--once-text-muted)]">{m.storyDrawerCommentsLoading}</p>
                 ) : comments.length === 0 ? (
                   <p className="rounded-xl bg-white/[0.03] px-3 py-2.5 text-xs italic text-[var(--once-text-muted)]">
-                    No messages yet — you can share a memory below.
+                    {m.storyDrawerNoCommentsYet}
                   </p>
                 ) : (
                   <ul className="space-y-2.5">
@@ -399,7 +401,7 @@ export function StoryMemoryDrawer({
                             <span className="text-[var(--once-text-primary)]">{c.text}</span>
                             <span className="text-[var(--once-text-muted)]"> — </span>
                             <span className="whitespace-nowrap text-xs text-[var(--aeterna-gold-muted)] tabular-nums">
-                              {formatShortTime(c.created_at)}
+                              {formatMemorialCommentTime(c.created_at, localeTag)}
                             </span>
                           </div>
                           <button
@@ -411,8 +413,8 @@ export function StoryMemoryDrawer({
                                 ? "text-red-400"
                                 : "text-[var(--once-text-muted)] hover:bg-white/[0.06] hover:text-red-400/90"
                             }`}
-                            aria-label={isHearted ? "Remove heart from this message" : "Heart this message"}
-                            title={isHearted ? "Remove heart" : "Heart"}
+                            aria-label={isHearted ? m.storyDrawerCommentHeartAriaRemove : m.storyDrawerCommentHeartAriaAdd}
+                            title={isHearted ? m.storyDrawerCommentHeartTitleRemove : m.storyDrawerCommentHeartTitleAdd}
                           >
                             <svg className="h-4 w-4" fill={isHearted ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                               <path
@@ -442,27 +444,27 @@ export function StoryMemoryDrawer({
               }}
             >
               <label htmlFor="tribute-author" className="sr-only">
-                Your name
+                {m.storyDrawerYourNamePlaceholder}
               </label>
               <input
                 id="tribute-author"
                 type="text"
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
-                placeholder="Your name (optional)"
+                placeholder={m.storyDrawerYourNamePlaceholder}
                 maxLength={60}
                 className="mb-2 w-full rounded-xl border border-[var(--border-gold-subtle)]/50 bg-[var(--aeterna-charcoal)]/80 px-3 py-2 text-xs text-[var(--once-text-primary)] placeholder:text-[var(--once-text-muted)] focus:border-[var(--aeterna-gold-muted)] focus:outline-none"
               />
               <div className="flex items-end gap-2 rounded-2xl border border-[var(--border-gold-subtle)]/60 bg-[var(--aeterna-charcoal-soft)]/90 pl-3 pr-1 py-1.5">
                 <label htmlFor="tribute-body" className="sr-only">
-                  Share a memory
+                  {m.storyDrawerComposerLabel}
                 </label>
                 <textarea
                   id="tribute-body"
                   value={body}
                   onChange={(e) => setBody(e.target.value.slice(0, 500))}
                   rows={1}
-                  placeholder="Write a few words…"
+                  placeholder={m.storyDrawerComposerPlaceholder}
                   className="max-h-24 min-h-[40px] flex-1 resize-none bg-transparent py-2 text-sm text-[var(--once-text-primary)] placeholder:text-[var(--once-text-muted)] focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
@@ -476,7 +478,7 @@ export function StoryMemoryDrawer({
                   type="submit"
                   disabled={sending || !body.trim() || !canPostComment}
                   className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] shadow-md transition hover:bg-[var(--aeterna-gold-light)] disabled:opacity-40"
-                  aria-label="Send"
+                  aria-label={m.storyDrawerSendAria}
                 >
                   <ArrowUp className="h-5 w-5" strokeWidth={2.2} />
                 </button>

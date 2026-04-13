@@ -1,20 +1,34 @@
 import type Stripe from "stripe"
 
+/** Stripe supports PayPay on Checkout; SDK union may lag behind API. */
+const pm = (s: string) => s as Stripe.Checkout.SessionCreateParams.PaymentMethodType
+
 /**
- * Stripe Checkout (hosted) payment method order.
+ * Stripe Checkout (hosted) — regional `payment_method_types` order.
  *
- * - **Apple Pay / Google Pay**: Shown as express options on the **`card`** method; keep `card` first.
- * - **Korea**: After `card`, list Kakao / Naver / Samsung Pay when locale is Korean or currency is KRW.
- * - **Link**: After wallets, before Cash App.
- * - **Cash App**: Only when currency is USD (Stripe hides or errors otherwise).
+ * - **Apple Pay / Google Pay**: Not separate Checkout types; they appear on **`card`**. Put `card`
+ *   early so wallets stay prominent.
+ * - **Link**: Always **after** regional wallets / APMs so it does not gatekeep local methods.
+ * - **Cash App**: USD only (Stripe hides or errors otherwise).
  *
- * Stripe may still reorder slightly for eligibility; this list is the best API-level priority hint.
- *
- * **Tabs vs accordion**: Hosted Checkout UI is controlled by Stripe and is not the embedded Payment
- * Element. The `layout: { type: "tabs" }` option applies to Payment Element / Checkout `ui_mode:
- * "elements"` integrations only—not to redirect Checkout. To get tabs, migrate those flows to
- * Elements-based Checkout or Stripe’s custom UI mode.
+ * Stripe may still reorder slightly by eligibility; this array is the best API-level priority hint.
  */
+
+export type CheckoutPaymentContext = {
+  /** App locale (`LandingLocale`) or BCP-47; primary signal for regional PM order. */
+  locale?: string | null
+  /** Browser `navigator.language` when `locale` is unset (pass from client). */
+  navigatorLanguage?: string | null
+  /** Stripe currency code (`usd`, `krw`, `jpy`, `sar`, `eur`, …). */
+  currency?: string | null
+}
+
+function effectiveLocaleFromContext(opts: CheckoutPaymentContext): string | null {
+  const a = opts.locale?.trim()
+  const b = opts.navigatorLanguage?.trim()
+  return a || b || null
+}
+
 export function isKoreanPaymentContext(locale?: string | null, currency?: string | null): boolean {
   const loc = (locale ?? "").trim().toLowerCase()
   if (loc.startsWith("ko")) return true
@@ -22,41 +36,126 @@ export function isKoreanPaymentContext(locale?: string | null, currency?: string
   return cur === "krw"
 }
 
-export function getCheckoutPaymentMethodTypes(opts: {
-  locale?: string | null
-  currency?: string | null
-}): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
-  const korean = isKoreanPaymentContext(opts.locale, opts.currency)
+/** Map locale → coarse region for payment-method ordering. */
+function resolvePaymentRegion(locale?: string | null): string {
+  const l = (locale ?? "").trim().toLowerCase()
+  if (!l) return "en"
+  if (l.startsWith("ko")) return "ko"
+  if (l.startsWith("ja")) return "ja"
+  if (l === "zh-hk" || l.startsWith("zh-hk")) return "zh-hk"
+  if (l === "zh" || l.startsWith("zh-tw") || l.startsWith("zh-hant")) return "zh-tw"
+  if (l.startsWith("ar")) return "ar"
+  if (l.startsWith("fr") || l.startsWith("es")) return "eu"
+  if (l.startsWith("en")) return "en"
+  return "en"
+}
+
+function uniqTypes(
+  types: Stripe.Checkout.SessionCreateParams.PaymentMethodType[],
+): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
+  const seen = new Set<string>()
+  const out: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = []
+  for (const t of types) {
+    if (!seen.has(t)) {
+      seen.add(t)
+      out.push(t)
+    }
+  }
+  return out
+}
+
+/**
+ * Hyper-local Stripe Checkout `payment_method_types` order.
+ * Link is never first — it stays a supporting option after trusted local methods.
+ */
+export function getPaymentMethods(
+  opts: CheckoutPaymentContext,
+): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
+  const effectiveLocale = effectiveLocaleFromContext(opts)
+  const region = resolvePaymentRegion(effectiveLocale)
   const cur = (opts.currency ?? "").trim().toLowerCase()
   const isUsd = cur === "usd" || cur === ""
+  const isKrw = cur === "krw"
+  const isJpy = cur === "jpy"
+  const isEur = cur === "eur"
+  const korean = isKoreanPaymentContext(effectiveLocale, opts.currency)
 
-  const methods: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = [
-    "card",
-    ...(korean ? (["kakao_pay", "naver_pay", "samsung_pay"] as const) : []),
-    "link",
-  ]
-  if (isUsd) methods.push("cashapp")
-  return methods
-}
+  const parts: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = []
 
-/** Narrower list when the account rejects some APMs (e.g. regional limits). */
-export function getCheckoutPaymentMethodTypesFallback(opts: {
-  locale?: string | null
-  currency?: string | null
-}): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
-  const korean = isKoreanPaymentContext(opts.locale, opts.currency)
-  if (korean) {
-    return ["card", "kakao_pay", "link"]
+  switch (region) {
+    case "ko":
+      // Kakao Pay first (trust); card = Apple/Google Pay + cards; Link last
+      if (isKrw || korean) {
+        parts.push("kakao_pay", "card", "naver_pay", "samsung_pay")
+      } else {
+        parts.push("card")
+      }
+      break
+    case "ja":
+      // Konbini + PayPay require JPY settlement for these rails
+      if (isJpy) {
+        parts.push("konbini", "card", pm("paypay"))
+      } else {
+        parts.push("card")
+      }
+      break
+    case "zh-tw":
+    case "zh-hk":
+      parts.push("alipay", "card")
+      break
+    case "ar":
+      // Mada and GCC cards use `card`; Apple Pay surfaces on card
+      parts.push("card")
+      break
+    case "eu":
+      if (isEur) {
+        parts.push("card", "bancontact", "ideal")
+      } else {
+        parts.push("card")
+      }
+      break
+    case "en":
+    default:
+      // Express wallets on `card`; Link after card
+      parts.push("card")
+      break
   }
-  return ["card", "link"]
+
+  // Link after local / card rails so it does not obscure wallets & APMs
+  parts.push("link")
+
+  if (isUsd) {
+    parts.push("cashapp")
+  }
+
+  return uniqTypes(parts)
 }
 
-/** Map app `LandingLocale` to Stripe Checkout `locale` for copy and hints. */
+/** @deprecated Use `getPaymentMethods` — alias for existing imports. */
+export function getCheckoutPaymentMethodTypes(
+  opts: CheckoutPaymentContext,
+): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
+  return getPaymentMethods(opts)
+}
+
+/** Narrow retry list when the account rejects some APMs (dashboard / region limits). */
+export function getCheckoutPaymentMethodTypesFallback(
+  opts: CheckoutPaymentContext,
+): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
+  const cur = (opts.currency ?? "").trim().toLowerCase()
+  const isUsd = cur === "usd" || cur === ""
+  const base: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = ["card", "link"]
+  if (isUsd) base.push("cashapp")
+  return base
+}
+
+/** Map app `LandingLocale` / BCP-47 to Stripe Checkout `locale` for copy and hints. */
 export function stripeCheckoutLocaleFromLanding(
-  landingLocale?: string | null
+  landingLocale?: string | null,
 ): Stripe.Checkout.SessionCreateParams.Locale | undefined {
   const raw = (landingLocale ?? "").trim().toLowerCase()
   if (!raw) return undefined
+  if (raw === "zh-hk" || raw.startsWith("zh-hk")) return "zh-HK"
   const base = raw.split("-")[0] ?? raw
   const map: Record<string, Stripe.Checkout.SessionCreateParams.Locale> = {
     en: "en",
@@ -70,15 +169,29 @@ export function stripeCheckoutLocaleFromLanding(
   return map[base] ?? "en"
 }
 
-export function checkoutSessionPaymentAndLocale(opts: {
-  locale?: string | null
-  currency?: string | null
-}): Pick<Stripe.Checkout.SessionCreateParams, "payment_method_types" | "locale"> {
-  const payment_method_types = getCheckoutPaymentMethodTypes(opts)
-  const loc = stripeCheckoutLocaleFromLanding(opts.locale)
+/**
+ * Shared Checkout Session fragment: payment methods, optional `payment_method_options`, UI locale.
+ * Pass `navigatorLanguage` from the client when `locale` may be empty.
+ */
+export function checkoutSessionPaymentAndLocale(opts: CheckoutPaymentContext): Pick<
+  Stripe.Checkout.SessionCreateParams,
+  "payment_method_types" | "locale" | "payment_method_options"
+> {
+  const effectiveLocale = effectiveLocaleFromContext(opts)
+  const payment_method_types = getPaymentMethods({
+    locale: effectiveLocale,
+    currency: opts.currency,
+  })
+  const loc = stripeCheckoutLocaleFromLanding(effectiveLocale)
   return {
     payment_method_types,
     ...(loc ? { locale: loc } : {}),
+    // Strong customer authentication where applicable; supports Mada / GCC cards on `card`
+    payment_method_options: {
+      card: {
+        request_three_d_secure: "automatic",
+      },
+    },
   }
 }
 

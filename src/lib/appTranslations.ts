@@ -35,6 +35,8 @@ export type AppStrings = {
     redirecting: string
     deleting: string
     memorialFallbackName: string
+    /** Suspense / route loading — secular, peaceful memory space (not religious sanctuary). */
+    peacefulMemoryLoading: string
   }
   signIn: {
     loading: string
@@ -134,16 +136,16 @@ export type AppStrings = {
     donationThankYou: string
     memoryReceivedTitle: string
     memoryReceivedBody: string
-    emailWhenLive: string
     emailPlaceholder: string
     saving: string
     notifyMe: string
-    afterUploadDone: string
     shareModalTitle: string
     shareModalBody: string
     whatsApp: string
     message: string
     copyLink: string
+    /** SMS / mailto share row (e.g. Japanese modal). */
+    shareChannelEmail: string
     filmAria: string
     videoUnsupported: string
     filmLabel: string
@@ -153,6 +155,26 @@ export type AppStrings = {
     premium: string
     locked: string
     viewStoryAria: string
+    /** Approved photo / story drawer (`StoryMemoryDrawer`) */
+    storyDrawerTitle: string
+    storyDrawerNoImage: string
+    storyDrawerAnonymous: string
+    storyDrawerGuestName: string
+    storyDrawerHeartAriaRemove: string
+    storyDrawerHeartAriaAdd: string
+    storyDrawerHeartsLabel: string
+    storyDrawerAiFilmHint: string
+    storyDrawerCommentsHeading: string
+    storyDrawerCommentsLoading: string
+    storyDrawerNoCommentsYet: string
+    storyDrawerCommentHeartAriaRemove: string
+    storyDrawerCommentHeartAriaAdd: string
+    storyDrawerCommentHeartTitleRemove: string
+    storyDrawerCommentHeartTitleAdd: string
+    storyDrawerYourNamePlaceholder: string
+    storyDrawerComposerPlaceholder: string
+    storyDrawerComposerLabel: string
+    storyDrawerSendAria: string
     donationSupportCta: string
     donationStatus: string
     donationSoFar: (count: number) => string
@@ -203,6 +225,19 @@ export type AppStrings = {
     adminEdit: string
     adminSharePdfInvitation: string
     adminPdfGenerating: string
+    /** PDF invitation share sheet (`InvitationActionSheet`) */
+    adminInvitationSheetTitle: string
+    adminInvitationSheetPreparing: string
+    adminInvitationShareKakao: string
+    adminInvitationShareLine: string
+    adminInvitationShareWhatsApp: string
+    adminInvitationNativeShare: string
+    adminInvitationNativeShareHint: string
+    adminInvitationDownload: string
+    adminInvitationClose: string
+    adminInvitationError: string
+    adminInvitationCopied: string
+    adminInvitationShareText: (name: string) => string
     adminBackToFeed: string
     adminCurrentPlan: string
     adminTierLabelFree: string
@@ -319,6 +354,9 @@ export type AppStrings = {
     memorialBackgroundSubtitle: string
     memorialBackgroundChoose: string
     memorialBackgroundSkip: string
+    backgroundDragHint: string
+    /** Step 4: death date must not be before full birth date. */
+    datePassingBeforeBirth: string
     step3Title: string
     step3Subtitle: string
     born: string
@@ -427,6 +465,7 @@ const EN: AppStrings = {
     redirecting: "Redirecting…",
     deleting: "Deleting…",
     memorialFallbackName: "Memorial",
+    peacefulMemoryLoading: "Preparing a peaceful space for your memories.",
   },
   signIn: {
     loading: "Loading…",
@@ -528,17 +567,18 @@ const EN: AppStrings = {
     adminForbidden: "You do not have permission to access the admin settings.",
     donationThankYou: "Thank you for your thoughtful support.",
     memoryReceivedTitle: "Memory Received",
-    memoryReceivedBody: "It will appear on the shrine once approved. We can email you when it goes live.",
-    emailWhenLive: "Email me when it's live",
+    memoryReceivedBody:
+      "Your memory has been submitted and will be displayed on the memorial once approved by the admin. Once public, others will be able to like and comment on your post.",
     emailPlaceholder: "Email",
     saving: "Saving…",
     notifyMe: "Notify me",
-    afterUploadDone: "You're set — we'll email you when this memory is visible on the page.",
     shareModalTitle: "Share this memorial",
-    shareModalBody: "Invite family and friends to visit and contribute.",
+    shareModalBody:
+      "Share this Memorial. Invite family and friends to visit and share memories together.",
     whatsApp: "WhatsApp",
     message: "Message",
     copyLink: "Copy link",
+    shareChannelEmail: "Email",
     filmAria: "AI Memorial Film",
     videoUnsupported: "Your browser does not support the video tag.",
     filmLabel: "Film",
@@ -548,6 +588,25 @@ const EN: AppStrings = {
     premium: "Premium",
     locked: "Locked",
     viewStoryAria: "View story",
+    storyDrawerTitle: "Memory",
+    storyDrawerNoImage: "No image",
+    storyDrawerAnonymous: "Anonymous",
+    storyDrawerGuestName: "Guest",
+    storyDrawerHeartAriaRemove: "Remove heart",
+    storyDrawerHeartAriaAdd: "Heart this memory",
+    storyDrawerHeartsLabel: "Hearts",
+    storyDrawerAiFilmHint: "Loved photos may be featured in the film.",
+    storyDrawerCommentsHeading: "Share a memory",
+    storyDrawerCommentsLoading: "Loading…",
+    storyDrawerNoCommentsYet: "No messages yet — you can share a memory below.",
+    storyDrawerCommentHeartAriaRemove: "Remove heart from this message",
+    storyDrawerCommentHeartAriaAdd: "Heart this message",
+    storyDrawerCommentHeartTitleRemove: "Remove heart",
+    storyDrawerCommentHeartTitleAdd: "Heart",
+    storyDrawerYourNamePlaceholder: "Your name (optional)",
+    storyDrawerComposerPlaceholder: "Write a few words…",
+    storyDrawerComposerLabel: "Share a memory",
+    storyDrawerSendAria: "Send",
     donationSupportCta: "support · view account details",
     donationStatus: "Donation status",
     donationSoFar: (count: number) =>
@@ -601,8 +660,20 @@ const EN: AppStrings = {
     adminDashboardWelcome:
       "Curate memories, protect the legacy, and share this sanctuary. Manage profile and media anytime in Settings.",
     adminEdit: "Edit",
-    adminSharePdfInvitation: "QR INVITATION",
+    adminSharePdfInvitation: "PDF Invitation",
     adminPdfGenerating: "Generating…",
+    adminInvitationSheetTitle: "Share & download",
+    adminInvitationSheetPreparing: "Preparing your invitation…",
+    adminInvitationShareKakao: "Share via KakaoTalk",
+    adminInvitationShareLine: "Share via LINE",
+    adminInvitationShareWhatsApp: "Share via WhatsApp",
+    adminInvitationNativeShare: "Share with…",
+    adminInvitationNativeShareHint: "Message, Mail, AirDrop, and more",
+    adminInvitationDownload: "Download PDF",
+    adminInvitationClose: "Close",
+    adminInvitationError: "Could not prepare the PDF.",
+    adminInvitationCopied: "Link copied.",
+    adminInvitationShareText: (name: string) => `Memorial invitation — ${name || "our loved one"}`,
     adminBackToFeed: "Back to feed",
     adminCurrentPlan: "Current plan",
     adminTierLabelFree: "Free",
@@ -710,7 +781,7 @@ const EN: AppStrings = {
   createWizard: {
     stepOf: "Step {current} of {total}",
     resumeToast: "We saved your place — you can pick up here.",
-    welcomeSacred: "Welcome to your sacred space.",
+    welcomeSacred: "Preparing a peaceful space for your memories.",
     paymentPending: "Payment didn't finish.",
     paymentPendingBold: "Continue the Story",
     dismiss: "Dismiss",
@@ -732,6 +803,9 @@ const EN: AppStrings = {
       "Optional — a wide image behind the memorial page (softly blurred). Skip to use a guest photo later — we’ll pick the most-loved memory, or the first shared.",
     memorialBackgroundChoose: "Choose background image",
     memorialBackgroundSkip: "Skip for now",
+    backgroundDragHint: "Drag to choose which part of the image shows in the backdrop.",
+    datePassingBeforeBirth:
+      "The date of passing cannot be earlier than the date of birth. Please check the dates.",
     step3Title: "Honoring Their Journey",
     step3Subtitle: "Exact dates are lovely; a year alone is fine if that's what you have.",
     born: "Born",
@@ -841,6 +915,7 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     redirecting: "이동 중…",
     deleting: "삭제 중…",
     memorialFallbackName: "기념관",
+    peacefulMemoryLoading: "당신을 위한 평온한 기억의 공간을 준비 중입니다.",
   },
   signIn: {
     loading: "로딩 중…",
@@ -937,18 +1012,18 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     paymentsSoonBody: "안전한 결제로 모든 추억을 열 수 있게 곧 제공됩니다.",
     adminForbidden: "관리 설정에 접근할 권한이 없습니다.",
     donationThankYou: "따뜻한 마음에 감사드립니다.",
-    memoryReceivedTitle: "추억을 받았습니다",
-    memoryReceivedBody: "승인되면 기념관에 올라갑니다. 공개 시 이메일로 알려드릴 수 있습니다.",
-    emailWhenLive: "공개되면 이메일로 알려주세요",
+    memoryReceivedTitle: "소중한 추억을 받았습니다",
+    memoryReceivedBody:
+      "보내주신 추억은 관리자의 확인 후 기념관에 게시됩니다. 공개된 후에는 다른 분들도 함께 보고 공감(좋아요)과 댓글을 남길 수 있습니다.",
     emailPlaceholder: "이메일",
     saving: "저장 중…",
     notifyMe: "알림 받기",
-    afterUploadDone: "완료되었습니다. 이 추억이 페이지에 보이면 이메일로 알려드립니다.",
     shareModalTitle: "이 기념관 공유하기",
-    shareModalBody: "가족과 지인을 초대해 방문하고 함께 남겨 주세요.",
+    shareModalBody: "가족과 지인을 초대해 함께 추억을 나눠보세요.",
     whatsApp: "WhatsApp",
     message: "메시지",
     copyLink: "링크 복사",
+    shareChannelEmail: "이메일",
     filmAria: "AI 추모 영상",
     videoUnsupported: "브라우저가 비디오 태그를 지원하지 않습니다.",
     filmLabel: "영상",
@@ -957,6 +1032,25 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     unlockMemories: "모든 추억 열기",
     premium: "프리미엄",
     locked: "잠김",
+    storyDrawerTitle: "추억",
+    storyDrawerNoImage: "이미지 없음",
+    storyDrawerAnonymous: "익명",
+    storyDrawerGuestName: "게스트",
+    storyDrawerHeartAriaRemove: "하트 취소",
+    storyDrawerHeartAriaAdd: "이 추억에 하트 보내기",
+    storyDrawerHeartsLabel: "하트",
+    storyDrawerAiFilmHint: "마음에 드는 사진은 영상에 담길 수 있습니다.",
+    storyDrawerCommentsHeading: "추억 나누기",
+    storyDrawerCommentsLoading: "불러오는 중…",
+    storyDrawerNoCommentsYet: "아직 메시지가 없습니다. 아래에서 추억을 남겨 주세요.",
+    storyDrawerCommentHeartAriaRemove: "이 메시지의 하트 취소",
+    storyDrawerCommentHeartAriaAdd: "이 메시지에 하트 보내기",
+    storyDrawerCommentHeartTitleRemove: "하트 취소",
+    storyDrawerCommentHeartTitleAdd: "하트",
+    storyDrawerYourNamePlaceholder: "이름 (선택)",
+    storyDrawerComposerPlaceholder: "짧은 메시지를 남겨 주세요…",
+    storyDrawerComposerLabel: "추억 나누기",
+    storyDrawerSendAria: "보내기",
     donationSupportCta: "후원 · 계좌 보기",
     donationStatus: "후원 현황",
     donationSoFar: (count: number) => `지금까지 ${count}분이 가족을 위해 마음을 나누었습니다.`,
@@ -1009,8 +1103,20 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     adminDashboardWelcome:
       "추억을 큐레이션하고, 유산을 보호하며, 이 성소를 공유하세요. 프로필과 미디어는 설정에서 언제든 관리할 수 있습니다.",
     adminEdit: "편집",
-    adminSharePdfInvitation: "QR 초대장",
+    adminSharePdfInvitation: "PDF 초대장",
     adminPdfGenerating: "생성 중…",
+    adminInvitationSheetTitle: "공유 및 저장",
+    adminInvitationSheetPreparing: "초대장을 준비하는 중…",
+    adminInvitationShareKakao: "카카오톡으로 공유",
+    adminInvitationShareLine: "LINE으로 공유",
+    adminInvitationShareWhatsApp: "WhatsApp으로 공유",
+    adminInvitationNativeShare: "다른 앱으로 공유…",
+    adminInvitationNativeShareHint: "메시지, 메일, AirDrop 등",
+    adminInvitationDownload: "PDF 저장",
+    adminInvitationClose: "닫기",
+    adminInvitationError: "PDF를 준비할 수 없습니다.",
+    adminInvitationCopied: "링크를 복사했습니다.",
+    adminInvitationShareText: (name: string) => `추모 초대장 — ${name || "고인"}`,
     adminBackToFeed: "피드로 돌아가기",
     adminCurrentPlan: "현재 플랜",
     adminTierLabelFree: "무료",
@@ -1086,7 +1192,7 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     namePlaceholder: "고인 성함",
     birthDateLabel: "생년월일",
     birthDatePlaceholder: "예: 1950-01-15",
-    dateOfPassingLabel: "기일 (별세일)",
+    dateOfPassingLabel: "별세일",
     dateOfPassingPlaceholder: "예: 2024-03-01",
     locationLabel: "장소",
     locationPlaceholder: "도시, 장소 등",
@@ -1115,7 +1221,7 @@ const KO_PATCH: DeepPartial<AppStrings> = {
   createWizard: {
     stepOf: "{current}단계 / 총 {total}단계",
     resumeToast: "이어서 진행할 수 있도록 저장했습니다.",
-    welcomeSacred: "당신의 성소에 오신 것을 환영합니다.",
+    welcomeSacred: "당신을 위한 평온한 기억의 공간을 준비 중입니다.",
     paymentPending: "결제가 완료되지 않았습니다.",
     paymentPendingBold: "이야기 이어가기",
     dismiss: "닫기",
@@ -1135,9 +1241,11 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     addSparkLabel: "추억의 조각 추가하기",
     memorialBackgroundTitle: "부드러운 배경",
     memorialBackgroundSubtitle:
-      "선택 사항 — 추모 페이지 뒤에 넓게 깔릴 이미지입니다(살짝 흐림). 건너뛰면 나중에 방문자 사진을 사용하며, 하트가 가장 많거나 가장 먼저 올린 사진을 고릅니다.",
+      "선택 사항 — 추모 페이지 뒤에 넓게 깔릴 이미지입니다. 건너뛰면 나중에 방문자 사진을 사용하며, 하트가 가장 많거나 가장 먼저 올린 사진을 고릅니다.",
     memorialBackgroundChoose: "배경 이미지 선택",
     memorialBackgroundSkip: "나중에 하기",
+    backgroundDragHint: "드래그하여 배경에 보일 영역을 맞추세요.",
+    datePassingBeforeBirth: "별세일은 생년월일보다 이전일 수 없습니다. 날짜를 확인해 주세요.",
     step3Title: "그들이 걸어온 길",
     step3Subtitle: "정확한 날짜도 좋고, 연도만 입력하셔도 무방합니다.",
     born: "생년월일",
@@ -1248,6 +1356,7 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     redirecting: "移動中…",
     deleting: "削除中…",
     memorialFallbackName: "メモリアル",
+    peacefulMemoryLoading: "大切な想い出が集まる場所、準備しています。",
   },
   signIn: {
     kicker: "サインイン",
@@ -1341,14 +1450,14 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     adminForbidden: "管理設定にアクセスする権限がありません。",
     donationThankYou: "温かいご支援ありがとうございます。",
     memoryReceivedTitle: "思い出を受け取りました",
-    memoryReceivedBody: "承認されるとページに表示されます。公開時にメールでお知らせできます。",
-    emailWhenLive: "公開されたらメールで知らせる",
+    memoryReceivedBody:
+      "お送りいただいた思い出は、管理者の承認後に記念館に掲載されます。公開後は、他の方々も「いいね」やコメントを残すことができます。",
     notifyMe: "通知する",
-    afterUploadDone: "設定しました — ページに表示されたらメールでお知らせします。",
-    shareModalTitle: "このメモリアルを共有",
-    shareModalBody: "写真と思い出を分かち合ってください",
+    shareModalTitle: "この記念館を共有する",
+    shareModalBody: "家族や知人を招待して、一緒に思い出を残しましょう。",
     message: "メッセージ",
     copyLink: "リンクをコピー",
+    shareChannelEmail: "メール",
     videoUnsupported: "お使いのブラウザは動画タグに対応していません。",
     filmLabel: "映像",
     redirectCheckout: "決済へ移動中…",
@@ -1356,6 +1465,25 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     unlockMemories: "すべての思い出を解放",
     premium: "プレミアム",
     locked: "ロック",
+    storyDrawerTitle: "思い出",
+    storyDrawerNoImage: "画像がありません",
+    storyDrawerAnonymous: "匿名",
+    storyDrawerGuestName: "ゲスト",
+    storyDrawerHeartAriaRemove: "ハートを取り消す",
+    storyDrawerHeartAriaAdd: "この思い出にハートを送る",
+    storyDrawerHeartsLabel: "ハート",
+    storyDrawerAiFilmHint: "心に響いた写真が映像に使われることがあります。",
+    storyDrawerCommentsHeading: "思い出を共有",
+    storyDrawerCommentsLoading: "読み込み中…",
+    storyDrawerNoCommentsYet: "まだメッセージがありません。下から一言添えられます。",
+    storyDrawerCommentHeartAriaRemove: "このメッセージのハートを取り消す",
+    storyDrawerCommentHeartAriaAdd: "このメッセージにハートを送る",
+    storyDrawerCommentHeartTitleRemove: "ハートを取り消す",
+    storyDrawerCommentHeartTitleAdd: "ハート",
+    storyDrawerYourNamePlaceholder: "お名前（任意）",
+    storyDrawerComposerPlaceholder: "短いメッセージをどうぞ…",
+    storyDrawerComposerLabel: "思い出を共有",
+    storyDrawerSendAria: "送信",
     donationSupportCta: "支援 · 口座を見る",
     donationStatus: "寄付の状況",
     donationSoFar: (count: number) => `これまでに ${count} 名がご家族を支援されています。`,
@@ -1404,8 +1532,20 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     adminDashboardWelcome:
       "想い出を整え、遺産を守り、この聖所を共有しましょう。プロフィールやメディアは設定からいつでも管理できます。",
     adminEdit: "編集",
-    adminSharePdfInvitation: "QR招待状",
+    adminSharePdfInvitation: "PDF招待状",
     adminPdfGenerating: "生成中…",
+    adminInvitationSheetTitle: "共有・ダウンロード",
+    adminInvitationSheetPreparing: "招待状を準備しています…",
+    adminInvitationShareKakao: "KakaoTalkで共有",
+    adminInvitationShareLine: "LINEで共有",
+    adminInvitationShareWhatsApp: "WhatsAppで共有",
+    adminInvitationNativeShare: "共有…",
+    adminInvitationNativeShareHint: "メッセージ、メール、AirDrop など",
+    adminInvitationDownload: "PDFを保存",
+    adminInvitationClose: "閉じる",
+    adminInvitationError: "PDFを準備できませんでした。",
+    adminInvitationCopied: "リンクをコピーしました。",
+    adminInvitationShareText: (name: string) => `追悼の招待状 — ${name || "ご故人"}`,
     adminBackToFeed: "フィードに戻る",
     adminCurrentPlan: "現在のプラン",
     adminTierLabelFree: "無料",
@@ -1504,7 +1644,7 @@ const JA_PATCH: DeepPartial<AppStrings> = {
   createWizard: {
     stepOf: "ステップ {current} / {total}",
     resumeToast: "続きから再開できるよう保存しました。",
-    welcomeSacred: "あなたの聖所へようこそ。",
+    welcomeSacred: "大切な想い出が集まる場所、準備しています。",
     paymentPending: "お支払いが完了していません。",
     paymentPendingBold: "物語を続ける",
     dismiss: "閉じる",
@@ -1527,6 +1667,8 @@ const JA_PATCH: DeepPartial<AppStrings> = {
       "任意 — 追悼ページの背後に広がる画像です（やわらかくぼかして表示）。スキップした場合は、のちにご参列の方の写真を使い、ハートが最も多いもの、または最初に共有されたものを選びます。",
     memorialBackgroundChoose: "背景画像を選ぶ",
     memorialBackgroundSkip: "今はスキップ",
+    backgroundDragHint: "ドラッグして背景に表示する範囲を調整します。",
+    datePassingBeforeBirth: "逝去日は生年月日より前の日付に設定できません。日付を確認してください。",
     step3Title: "歩んできた道のり",
     step3Subtitle: "正確な日付でも、年だけでも構いません。",
     born: "生年月日",
@@ -1635,6 +1777,7 @@ const FR_PATCH: DeepPartial<AppStrings> = {
     redirecting: "Redirection…",
     deleting: "Suppression…",
     memorialFallbackName: "Mémorial",
+    peacefulMemoryLoading: "Préparation d'un havre de paix pour vos souvenirs.",
   },
   signIn: {
     kicker: "Connexion",
@@ -1692,6 +1835,7 @@ const ES_PATCH: DeepPartial<AppStrings> = {
     redirecting: "Redirigiendo…",
     deleting: "Eliminando…",
     memorialFallbackName: "Memorial",
+    peacefulMemoryLoading: "Preparando un lugar de paz para sus recuerdos.",
   },
   signIn: {
     kicker: "Iniciar sesión",
@@ -1747,6 +1891,7 @@ const AR_PATCH: DeepPartial<AppStrings> = {
     redirecting: "جاري إعادة التوجيه…",
     deleting: "جاري الحذف…",
     memorialFallbackName: "صفحة تذكارية",
+    peacefulMemoryLoading: "نجهز مساحة هادئة لذكراكم.",
   },
   signIn: {
     kicker: "تسجيل الدخول",
@@ -1803,6 +1948,7 @@ const ZH_PATCH: DeepPartial<AppStrings> = {
     redirecting: "跳轉中…",
     deleting: "刪除中…",
     memorialFallbackName: "紀念頁",
+    peacefulMemoryLoading: "正在為您開啟永恆的記憶空間。",
   },
   signIn: {
     kicker: "登入",
@@ -1847,6 +1993,7 @@ export const APP_COPY: Record<LandingLocale, AppStrings> = {
   es: mergeApp(mergeApp(EN, ES_PATCH), ES_APP_REST),
   ar: mergeApp(mergeApp(EN, AR_PATCH), AR_APP_REST),
   zh: mergeApp(mergeApp(EN, ZH_PATCH), ZH_APP_REST),
+  "zh-hk": mergeApp(mergeApp(EN, ZH_PATCH), ZH_APP_REST),
 }
 
 export function getAppStrings(locale: LandingLocale): AppStrings {

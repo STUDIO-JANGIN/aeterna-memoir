@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, type ReactNode } from "react"
+import { Suspense, useState, useEffect, type ReactNode } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Heart, QrCode, Sparkles } from "lucide-react"
 import { Navbar } from "@/components/Layout/Navbar"
@@ -18,7 +19,7 @@ import {
   getLandingGridFootnote,
   landingPlanHref,
 } from "@/lib/landingPricing"
-import type { LandingLocale } from "@/lib/landingTranslations"
+import { isLandingLocale, type LandingLocale } from "@/lib/landingTranslations"
 import { getLandingHeroTitleTrackingClass, getLandingLocaleFontClasses } from "@/lib/landingLocaleFonts"
 import {
   IPhoneShell,
@@ -39,7 +40,7 @@ const LANDING_BACKGROUND_POSTER_URL =
   process.env.NEXT_PUBLIC_LANDING_BACKGROUND_POSTER_URL ?? "/hero-fallback.jpg"
 
 function landingHeroVideoUrlForLocale(locale: LandingLocale): string {
-  if (locale === "ko" || locale === "ja" || locale === "zh") {
+  if (locale === "ko" || locale === "ja" || locale === "zh" || locale === "zh-hk") {
     return ASIA_LANDING_BACKGROUND_VIDEO_URL
   }
   if (locale === "ar") {
@@ -107,8 +108,15 @@ function HowItWorksMockup({
 }
 
 function LandingPageInner() {
-  const { locale, strings: t } = useLandingLocale()
+  const searchParams = useSearchParams()
+  const { locale, setLocale, strings: t } = useLandingLocale()
   const { pricingCurrency } = useLandingPricingCurrency()
+
+  /** Same as /create: honor `?locale=` when opening the landing (e.g. memorial “upgrade” → pricing). */
+  useEffect(() => {
+    const l = searchParams.get("locale")?.trim()
+    if (l && isLandingLocale(l)) setLocale(l)
+  }, [searchParams, setLocale])
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [videoError, setVideoError] = useState(false)
   const [activeNavId, setActiveNavId] = useState<LandingNavId | null>(null)
@@ -121,7 +129,7 @@ function LandingPageInner() {
   const { serif: locSerif, sans: locSans } = getLandingLocaleFontClasses(locale)
   const heroTitleTracking = getLandingHeroTitleTrackingClass(locale)
   /** Pan KO/JA/ZH hero footage left via object-position so faces clear mockups — do not use translate-x on md+ (it exposes bg-landing as a black strip on the right). */
-  const isCjkHeroLocale = locale === "ko" || locale === "ja" || locale === "zh"
+  const isCjkHeroLocale = locale === "ko" || locale === "ja" || locale === "zh" || locale === "zh-hk"
   /** Gulf / Arabic hero: never use sub-1 scale or x-translate on md+ — they letterbox and show bg-landing as black edges. */
   const isArHeroLocale = locale === "ar"
   /** Mobile: avoid horizontal translate + sub-1 scale — they reveal bg-landing as a “black” edge; use scale + object-position only. */
@@ -568,7 +576,9 @@ function LandingPageInner() {
 export default function LandingPage() {
   return (
     <LandingPricingCurrencyProvider>
-      <LandingPageInner />
+      <Suspense fallback={<div className="min-h-dvh bg-landing" aria-hidden />}>
+        <LandingPageInner />
+      </Suspense>
     </LandingPricingCurrencyProvider>
   )
 }

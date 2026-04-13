@@ -1,7 +1,6 @@
 "use client"
 
-import { use, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
-import { createPortal } from "react-dom"
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
@@ -10,12 +9,11 @@ import imageCompression from "browser-image-compression"
 import { createStoryAction } from "@/app/actions/createStory"
 import { heartStoryAction, unheartStoryAction } from "@/app/actions/heartStory"
 import { subscribeNotificationAction } from "@/app/actions/subscribeNotification"
-import { subscribeVisitorAction } from "@/app/actions/subscribeVisitor"
 import { createCheckoutSessionAction } from "@/app/actions/createCheckoutSession"
 import { createDonationCheckoutSessionAction } from "@/app/actions/createDonationCheckoutSession"
 import { getDonationStatsAction } from "@/app/actions/getDonationStats"
 import { getDonationAmountByLocale } from "@/lib/checkout"
-import { formatLongDate } from "@/lib/formatDate"
+import { formatLongDateForLandingLocale } from "@/lib/formatDate"
 import { getAppBaseUrl } from "@/lib/appUrl"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import { isMemorialOwner } from "@/lib/memorialOwnership"
@@ -32,11 +30,12 @@ import {
   type MemorialTrialBannerCopy,
 } from "@/components/memorial/MemorialTrialCountdown"
 import { buildGlobalShareMessage } from "@/components/MemorialShareActions"
-import { openWhatsAppWithPrefilledText } from "@/lib/whatsappInvite"
+import { ShareMemorialModal } from "@/components/memorial/ShareMemorialModal"
 import { coerceIdString, parseUuidString } from "@/lib/uuid"
 import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
 import { OptimisticImage } from "@/components/Upload"
 import { eventRowIsPaidMemorial, PAID_MEMORIAL_DEADLINE_MS } from "@/lib/paidMemorialDeadlines"
+import { parseMemorialBackgroundPosition } from "@/lib/memorialBackgroundPosition"
 import { resolveMemorialBackgroundUrl } from "@/lib/resolveMemorialBackgroundUrl"
 
 function normalizeStoryIdForHearts(raw: string): string {
@@ -72,6 +71,7 @@ type FeedEvent = {
   invite_pdf_urls?: Record<string, string> | null
   invitation_bio: string | null
   memorial_background_image: string | null
+  memorial_background_position: string | null
 }
 
 // Deadline time: prefer expired_at, then collection_end_at, else created_at + 7 days.
@@ -173,15 +173,8 @@ export default function GuestFeedPage({ params }: PageProps) {
   /** Donation checkout uses KRW only for Korean; other app locales use USD path. */
   const donationLocale: "ko" | "en" = appLocale === "ko" ? "ko" : "en"
   const [showUploadSuccessToast, setShowUploadSuccessToast] = useState(false)
-  const [showAfterUploadEmailField, setShowAfterUploadEmailField] = useState(false)
   const uploadSuccessAutoCloseRef = useRef<number | null>(null)
   const [showAdminForbiddenToast, setShowAdminForbiddenToast] = useState(false)
-  const [afterUploadEmail, setAfterUploadEmail] = useState("")
-  const [afterUploadLoading, setAfterUploadLoading] = useState(false)
-  const [afterUploadError, setAfterUploadError] = useState<string | null>(null)
-  const [afterUploadDone, setAfterUploadDone] = useState(false)
-  /** Story id from the upload just completed — passed to visitor email signup so we can notify when approved. */
-  const [pendingVisitorStoryId, setPendingVisitorStoryId] = useState<string | null>(null)
   const [donationStats, setDonationStats] = useState<{ count: number; list: { displayLabel: string }[]; recentCount1h: number } | null>(null)
   const donationAmountLabel = useMemo(() => {
     const { currency, unit_amount } = getDonationAmountByLocale(donationLocale)
@@ -190,74 +183,22 @@ export default function GuestFeedPage({ params }: PageProps) {
       : `US$${(unit_amount / 100).toFixed(2)}`
   }, [donationLocale])
 
+  const memorialGuestUrl = useMemo(() => {
+    const base = typeof window !== "undefined" ? window.location.origin : getAppBaseUrl()
+    return `${base}/p/${encodeURIComponent(slug)}`
+  }, [slug])
+
   const dualRouteShareText = useMemo(() => {
     if (!event) return ""
-    const base = typeof window !== "undefined" ? window.location.origin : getAppBaseUrl()
     const name = event.name?.trim() || "our loved one"
-    const guestUrl = `${base}/p/${encodeURIComponent(slug)}`
-    return buildGlobalShareMessage(name, guestUrl)
-  }, [event, slug])
+    return buildGlobalShareMessage(name, memorialGuestUrl)
+  }, [event, memorialGuestUrl])
 
   const [shareModalOpen, setShareModalOpen] = useState(false)
 
   const closeShareModal = useCallback(() => {
     setShareModalOpen(false)
   }, [])
-
-  useEffect(() => {
-    if (!shareModalOpen) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [shareModalOpen])
-
-  useEffect(() => {
-    if (!shareModalOpen) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeShareModal()
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [shareModalOpen, closeShareModal])
-
-  const handleRankShareWhatsApp = useCallback(
-    (e: MouseEvent) => {
-      e.stopPropagation()
-      const text =
-        dualRouteShareText || (typeof window !== "undefined" ? window.location.href : "")
-      openWhatsAppWithPrefilledText(text)
-      closeShareModal()
-    },
-    [dualRouteShareText, closeShareModal],
-  )
-
-  const handleRankShareMessage = useCallback(
-    (e: MouseEvent) => {
-      e.stopPropagation()
-      const text = dualRouteShareText || (typeof window !== "undefined" ? window.location.href : "")
-      window.location.href = `sms:?&body=${encodeURIComponent(text)}`
-      closeShareModal()
-    },
-    [dualRouteShareText, closeShareModal],
-  )
-
-  const handleRankShareCopy = useCallback(
-    (e: MouseEvent) => {
-      e.stopPropagation()
-      const url = typeof window !== "undefined" ? window.location.href : ""
-      void navigator.clipboard.writeText(url).then(() => {
-        if (typeof window !== "undefined") window.alert(tx.memorial.linkCopied)
-        closeShareModal()
-      })
-    },
-    [closeShareModal, tx.memorial.linkCopied],
-  )
-
-  /** WhatsApp / Message / Copy in the share modal. */
-  const shareChannelBtnBase =
-    "inline-flex min-h-[40px] w-full min-w-0 items-center justify-center rounded-full px-1.5 text-[10px] font-medium tracking-wide touch-manipulation active:scale-[0.98] sm:min-h-[36px]"
 
   const [photoDeadlineRemainingMs, setPhotoDeadlineRemainingMs] = useState<number | null>(null)
 
@@ -440,6 +381,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         invite_pdf_urls?: Record<string, string> | null
         invitation_bio?: string | null
         memorial_background_image?: string | null
+        memorial_background_position?: string | null
       }, list: Story[]) => {
         setEvent({
           id: eventData.id,
@@ -468,6 +410,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           invite_pdf_urls: eventData.invite_pdf_urls ?? null,
           invitation_bio: eventData.invitation_bio ?? null,
           memorial_background_image: eventData.memorial_background_image ?? null,
+          memorial_background_position: eventData.memorial_background_position ?? null,
         })
         const storiesNormalized: Story[] = list.map((s) => ({
           ...s,
@@ -634,54 +577,25 @@ export default function GuestFeedPage({ params }: PageProps) {
       uploadSuccessAutoCloseRef.current = null
     }
     setShowUploadSuccessToast(false)
-    setShowAfterUploadEmailField(false)
-    setAfterUploadEmail("")
-    setAfterUploadError(null)
-    setAfterUploadDone(false)
-    setPendingVisitorStoryId(null)
   }, [])
 
-  /** Auto-close the success toast, but never while the guest is entering an email (mobile keyboard / slow typists). */
   useEffect(() => {
     if (!showUploadSuccessToast) return
     if (uploadSuccessAutoCloseRef.current) {
       clearTimeout(uploadSuccessAutoCloseRef.current)
       uploadSuccessAutoCloseRef.current = null
     }
-    if (showAfterUploadEmailField && !afterUploadDone) {
-      return
-    }
-    const delayMs = afterUploadDone ? 12_000 : 14_000
     uploadSuccessAutoCloseRef.current = window.setTimeout(() => {
       uploadSuccessAutoCloseRef.current = null
       dismissUploadSuccessToast()
-    }, delayMs)
+    }, 14_000)
     return () => {
       if (uploadSuccessAutoCloseRef.current) {
         clearTimeout(uploadSuccessAutoCloseRef.current)
         uploadSuccessAutoCloseRef.current = null
       }
     }
-  }, [showUploadSuccessToast, showAfterUploadEmailField, afterUploadDone, dismissUploadSuccessToast])
-
-  const handleAfterUploadSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!event) return
-    setAfterUploadLoading(true)
-    setAfterUploadError(null)
-    try {
-      const result = await subscribeVisitorAction(event.id, afterUploadEmail, "email", pendingVisitorStoryId)
-      setAfterUploadLoading(false)
-      if (result.ok) {
-        setAfterUploadDone(true)
-      } else {
-        setAfterUploadError(result.error)
-      }
-    } catch (err) {
-      setAfterUploadLoading(false)
-      setAfterUploadError(err instanceof Error ? err.message : tx.memorial.errors.subscribeFailed)
-    }
-  }
+  }, [showUploadSuccessToast, dismissUploadSuccessToast])
 
   const handleSubmitStory = async () => {
     if (!event) return
@@ -742,11 +656,6 @@ export default function GuestFeedPage({ params }: PageProps) {
         } catch {
           // ignore
         }
-        setAfterUploadEmail("")
-        setAfterUploadError(null)
-        setAfterUploadDone(false)
-        setShowAfterUploadEmailField(false)
-        setPendingVisitorStoryId(result.storyId ?? null)
         setShowUploadSuccessToast(true)
       }
       handleCloseForm()
@@ -881,6 +790,13 @@ export default function GuestFeedPage({ params }: PageProps) {
     return resolveMemorialBackgroundUrl(event, stories)
   }, [event, stories])
 
+  const memorialBackdropObjectPosition = useMemo(() => {
+    if (!event?.memorial_background_image?.trim()) return "50% 50%"
+    const p = parseMemorialBackgroundPosition(event.memorial_background_position)
+    if (!p) return "50% 50%"
+    return `${p.x}% ${p.y}%`
+  }, [event])
+
   if (loading) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-3 font-sans text-[var(--landing-text-muted)] text-sm label-uppercase tracking-widest uppercase px-6 text-center">
@@ -913,8 +829,8 @@ export default function GuestFeedPage({ params }: PageProps) {
     )
   }
 
-  const birth = formatLongDate(event.birth_date)
-  const death = formatLongDate(event.death_date)
+  const birth = formatLongDateForLandingLocale(event.birth_date, appLocale)
+  const death = formatLongDateForLandingLocale(event.death_date, appLocale)
   const profileSrc = resolveProfileImageUrl(event.profile_image)
   const isOwner =
     !!sessionUser &&
@@ -941,6 +857,7 @@ export default function GuestFeedPage({ params }: PageProps) {
             src={memorialBackdropUrl}
             alt=""
             className="h-full w-full scale-105 object-cover opacity-[0.35] blur-md"
+            style={{ objectPosition: memorialBackdropObjectPosition }}
           />
           <div className="absolute inset-0 bg-landing/85" />
         </div>
@@ -1071,137 +988,56 @@ export default function GuestFeedPage({ params }: PageProps) {
         )}
         {showUploadSuccessToast && (
           <motion.div
-            role="status"
-            aria-live="polite"
-            className={
-              showAfterUploadEmailField && !afterUploadDone
-                ? "fixed left-1/2 top-[max(1rem,env(safe-area-inset-top))] z-[60] w-[min(calc(100vw-2rem),22rem)] -translate-x-1/2 px-4 max-h-[min(90dvh,560px)] overflow-y-auto"
-                : "fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-[60] w-[min(calc(100vw-2rem),22rem)] -translate-x-1/2 px-4"
-            }
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="upload-success-title"
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#030303]/60 backdrop-blur-sm"
             initial={artisanPresence.initial}
             animate={artisanPresence.animate}
             exit={artisanPresence.exit}
             transition={ARTISAN_SPRING}
+            onClick={dismissUploadSuccessToast}
           >
-            <div className="rounded-2xl border border-white/[0.12] bg-[#030303]/80 px-5 py-4 text-center shadow-[0_16px_48px_rgba(0,0,0,0.5)] backdrop-blur-md">
-              <p className="font-[var(--font-serif)] text-[16px] font-medium tracking-tight text-white">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={ARTISAN_SPRING}
+              className="w-full max-w-sm rounded-2xl border border-[var(--aeterna-gold-pale)] bg-[var(--aeterna-charcoal)] px-6 py-6 text-center shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p
+                id="upload-success-title"
+                className="font-[var(--font-serif)] text-lg font-medium tracking-tight text-[var(--aeterna-headline)]"
+              >
                 {tx.memorial.memoryReceivedTitle}
               </p>
-              <p className="mt-2 text-[13px] leading-relaxed text-white/75">
+              <p className="mt-3 text-[13px] leading-relaxed text-[var(--aeterna-body)]">
                 {tx.memorial.memoryReceivedBody}
               </p>
-              {!afterUploadDone && !showAfterUploadEmailField ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAfterUploadEmailField(true)}
-                  className="mt-3 block w-full text-center text-[12px] text-[var(--aeterna-gold)]/95 underline-offset-2 hover:underline"
-                >
-                  {tx.memorial.emailWhenLive}
-                </button>
-              ) : null}
-              {showAfterUploadEmailField && !afterUploadDone ? (
-                <form
-                  onSubmit={handleAfterUploadSubscribe}
-                  className="mt-3 flex flex-col gap-2 text-left"
-                >
-                  <input
-                    type="email"
-                    value={afterUploadEmail}
-                    onChange={(e) => setAfterUploadEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    enterKeyHint="done"
-                    placeholder={tx.memorial.emailPlaceholder}
-                    className="min-h-[44px] w-full rounded-xl border border-white/[0.14] bg-white/[0.06] px-3 text-[13px] text-white placeholder:text-white/38 focus:outline-none focus:ring-1 focus:ring-[var(--aeterna-gold)]/40"
-                  />
-                  <button
-                    type="submit"
-                    disabled={afterUploadLoading}
-                    className="min-h-[38px] w-full rounded-lg border border-[var(--aeterna-gold)]/40 bg-[var(--aeterna-gold)]/12 px-3 text-[12px] font-medium text-[var(--aeterna-gold)] transition-colors hover:bg-[var(--aeterna-gold)]/18 disabled:opacity-50"
-                  >
-                    {afterUploadLoading ? tx.memorial.saving : tx.common.save}
-                  </button>
-                  <LegalFormCaption className="mt-2" />
-                </form>
-              ) : null}
-              {afterUploadError ? (
-                <p className="mt-2 text-[11px] text-[var(--aeterna-gold-muted)]" role="alert">
-                  {afterUploadError}
-                </p>
-              ) : null}
-              {afterUploadDone ? (
-                <p className="mt-3 text-[13px] leading-relaxed text-[var(--aeterna-gold)]">
-                  {tx.memorial.afterUploadDone}
-                </p>
-              ) : null}
-              <button
+              <motion.button
                 type="button"
                 onClick={dismissUploadSuccessToast}
-                className="mt-4 w-full min-h-[40px] rounded-xl border border-white/[0.12] bg-white/[0.06] text-[12px] font-medium tracking-wide text-white/90 transition-colors hover:bg-white/[0.1]"
+                className="mt-6 w-full min-h-[44px] rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] text-sm font-medium transition-colors hover:bg-[var(--aeterna-gold-light)]"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={ARTISAN_SPRING}
               >
                 {tx.memorial.close}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {shareModalOpen &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="memorial-share-title"
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-[3px]"
-            onClick={closeShareModal}
-          >
-            <div
-              className="w-full max-w-sm rounded-2xl border border-white/[0.12] bg-[#0a0a0a]/96 px-5 py-5 text-center shadow-[0_24px_64px_rgba(0,0,0,0.55)]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <p id="memorial-share-title" className="text-[13px] font-medium leading-relaxed text-white">
-                {tx.memorial.shareModalTitle}
-              </p>
-              <p className="mt-2 text-[11px] leading-relaxed text-white/70">
-                {tx.memorial.shareModalBody}
-              </p>
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={handleRankShareWhatsApp}
-                  className={`${shareChannelBtnBase} border border-[var(--border-gold)] bg-[#030303]/30 text-[var(--aeterna-gold)] hover:bg-[var(--aeterna-gold)]/10`}
-                >
-                  {tx.memorial.whatsApp}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRankShareMessage}
-                  className={`${shareChannelBtnBase} border border-[var(--border-gold)] bg-[#030303]/35 text-[var(--landing-text-hero)] hover:border-[var(--aeterna-gold-light)] hover:bg-[var(--aeterna-gold)]/10`}
-                >
-                  {tx.memorial.message}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRankShareCopy}
-                  className={`${shareChannelBtnBase} border border-white/20 bg-white/[0.06] text-[var(--landing-text-body)] hover:bg-white/10`}
-                >
-                  {tx.memorial.copyLink}
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={closeShareModal}
-                className="mt-4 w-full min-h-[40px] rounded-full border border-white/15 text-[11px] font-medium tracking-wide text-white/80 hover:bg-white/[0.06] transition-colors"
-              >
-                {tx.memorial.close}
-              </button>
-            </div>
-          </div>,
-          document.body,
-        )}
+      <ShareMemorialModal
+        open={shareModalOpen}
+        onClose={closeShareModal}
+        locale={appLocale}
+        shareText={dualRouteShareText}
+        pageUrl={memorialGuestUrl}
+        memorial={tx.memorial}
+      />
 
       {/* Free tier: preservation banner — full width at top (safe area for notched phones) */}
       {event &&
@@ -1213,7 +1049,7 @@ export default function GuestFeedPage({ params }: PageProps) {
             <MemorialTrialCountdown
               variant="banner"
               remainingMs={photoDeadlineRemainingMs}
-              upgradeHref={`/p/${encodeURIComponent(slug)}#memorial-preserve-upgrade`}
+              upgradeHref={`/?locale=${encodeURIComponent(appLocale)}#pricing`}
               copy={memorialTrialBannerCopy}
             />
           </div>
@@ -1282,56 +1118,8 @@ export default function GuestFeedPage({ params }: PageProps) {
               ) : null}
             </div>
           ) : null}
-
-          {photoDeadlineRemainingMs !== null &&
-          photoDeadlineRemainingMs > 0 &&
-          !isPhotoDeadlinePassed &&
-          !isPaidMemorial ? (
-            <p className="mt-5 text-[10px] uppercase tracking-[0.2em] text-[var(--aeterna-gold-muted)]">
-              {tx.memorial.photoWindow}{" "}
-              <span className="font-mono tabular-nums text-[var(--aeterna-gold)]">
-                {tx.memorial.trialCountdownFromMs(photoDeadlineRemainingMs)}
-              </span>
-            </p>
-          ) : null}
         </div>
       </header>
-
-      {/* Trial banner “upgrade” link scrolls here — same checkout as unlock / preserve */}
-      {event &&
-        !isPaidMemorial &&
-        photoDeadlineRemainingMs !== null &&
-        photoDeadlineRemainingMs > 0 &&
-        !isPhotoDeadlinePassed && (
-          <section
-            id="memorial-preserve-upgrade"
-            tabIndex={-1}
-            className="scroll-mt-[max(5.5rem,env(safe-area-inset-top))] mx-auto w-full max-w-lg px-4 pb-6 pt-1"
-          >
-            <div className="rounded-2xl border border-[var(--border-gold-subtle)]/45 bg-[#030303]/30 px-4 py-5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <p className="text-sm leading-relaxed text-[var(--landing-text-body)] mb-4">
-                {tx.memorial.memorialUpgradeAnchorIntro}
-              </p>
-              <motion.button
-                type="button"
-                onClick={() => {
-                  if (!PAYMENT_ENABLED) {
-                    setShowPaymentComingSoon(true)
-                    return
-                  }
-                  void handleUnlockMemories()
-                }}
-                disabled={checkoutLoading}
-                className="inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl bg-[var(--aeterna-gold)] px-6 py-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60"
-                whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
-                whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
-                transition={ARTISAN_SPRING}
-              >
-                {checkoutLoading ? tx.common.redirecting : tx.memorial.upgradePremiumCta}
-              </motion.button>
-            </div>
-          </section>
-        )}
 
       {/* Full screen cinematic section (when film_url exists) */}
       {filmReleased && (
@@ -1631,6 +1419,42 @@ export default function GuestFeedPage({ params }: PageProps) {
             </ul>
           </>
         )}
+
+        {/* Free tier: checkout copy + Premium upgrade — below approved photos (all locales) */}
+        {event &&
+          !isPaidMemorial &&
+          photoDeadlineRemainingMs !== null &&
+          photoDeadlineRemainingMs > 0 &&
+          !isPhotoDeadlinePassed && (
+            <section
+              id="memorial-preserve-upgrade"
+              tabIndex={-1}
+              className="mx-auto w-full max-w-lg px-4 pt-8 pb-2 scroll-mt-[max(5.5rem,env(safe-area-inset-top))]"
+            >
+              <div className="rounded-2xl border border-[var(--border-gold-subtle)]/45 bg-[#030303]/30 px-4 py-5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                <p className="text-sm leading-relaxed text-[var(--landing-text-body)] mb-4">
+                  {tx.memorial.memorialUpgradeAnchorIntro}
+                </p>
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    if (!PAYMENT_ENABLED) {
+                      setShowPaymentComingSoon(true)
+                      return
+                    }
+                    void handleUnlockMemories()
+                  }}
+                  disabled={checkoutLoading}
+                  className="inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl bg-[var(--aeterna-gold)] px-6 py-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60"
+                  whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
+                  transition={ARTISAN_SPRING}
+                >
+                  {checkoutLoading ? tx.common.redirecting : tx.memorial.upgradePremiumCta}
+                </motion.button>
+              </div>
+            </section>
+          )}
 
         {/* Condolence gift section: card/Apple Pay/Google Pay with 1% platform support note */}
         {event.bank_info && (

@@ -25,7 +25,7 @@ import { requestFullFilmAction } from "@/app/actions/requestFullFilm"
 import { updateEventBySlugAction } from "@/app/actions/updateEventBySlug"
 import { generatePreviewVideo } from "@/lib/generatePreviewVideo"
 import { getMemorialFundTotalBySlugAction } from "@/app/actions/getMemorialFundTotal"
-import { generateInvitePdfAction } from "@/app/actions/generateInvitePdf"
+import { InvitationActionSheet } from "@/components/memorial/InvitationActionSheet"
 import { supabase } from "@/lib/supabase/browser"
 import {
   normalizeTributeSlots,
@@ -109,7 +109,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   const [showFilmArrivedLayer, setShowFilmArrivedLayer] = useState(false)
   const hasShownFilmArrived = useRef(false)
   const [adminToast, setAdminToast] = useState<string | null>(null)
-  const [invitePdfLoading, setInvitePdfLoading] = useState(false)
+  const [inviteSheetOpen, setInviteSheetOpen] = useState(false)
 
   const pending = stories.filter((s) => !s.is_approved)
   const approvedRaw = stories.filter((s) => s.is_approved)
@@ -208,24 +208,6 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
       window.location.href = result.url
     } else {
       setPremiumCheckoutError(result.error || "Unable to start checkout.")
-    }
-  }
-
-  const handleSharePdfInvitation = async () => {
-    if (!slug || invitePdfLoading) return
-    setInvitePdfLoading(true)
-    try {
-      const result = await generateInvitePdfAction(slug)
-      if (result.ok) {
-        const openUrl = result.urls?.[locale] ?? result.url
-        if (typeof window !== "undefined") window.open(openUrl, "_blank", "noopener,noreferrer")
-      } else {
-        setAdminToast(result.error)
-      }
-    } catch (err) {
-      setAdminToast(err instanceof Error ? err.message : "Failed to generate invitation PDF.")
-    } finally {
-      setInvitePdfLoading(false)
     }
   }
 
@@ -355,11 +337,10 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => void handleSharePdfInvitation()}
-                  disabled={invitePdfLoading}
-                  className="btn-landing-outline-gold w-full justify-center min-h-[48px] disabled:opacity-50 disabled:cursor-wait"
+                  onClick={() => setInviteSheetOpen(true)}
+                  className="btn-landing-outline-gold w-full justify-center min-h-[48px]"
                 >
-                  {invitePdfLoading ? tx.memorial.adminPdfGenerating : tx.memorial.adminSharePdfInvitation}
+                  {tx.memorial.adminSharePdfInvitation}
                 </button>
                 <Link
                   href={`/p/${slug}`}
@@ -600,7 +581,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
         )}
 
         <div className="card-landing-airy p-6 md:p-8 mb-6 md:mb-8">
-          <h2 className="font-[var(--font-serif)] text-xl md:text-2xl font-normal tracking-[-0.02em] text-[var(--landing-text-title)] mb-6">
+          <h2 className="text-landing-label mb-6">
             {tx.memorial.adminMemoriesSectionTitle}
           </h2>
           <div
@@ -708,6 +689,15 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
             {adminToast}
           </div>
         ) : null}
+
+        <InvitationActionSheet
+          open={inviteSheetOpen}
+          onOpenChange={setInviteSheetOpen}
+          slug={slug}
+          deceasedName={event.name}
+          locale={locale}
+          memorial={tx.memorial}
+        />
       </div>
     </div>
   )

@@ -11,6 +11,8 @@
     "list-memorials": "node scripts/list-memorials.mjs"
   },
   "dependencies": {
+    "@fontsource/amiri": "^5.2.6",
+    "@fontsource/eb-garamond": "^5.2.7",
     "@fontsource/noto-sans": "^5.2.10",
     "@fontsource/noto-sans-arabic": "^5.2.10",
     "@fontsource/noto-sans-jp": "^5.2.9",
@@ -21,6 +23,7 @@
     "@stripe/stripe-js": "^8.8.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.97.0",
+    "arabic-persian-reshaper": "^1.0.1",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^11.18.2",

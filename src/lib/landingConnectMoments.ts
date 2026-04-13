@@ -181,6 +181,7 @@ export function getLandingConnectMoments(locale: LandingLocale): LandingConnectM
     case "ko":
     case "ja":
     case "zh":
+    case "zh-hk":
       return EAST_ASIA_CONNECT_MOMENTS
     case "ar":
       return ARABIC_CONNECT_MOMENTS

@@ -123,7 +123,7 @@ const JA: LandingMockupStrings = {
 export function getLandingMockupStrings(locale: LandingLocale): LandingMockupStrings {
   if (locale === "ja") return JA
   if (locale === "ar") return AR
-  if (locale === "zh") return ZH
+  if (locale === "zh" || locale === "zh-hk") return ZH
   if (locale === "es") return ES
   if (locale === "fr") return FR
   return EN_FALLBACK

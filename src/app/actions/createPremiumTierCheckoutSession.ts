@@ -28,6 +28,8 @@ export type PremiumTierCheckoutSessionOptions = {
   planQueryParam?: "basic" | "premium" | "free" | "forever" | "film"
   pricingCurrency?: PricingCurrencyId
   checkoutLocale?: string
+  /** Browser `navigator.language` fallback when locale is empty (pass from client). */
+  checkoutNavigatorLanguage?: string
 }
 
 function resolvePremiumCancelUrl(
@@ -85,6 +87,7 @@ export async function createPremiumTierCheckoutSessionAction(
       mode: "payment",
       ...checkoutSessionPaymentAndLocale({
         locale: options?.checkoutLocale,
+        navigatorLanguage: options?.checkoutNavigatorLanguage,
         currency: curr,
       }),
       line_items: lineItems,

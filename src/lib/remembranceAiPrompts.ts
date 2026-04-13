@@ -8,6 +8,7 @@ export function getLocaleInstruction(locale: LandingLocale): string {
     case "ja":
       return `Write entirely in Japanese. Option A (Poetic): brief haiku-like aftertaste; motifs like 櫻, 絆, 心; restrained lyricism. Option B (Formal): keigo (尊敬語・謙譲語) as appropriate; noble, timeless diction. Option C (Warm): gentle, intimate です・ます; focus on small daily moments and warmth.`
     case "zh":
+    case "zh-hk":
       return `Write entirely in Traditional Chinese (繁體中文, Taiwan/Hong Kong literary norms). Option A (Poetic): classical color, idioms (成語) used sparingly and naturally — depth, not ornament. Option B (Formal): 典雅、敬語感、品格. Option C (Warm): 口語化但仍文雅, 日常溫度.`
     case "ar":
       return `Write entirely in formal Arabic (فصحى), right-to-left script in the strings. Option A (Poetic): balanced cadence, metaphor, timeless imagery. Option B (Formal): grave, dignified phrasing; may include رحمة الله where culturally fitting for the deceased; emphasize تراث (legacy). Option C (Warm): intimate address, kindness, shared moments — still classical, not dialect-heavy.`

@@ -10,26 +10,43 @@ import type { LandingLocale } from "@/lib/landingTranslations"
  * Local dev can read from `node_modules`; Vercel often omits these files from the
  * serverless bundle when only accessed by string path — fetch fallback fixes ENOENT.
  */
-const FONTSOURCE_NOTO_SANS_VERSION = "5.2.10"
-const FONTSOURCE_NOTO_SANS_ARABIC_VERSION = "5.2.10"
+const FONTSOURCE_EB_GARAMOND_VERSION = "5.2.7"
+const FONTSOURCE_AMIRI_VERSION = "5.2.6"
 
-const REMOTE_WOFF_NOTO_SANS_LATIN_400 = `https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@${FONTSOURCE_NOTO_SANS_VERSION}/files/noto-sans-latin-400-normal.woff`
-const REMOTE_WOFF_NOTO_SANS_LATIN_700 = `https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@${FONTSOURCE_NOTO_SANS_VERSION}/files/noto-sans-latin-700-normal.woff`
-const REMOTE_WOFF_NOTO_SANS_ARABIC_400 = `https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-arabic@${FONTSOURCE_NOTO_SANS_ARABIC_VERSION}/files/noto-sans-arabic-arabic-400-normal.woff`
-const REMOTE_WOFF_NOTO_SANS_ARABIC_700 = `https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-arabic@${FONTSOURCE_NOTO_SANS_ARABIC_VERSION}/files/noto-sans-arabic-arabic-700-normal.woff`
+const REMOTE_WOFF_EB_GARAMOND_LATIN_400 = `https://cdn.jsdelivr.net/npm/@fontsource/eb-garamond@${FONTSOURCE_EB_GARAMOND_VERSION}/files/eb-garamond-latin-400-normal.woff`
+const REMOTE_WOFF_EB_GARAMOND_LATIN_700 = `https://cdn.jsdelivr.net/npm/@fontsource/eb-garamond@${FONTSOURCE_EB_GARAMOND_VERSION}/files/eb-garamond-latin-700-normal.woff`
+const REMOTE_WOFF_EB_GARAMOND_LATIN_400_ITALIC = `https://cdn.jsdelivr.net/npm/@fontsource/eb-garamond@${FONTSOURCE_EB_GARAMOND_VERSION}/files/eb-garamond-latin-400-italic.woff`
 
-const CJK_OTF: Record<"kr" | "jp" | "tc", { url: string; file: string }> = {
+const REMOTE_WOFF_AMIRI_ARABIC_400 = `https://cdn.jsdelivr.net/npm/@fontsource/amiri@${FONTSOURCE_AMIRI_VERSION}/files/amiri-arabic-400-normal.woff`
+const REMOTE_WOFF_AMIRI_ARABIC_700 = `https://cdn.jsdelivr.net/npm/@fontsource/amiri@${FONTSOURCE_AMIRI_VERSION}/files/amiri-arabic-700-normal.woff`
+
+const CJK_SERIF_OTF: Record<"kr" | "jp" | "tc", { url: string; file: string }> = {
   kr: {
-    url: "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/OTF/Korean/NotoSansCJKkr-Regular.otf",
-    file: "NotoSansCJKkr-Regular.otf",
+    url: "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Serif/OTF/Korean/NotoSerifCJKkr-Regular.otf",
+    file: "NotoSerifCJKkr-Regular.otf",
   },
   jp: {
-    url: "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf",
-    file: "NotoSansCJKjp-Regular.otf",
+    url: "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Serif/OTF/Japanese/NotoSerifCJKjp-Regular.otf",
+    file: "NotoSerifCJKjp-Regular.otf",
   },
   tc: {
-    url: "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/OTF/TraditionalChinese/NotoSansCJKtc-Regular.otf",
-    file: "NotoSansCJKtc-Regular.otf",
+    url: "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Serif/OTF/TraditionalChinese/NotoSerifCJKtc-Regular.otf",
+    file: "NotoSerifCJKtc-Regular.otf",
+  },
+}
+
+const CJK_SERIF_BOLD_OTF: Record<"kr" | "jp" | "tc", { url: string; file: string }> = {
+  kr: {
+    url: "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Serif/OTF/Korean/NotoSerifCJKkr-Bold.otf",
+    file: "NotoSerifCJKkr-Bold.otf",
+  },
+  jp: {
+    url: "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Serif/OTF/Japanese/NotoSerifCJKjp-Bold.otf",
+    file: "NotoSerifCJKjp-Bold.otf",
+  },
+  tc: {
+    url: "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Serif/OTF/TraditionalChinese/NotoSerifCJKtc-Bold.otf",
+    file: "NotoSerifCJKtc-Bold.otf",
   },
 }
 
@@ -90,28 +107,26 @@ async function loadWoffFontBytes(opts: {
 }
 
 /**
- * Embed a Unicode-capable font for the invitation locale. Call {@link PDFDocument.registerFontkit} before embed.
+ * Embed a Unicode-capable serif font for the invitation locale. Call {@link PDFDocument.registerFontkit} before embed.
  */
-export async function embedInvitePdfFont(
-  pdfDoc: PDFDocument,
-  locale: LandingLocale
-): Promise<PDFFont> {
+export async function embedInvitePdfFont(pdfDoc: PDFDocument, locale: LandingLocale): Promise<PDFFont> {
   let bytes: Uint8Array
 
   switch (locale) {
     case "ko":
-      bytes = await ensureCachedOtf(CJK_OTF.kr.url, CJK_OTF.kr.file)
+      bytes = await ensureCachedOtf(CJK_SERIF_OTF.kr.url, CJK_SERIF_OTF.kr.file)
       break
     case "ja":
-      bytes = await ensureCachedOtf(CJK_OTF.jp.url, CJK_OTF.jp.file)
+      bytes = await ensureCachedOtf(CJK_SERIF_OTF.jp.url, CJK_SERIF_OTF.jp.file)
       break
     case "zh":
-      bytes = await ensureCachedOtf(CJK_OTF.tc.url, CJK_OTF.tc.file)
+    case "zh-hk":
+      bytes = await ensureCachedOtf(CJK_SERIF_OTF.tc.url, CJK_SERIF_OTF.tc.file)
       break
     case "ar":
       bytes = await loadWoffFontBytes({
-        nodeModulesRelativePath: "@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabic-400-normal.woff",
-        remoteUrl: REMOTE_WOFF_NOTO_SANS_ARABIC_400,
+        nodeModulesRelativePath: "@fontsource/amiri/files/amiri-arabic-400-normal.woff",
+        remoteUrl: REMOTE_WOFF_AMIRI_ARABIC_400,
       })
       break
     case "en":
@@ -119,8 +134,8 @@ export async function embedInvitePdfFont(
     case "es":
     default:
       bytes = await loadWoffFontBytes({
-        nodeModulesRelativePath: "@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff",
-        remoteUrl: REMOTE_WOFF_NOTO_SANS_LATIN_400,
+        nodeModulesRelativePath: "@fontsource/eb-garamond/files/eb-garamond-latin-400-normal.woff",
+        remoteUrl: REMOTE_WOFF_EB_GARAMOND_LATIN_400,
       })
       break
   }
@@ -128,9 +143,7 @@ export async function embedInvitePdfFont(
   return pdfDoc.embedFont(bytes, { subset: true })
 }
 
-/**
- * Bold weight for labels and emphasis (Latin / Arabic). CJK locales return `null` — use faux-bold (color/size) in the caller.
- */
+/** Bold weight for names and labels (Latin, Arabic, CJK serif). */
 export async function embedInvitePdfFontBold(
   pdfDoc: PDFDocument,
   locale: LandingLocale
@@ -139,13 +152,19 @@ export async function embedInvitePdfFontBold(
 
   switch (locale) {
     case "ko":
+      bytes = await ensureCachedOtf(CJK_SERIF_BOLD_OTF.kr.url, CJK_SERIF_BOLD_OTF.kr.file)
+      return pdfDoc.embedFont(bytes, { subset: true })
     case "ja":
+      bytes = await ensureCachedOtf(CJK_SERIF_BOLD_OTF.jp.url, CJK_SERIF_BOLD_OTF.jp.file)
+      return pdfDoc.embedFont(bytes, { subset: true })
     case "zh":
-      return null
+    case "zh-hk":
+      bytes = await ensureCachedOtf(CJK_SERIF_BOLD_OTF.tc.url, CJK_SERIF_BOLD_OTF.tc.file)
+      return pdfDoc.embedFont(bytes, { subset: true })
     case "ar":
       bytes = await loadWoffFontBytes({
-        nodeModulesRelativePath: "@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabic-700-normal.woff",
-        remoteUrl: REMOTE_WOFF_NOTO_SANS_ARABIC_700,
+        nodeModulesRelativePath: "@fontsource/amiri/files/amiri-arabic-700-normal.woff",
+        remoteUrl: REMOTE_WOFF_AMIRI_ARABIC_700,
       })
       break
     case "en":
@@ -153,12 +172,32 @@ export async function embedInvitePdfFontBold(
     case "es":
     default:
       bytes = await loadWoffFontBytes({
-        nodeModulesRelativePath: "@fontsource/noto-sans/files/noto-sans-latin-700-normal.woff",
-        remoteUrl: REMOTE_WOFF_NOTO_SANS_LATIN_700,
+        nodeModulesRelativePath: "@fontsource/eb-garamond/files/eb-garamond-latin-700-normal.woff",
+        remoteUrl: REMOTE_WOFF_EB_GARAMOND_LATIN_700,
       })
       break
   }
 
+  return pdfDoc.embedFont(bytes, { subset: true })
+}
+
+/** Italic body for remembrance (Latin locales only). */
+export async function embedInvitePdfFontItalic(
+  pdfDoc: PDFDocument,
+  locale: LandingLocale
+): Promise<PDFFont | null> {
+  switch (locale) {
+    case "en":
+    case "fr":
+    case "es":
+      break
+    default:
+      return null
+  }
+  const bytes = await loadWoffFontBytes({
+    nodeModulesRelativePath: "@fontsource/eb-garamond/files/eb-garamond-latin-400-italic.woff",
+    remoteUrl: REMOTE_WOFF_EB_GARAMOND_LATIN_400_ITALIC,
+  })
   return pdfDoc.embedFont(bytes, { subset: true })
 }
 

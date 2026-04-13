@@ -2,7 +2,7 @@
  * Landing page copy — one memorial product voice, localized.
  */
 
-export type LandingLocale = "en" | "ko" | "ja" | "fr" | "es" | "ar" | "zh"
+export type LandingLocale = "en" | "ko" | "ja" | "fr" | "es" | "ar" | "zh" | "zh-hk"
 
 export const LANDING_LOCALE_STORAGE_KEY = "aeterna.landing.locale"
 
@@ -19,7 +19,8 @@ export const LANDING_LOCALES: {
   { code: "fr", label: "French", native: "Français" },
   { code: "es", label: "Spanish", native: "Español" },
   { code: "ar", label: "Arabic", native: "العربية" },
-  { code: "zh", label: "Chinese (Traditional)", native: "繁體中文" },
+  { code: "zh", label: "Chinese (Traditional, Taiwan)", native: "繁體中文（台灣）" },
+  { code: "zh-hk", label: "Chinese (Traditional, Hong Kong)", native: "繁體中文（香港）" },
 ]
 
 export type LandingStrings = {
@@ -785,6 +786,7 @@ export const LANDING_COPY: Record<LandingLocale, LandingStrings> = {
   es: ES,
   ar: AR,
   zh: ZH,
+  "zh-hk": ZH,
 }
 
 export function isLandingLocale(x: string | null | undefined): x is LandingLocale {
@@ -795,7 +797,8 @@ export function isLandingLocale(x: string | null | undefined): x is LandingLocal
     x === "fr" ||
     x === "es" ||
     x === "ar" ||
-    x === "zh"
+    x === "zh" ||
+    x === "zh-hk"
   )
 }
 

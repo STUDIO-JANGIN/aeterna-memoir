@@ -15,6 +15,7 @@ export function getLandingHeroImages(locale: LandingLocale): {
     case "ko":
     case "ja":
     case "zh":
+    case "zh-hk":
       return {
         portrait: "/landing-hero-east-asian-grandmother.png",
         secondary: "/landing-hero-pets.png",

@@ -82,6 +82,7 @@ export function getLandingGridFootnote(locale: LandingLocale, currency: PricingC
     case "ar":
       return GRID_FOOTNOTE_AR[currency]
     case "zh":
+    case "zh-hk":
       return GRID_FOOTNOTE_ZH[currency]
     case "es":
       return GRID_FOOTNOTE_ES[currency]
@@ -149,6 +150,7 @@ export function getPricingCurrencyId(locale: LandingLocale): PricingCurrencyId {
     case "es":
     case "fr":
     case "zh":
+    case "zh-hk":
     default:
       return "usd"
   }

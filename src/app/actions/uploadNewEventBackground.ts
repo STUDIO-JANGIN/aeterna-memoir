@@ -70,9 +70,23 @@ export async function uploadNewEventBackgroundAction(
   const { data: urlData } = supabase.storage.from("photos").getPublicUrl(path)
   const memorial_background_image = urlData.publicUrl
 
+  const posRaw = formData.get("memorial_background_position")
+  let memorial_background_position: string | null = null
+  if (typeof posRaw === "string") {
+    const t = posRaw.trim()
+    const m = /^(\d{1,3}),(\d{1,3})$/.exec(t)
+    if (m) {
+      const x = Math.min(100, Math.max(0, Number(m[1])))
+      const y = Math.min(100, Math.max(0, Number(m[2])))
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        memorial_background_position = `${Math.round(x)},${Math.round(y)}`
+      }
+    }
+  }
+
   const { error: updateErr } = await supabase
     .from("events")
-    .update({ memorial_background_image })
+    .update({ memorial_background_image, memorial_background_position })
     .eq("id", eventRow.id)
 
   if (updateErr) {

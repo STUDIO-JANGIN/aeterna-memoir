@@ -16,6 +16,7 @@ export function getLandingLocaleFontClasses(locale: LandingLocale): {
     case "ja":
       return { serif: "landing-ja-serif-md", sans: "landing-ja-sans-md" }
     case "zh":
+    case "zh-hk":
       return { serif: "landing-zh-serif-md", sans: "landing-zh-sans-md" }
     case "ar":
       return { serif: "landing-ar-sans-md", sans: "landing-ar-sans-md" }
@@ -31,6 +32,7 @@ export function getLandingHeroTitleTrackingClass(locale: LandingLocale): string 
     case "ja":
       return "md:tracking-[-0.02em]"
     case "zh":
+    case "zh-hk":
       return "md:tracking-tight"
     case "ar":
       return "md:tracking-normal"

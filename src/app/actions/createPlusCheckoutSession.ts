@@ -31,6 +31,8 @@ export type PlusCheckoutSessionOptions = {
   pricingCurrency?: PricingCurrencyId
   /** App landing locale — drives Checkout language and KR wallet ordering. */
   checkoutLocale?: string
+  /** Browser `navigator.language` fallback when locale is empty (pass from client). */
+  checkoutNavigatorLanguage?: string
 }
 
 function resolvePlusCancelUrl(
@@ -88,6 +90,7 @@ export async function createPlusCheckoutSessionAction(
       mode: "payment",
       ...checkoutSessionPaymentAndLocale({
         locale: options?.checkoutLocale,
+        navigatorLanguage: options?.checkoutNavigatorLanguage,
         currency: curr,
       }),
       line_items: lineItems,

@@ -713,6 +713,21 @@
   }
 }
 
+/** Route / Suspense loading line — slow, calm opacity pulse */
+@keyframes peacefulLoadingBreathe {
+  0%,
+  100% {
+    opacity: 0.86;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.peaceful-loading-text-breathe {
+  animation: peacefulLoadingBreathe 4.2s ease-in-out infinite;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -722,6 +737,21 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/** Route / Suspense loading copy — slow, calm opacity pulse */
+@keyframes peacefulLoadingBreathe {
+  0%,
+  100% {
+    opacity: 0.88;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.peaceful-loading-breathe {
+  animation: peacefulLoadingBreathe 4s ease-in-out infinite;
 }
 
 /* AI Film: gold loading bar */

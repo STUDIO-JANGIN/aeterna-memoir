@@ -41,6 +41,19 @@ import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricin
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
 import { raceWithTimeout } from "@/lib/raceWithTimeout"
 import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
+import {
+  buildCeremonyDisplay,
+  ceremonyDateFieldOrder,
+  ceremonyDateFormatHint,
+  ceremonyDateTimeFieldLabel,
+  ceremonyPeriodOptionLabels,
+  ceremonyTimeFormatHint,
+  ceremonyTimeUses12HourClock,
+  formatCeremonyMonthOption,
+  formatCeremonyNumericPick,
+  from24hTo12,
+  to24Hour,
+} from "@/lib/ceremonyLocaleFormat"
 
 /** URL `plan=` → internal tier. Legacy: `basic` = Plus; marketing: `forever` = Plus, `film` = Premium. */
 function parsePlanQueryParam(param: string | null): StoragePlan | null {
@@ -122,6 +135,7 @@ const YEARS = Array.from({ length: CURRENT_YEAR - 1899 }, (_, i) => CURRENT_YEAR
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1)
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1)
 const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
+const HOURS_24 = Array.from({ length: 24 }, (_, i) => i)
 const MINUTES = ["00", "15", "30", "45"]
 /** Memorial service year — current year and near future only (no past years in the list). */
 const CEREMONY_YEAR_COUNT = 8
@@ -193,14 +207,22 @@ function buildDateString(y: string, m: string, d: string): string {
   return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`
 }
 
-function from24hTo12(h: number): { hour12: number; period: "AM" | "PM" } {
-  if (h === 0) return { hour12: 12, period: "AM" }
-  if (h < 12) return { hour12: h, period: "AM" }
-  if (h === 12) return { hour12: 12, period: "PM" }
-  return { hour12: h - 12, period: "PM" }
+/** True when both dates are fully specified and passing (death) is strictly before birth. */
+function isPassingDateBeforeBirth(
+  birthY: string,
+  birthM: string,
+  birthD: string,
+  deathY: string,
+  deathM: string,
+  deathD: string,
+): boolean {
+  if (!birthY || !birthM || !birthD || !deathY || !deathM || !deathD) return false
+  const b = buildDateString(birthY, birthM, birthD)
+  const p = buildDateString(deathY, deathM, deathD)
+  if (b.length < 10 || p.length < 10) return false
+  return p < b
 }
 
-/** Human-readable line for `events.ceremony_time` (date + 12h time). */
 /** True when service time fields are all explicitly set (no placeholder defaults). */
 function isCeremonyTimeComplete(
   hour12: number | "",
@@ -208,29 +230,6 @@ function isCeremonyTimeComplete(
   period: "AM" | "PM" | "",
 ): boolean {
   return typeof hour12 === "number" && minute !== "" && (period === "AM" || period === "PM")
-}
-
-function buildCeremonyDisplay(
-  dateIso: string,
-  hour12: number,
-  minute: string,
-  period: "AM" | "PM"
-): string {
-  const timeStr = `${hour12}:${minute} ${period}`
-  const d = dateIso.trim()
-  if (!d) return timeStr
-  const parts = d.split("-").map(Number)
-  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return timeStr
-  const [y, mo, day] = parts
-  const dt = new Date(y, mo - 1, day)
-  if (Number.isNaN(dt.getTime())) return timeStr
-  const long = dt.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  })
-  return `${long} · ${timeStr}`
 }
 
 /** Footer-only noise: never block Step 5 (account) or Step 6 (plan) with stale sign-in copy. */
@@ -290,6 +289,15 @@ function CreateEventForm() {
     originX: number
     originY: number
   } | null>(null)
+  /** Step 3: full-width background preview framing (same % model as profile). */
+  const [backgroundPan, setBackgroundPan] = useState({ x: 50, y: 50 })
+  const backgroundDragRef = useRef<{
+    pointerId: number
+    startX: number
+    startY: number
+    originX: number
+    originY: number
+  } | null>(null)
 
   const [birthY, setBirthY] = useState("")
   const [birthM, setBirthM] = useState("")
@@ -299,6 +307,10 @@ function CreateEventForm() {
   const [deathD, setDeathD] = useState("")
 
   const birthComplete = Boolean(birthY && birthM && birthD)
+  const datePassingBeforeBirthInvalid = useMemo(
+    () => isPassingDateBeforeBirth(birthY, birthM, birthD, deathY, deathM, deathD),
+    [birthY, birthM, birthD, deathY, deathM, deathD],
+  )
   const atRestRevealRef = useRef(false)
 
   const [location, setLocation] = useState("")
@@ -731,8 +743,10 @@ function CreateEventForm() {
   useEffect(() => {
     if (!backgroundFile) {
       setBackgroundPreview(null)
+      setBackgroundPan({ x: 50, y: 50 })
       return
     }
+    setBackgroundPan({ x: 50, y: 50 })
     const url = URL.createObjectURL(backgroundFile)
     setBackgroundPreview(url)
     return () => URL.revokeObjectURL(url)
@@ -924,6 +938,7 @@ function CreateEventForm() {
       // ignore
     }
     setProfilePan({ x: 50, y: 50 })
+    setBackgroundPan({ x: 50, y: 50 })
     setBirthY("")
     setBirthM("")
     setBirthD("")
@@ -987,6 +1002,43 @@ function CreateEventForm() {
     }
   }
 
+  const handleBackgroundPanPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!backgroundPreview) return
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    backgroundDragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      originX: backgroundPan.x,
+      originY: backgroundPan.y,
+    }
+  }
+
+  const handleBackgroundPanPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = backgroundDragRef.current
+    if (!d || e.pointerId !== d.pointerId) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const w = Math.max(rect.width, 1)
+    const h = Math.max(rect.height, 1)
+    const dx = e.clientX - d.startX
+    const dy = e.clientY - d.startY
+    const nextX = Math.min(100, Math.max(0, d.originX - (dx / w) * 100))
+    const nextY = Math.min(100, Math.max(0, d.originY - (dy / h) * 100))
+    setBackgroundPan({ x: nextX, y: nextY })
+  }
+
+  const handleBackgroundPanPointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = backgroundDragRef.current
+    if (!d || e.pointerId !== d.pointerId) return
+    backgroundDragRef.current = null
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {
+      /* ignore */
+    }
+  }
+
   const pickType = (t: MemorialType) => {
     setMemorialType(t)
     setStepSlideDir(1)
@@ -1028,7 +1080,9 @@ function CreateEventForm() {
         return name.trim().length > 0
       case 2:
       case 3:
+        return true
       case 4:
+        return !datePassingBeforeBirthInvalid
       case 5:
       case 7:
       case 8:
@@ -1134,6 +1188,10 @@ function CreateEventForm() {
   const handleCreate = async () => {
     if (memorialType === null || wizardStep !== WIZARD_STEPS_FULL) return
     if (!canContinue()) return
+    if (datePassingBeforeBirthInvalid) {
+      setCreateError(a.createWizard.datePassingBeforeBirth)
+      return
+    }
 
     playMemorialGentleChime()
 
@@ -1145,7 +1203,13 @@ function CreateEventForm() {
       planQueryParam: storagePlanToUrlPlan(storagePlan),
       pricingCurrency,
       checkoutLocale: locale,
+      checkoutNavigatorLanguage:
+        typeof navigator !== "undefined" ? navigator.language : undefined,
     }
+
+    /** Avoid infinite “Creating…” if Stripe or the server action never settles (tab sleep, network stall). */
+    const CHECKOUT_RACE_MS = 90_000
+    const CREATE_EVENT_RACE_MS = 120_000
 
     const memorialName = name.trim()
     let fromLs = readPendingCheckout()
@@ -1167,22 +1231,37 @@ function CreateEventForm() {
     if (pendingResume) {
       setLoading(true)
       setCreateError(null)
-      const resumeOpts = {
-        ...checkoutOpts,
-        pricingCurrency: pendingResume.pricingCurrency ?? pricingCurrency,
+      try {
+        const resumeOpts = {
+          ...checkoutOpts,
+          pricingCurrency: pendingResume.pricingCurrency ?? pricingCurrency,
+        }
+        const checkoutPromise =
+          storagePlan === "plus"
+            ? createPlusCheckoutSessionAction(pendingResume.eventId, pendingResume.slug, resumeOpts)
+            : createPremiumTierCheckoutSessionAction(pendingResume.eventId, pendingResume.slug, resumeOpts)
+        const checkout = await raceWithTimeout(checkoutPromise, CHECKOUT_RACE_MS, null)
+        if (checkout === null) {
+          setCreateError(
+            "Payment setup timed out. Please check your connection and tap Continue again.",
+          )
+          return
+        }
+        if (checkout.ok && checkout.url) {
+          window.location.assign(checkout.url)
+          return
+        }
+        setCreateError(
+          (!checkout.ok && checkout.error) || "Checkout couldn’t start. Please try again.",
+        )
+      } catch (e) {
+        console.error("[handleCreate] resume checkout", e)
+        setCreateError(
+          e instanceof Error ? e.message : "Checkout couldn’t start. Please try again.",
+        )
+      } finally {
+        setLoading(false)
       }
-      const checkout =
-        storagePlan === "plus"
-          ? await createPlusCheckoutSessionAction(pendingResume.eventId, pendingResume.slug, resumeOpts)
-          : await createPremiumTierCheckoutSessionAction(pendingResume.eventId, pendingResume.slug, resumeOpts)
-      setLoading(false)
-      if (checkout.ok && checkout.url) {
-        window.location.href = checkout.url
-        return
-      }
-      setCreateError(
-        (!checkout.ok && checkout.error) || "Checkout couldn’t start. Please try again."
-      )
       return
     }
 
@@ -1190,144 +1269,185 @@ function CreateEventForm() {
     setCreateError(null)
     setProfileUploadError(null)
     setBackgroundUploadError(null)
-    const birth_date = buildDateString(birthY, birthM, birthD) || "—"
-    const death_date = buildDateString(deathY, deathM, deathD) || "—"
-    const ceremony_time =
-      ceremonyDate.trim().length > 0 && isCeremonyTimeComplete(ceremonyHour12, ceremonyM, ceremonyPeriod)
-        ? buildCeremonyDisplay(
-            ceremonyDate,
-            ceremonyHour12 as number,
-            ceremonyM,
-            ceremonyPeriod as "AM" | "PM",
-          )
-        : undefined
-    if (!user?.email?.trim()) {
-      setLoading(false)
-      await refreshAuthUser()
-      return
-    }
 
-    const result = await createEventAction({
-      name: name.trim(),
-      birth_date,
-      death_date,
-      location: location.trim(),
-      ceremony_time:
-        ceremony_time && ceremony_time.trim().length > 0 ? ceremony_time.trim() : undefined,
-      has_fund: fundLink.trim().length > 0,
-      fund_link: fundLink.trim() || undefined,
-      creator_email: user.email.trim(),
-      memorial_type: memorialType,
-      collection_period: "7",
-      custom_expired_at: undefined,
-      invitation_bio: invitationBio.trim() ? invitationBio.trim().slice(0, 2000) : undefined,
-      invitation_contact_phone: serviceContactPhone.trim()
-        ? serviceContactPhone.trim().slice(0, 40)
-        : undefined,
-    })
+    try {
+      const birth_date = buildDateString(birthY, birthM, birthD) || "—"
+      const death_date = buildDateString(deathY, deathM, deathD) || "—"
+      const ceremony_time =
+        ceremonyDate.trim().length > 0 && isCeremonyTimeComplete(ceremonyHour12, ceremonyM, ceremonyPeriod)
+          ? buildCeremonyDisplay(
+              ceremonyDate,
+              ceremonyHour12 as number,
+              ceremonyM,
+              ceremonyPeriod as "AM" | "PM",
+              locale,
+            )
+          : undefined
+      if (!user?.email?.trim()) {
+        await refreshAuthUser()
+        return
+      }
 
-    if (result.ok) {
-      if (profileFile && result.slug) {
-        const fd = new FormData()
-        fd.set("profile_image", profileFile)
-        const uploadRes = await uploadNewEventProfileAction(result.slug, fd)
-        if (uploadRes.ok) {
-          try {
-            sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
-          } catch {
-            // ignore
+      const result = await raceWithTimeout(
+        createEventAction({
+          name: name.trim(),
+          birth_date,
+          death_date,
+          location: location.trim(),
+          ceremony_time:
+            ceremony_time && ceremony_time.trim().length > 0 ? ceremony_time.trim() : undefined,
+          has_fund: fundLink.trim().length > 0,
+          fund_link: fundLink.trim() || undefined,
+          creator_email: user.email.trim(),
+          memorial_type: memorialType,
+          collection_period: "7",
+          custom_expired_at: undefined,
+          invitation_bio: invitationBio.trim() ? invitationBio.trim().slice(0, 2000) : undefined,
+          invitation_contact_phone: serviceContactPhone.trim()
+            ? serviceContactPhone.trim().slice(0, 40)
+            : undefined,
+        }),
+        CREATE_EVENT_RACE_MS,
+        null,
+      )
+      if (result === null) {
+        setCreateError(
+          "This is taking too long. Please check your connection and try again.",
+        )
+        return
+      }
+
+      if (result.ok) {
+        if (profileFile && result.slug) {
+          const fd = new FormData()
+          fd.set("profile_image", profileFile)
+          const uploadRes = await uploadNewEventProfileAction(result.slug, fd)
+          if (uploadRes.ok) {
+            try {
+              sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
+            } catch {
+              // ignore
+            }
+          } else {
+            setProfileUploadError(
+              uploadRes.error ||
+                "Profile photo could not be uploaded. You can add it from the memorial admin.",
+            )
           }
-        } else {
-          setProfileUploadError(
-            uploadRes.error ||
-              "Profile photo could not be uploaded. You can add it from the memorial admin.",
-          )
         }
-      }
 
-      if (backgroundFile && result.slug) {
-        const bgFd = new FormData()
-        bgFd.set("memorial_background_image", backgroundFile)
-        const bgRes = await uploadNewEventBackgroundAction(result.slug, bgFd)
-        if (!bgRes.ok) {
-          setBackgroundUploadError(
-            bgRes.error || "Background image could not be uploaded. You can set it later from admin.",
+        if (backgroundFile && result.slug) {
+          const bgFd = new FormData()
+          bgFd.set("memorial_background_image", backgroundFile)
+          bgFd.set(
+            "memorial_background_position",
+            `${Math.round(backgroundPan.x)},${Math.round(backgroundPan.y)}`,
           )
+          const bgRes = await uploadNewEventBackgroundAction(result.slug, bgFd)
+          if (!bgRes.ok) {
+            setBackgroundUploadError(
+              bgRes.error || "Background image could not be uploaded. You can set it later from admin.",
+            )
+          }
         }
-      }
 
-      if (storagePlan === "plus") {
-        writePendingCheckout({
-          eventId: result.eventId,
-          slug: result.slug,
-          storagePlan: "plus",
-          name: name.trim(),
-          pricingCurrency,
-        })
-        setPendingCheckout({
-          v: 1,
-          eventId: result.eventId,
-          slug: result.slug,
-          storagePlan: "plus",
-          name: name.trim(),
-          pricingCurrency,
-        })
-        const checkout = await createPlusCheckoutSessionAction(result.eventId, result.slug, checkoutOpts)
-        setLoading(false)
-        if (checkout.ok && checkout.url) {
-          window.location.href = checkout.url
+        if (storagePlan === "plus") {
+          writePendingCheckout({
+            eventId: result.eventId,
+            slug: result.slug,
+            storagePlan: "plus",
+            name: name.trim(),
+            pricingCurrency,
+          })
+          setPendingCheckout({
+            v: 1,
+            eventId: result.eventId,
+            slug: result.slug,
+            storagePlan: "plus",
+            name: name.trim(),
+            pricingCurrency,
+          })
+          const checkout = await raceWithTimeout(
+            createPlusCheckoutSessionAction(result.eventId, result.slug, checkoutOpts),
+            CHECKOUT_RACE_MS,
+            null,
+          )
+          if (checkout === null) {
+            setCreateError(
+              "Payment setup timed out. Please check your connection and tap Continue again.",
+            )
+            return
+          }
+          if (checkout.ok && checkout.url) {
+            window.location.assign(checkout.url)
+            return
+          }
+          setCreateError(
+            (!checkout.ok && checkout.error) ||
+              "Checkout couldn’t start. Please try again — your memorial draft is saved when you complete payment from the link we email you, or contact support.",
+          )
           return
         }
-        setCreateError(
-          (!checkout.ok && checkout.error) ||
-            "Checkout couldn’t start. Please try again — your memorial draft is saved when you complete payment from the link we email you, or contact support."
-        )
-        return
-      }
 
-      if (storagePlan === "premium") {
-        writePendingCheckout({
-          eventId: result.eventId,
-          slug: result.slug,
-          storagePlan: "premium",
-          name: name.trim(),
-          pricingCurrency,
-        })
-        setPendingCheckout({
-          v: 1,
-          eventId: result.eventId,
-          slug: result.slug,
-          storagePlan: "premium",
-          name: name.trim(),
-          pricingCurrency,
-        })
-        const checkout = await createPremiumTierCheckoutSessionAction(result.eventId, result.slug, checkoutOpts)
-        setLoading(false)
-        if (checkout.ok && checkout.url) {
-          window.location.href = checkout.url
+        if (storagePlan === "premium") {
+          writePendingCheckout({
+            eventId: result.eventId,
+            slug: result.slug,
+            storagePlan: "premium",
+            name: name.trim(),
+            pricingCurrency,
+          })
+          setPendingCheckout({
+            v: 1,
+            eventId: result.eventId,
+            slug: result.slug,
+            storagePlan: "premium",
+            name: name.trim(),
+            pricingCurrency,
+          })
+          const checkout = await raceWithTimeout(
+            createPremiumTierCheckoutSessionAction(result.eventId, result.slug, checkoutOpts),
+            CHECKOUT_RACE_MS,
+            null,
+          )
+          if (checkout === null) {
+            setCreateError(
+              "Payment setup timed out. Please check your connection and tap Continue again.",
+            )
+            return
+          }
+          if (checkout.ok && checkout.url) {
+            window.location.assign(checkout.url)
+            return
+          }
+          setCreateError(
+            (!checkout.ok && checkout.error) ||
+              "Checkout couldn’t start. Please try again — complete payment to open your memorial.",
+          )
           return
         }
-        setCreateError(
-          (!checkout.ok && checkout.error) ||
-            "Checkout couldn’t start. Please try again — complete payment to open your memorial."
-        )
-        return
-      }
 
-      clearCreateDraft()
-      clearPendingCheckout()
-      setPendingCheckout(null)
-      setCreatedSlug(result.slug)
-      setShowSuccessPopup(true)
-    } else {
-      const err = result.error ?? "We couldn't create the memorial space. Please try again."
-      if (signedIn && isMemorialSignInFooterNoise(err)) {
-        setCreateError(null)
+        clearCreateDraft()
+        clearPendingCheckout()
+        setPendingCheckout(null)
+        setCreatedSlug(result.slug)
+        setShowSuccessPopup(true)
       } else {
-        setCreateError(err)
+        const err = result.error ?? "We couldn't create the memorial space. Please try again."
+        if (signedIn && isMemorialSignInFooterNoise(err)) {
+          setCreateError(null)
+        } else {
+          setCreateError(err)
+        }
       }
+    } catch (e) {
+      console.error("[handleCreate]", e)
+      setCreateError(
+        e instanceof Error ? e.message : "Something went wrong. Please try again.",
+      )
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const onPrimaryPress = () => {
@@ -1357,8 +1477,35 @@ function CreateEventForm() {
           ceremonyHour12 as number,
           ceremonyM,
           ceremonyPeriod as "AM" | "PM",
+          locale,
         )
       : ""
+
+  const ceremonyDateOrder = useMemo(() => ceremonyDateFieldOrder(locale), [locale])
+  const ceremonyUses12hClock = useMemo(() => ceremonyTimeUses12HourClock(locale), [locale])
+  const ceremonyAmPmLabels = useMemo(() => ceremonyPeriodOptionLabels(locale), [locale])
+  const ceremonyDateColumnLabels = useMemo(() => {
+    const m = ceremonyDateTimeFieldLabel(locale, "month")
+    const d = ceremonyDateTimeFieldLabel(locale, "day")
+    const y = ceremonyDateTimeFieldLabel(locale, "year")
+    if (ceremonyDateOrder === "mdy") return [m, d, y]
+    if (ceremonyDateOrder === "dmy") return [d, m, y]
+    return [y, m, d]
+  }, [locale, ceremonyDateOrder])
+
+  const scrollAfterCeremonyMonth = () => {
+    if (ceremonyDateOrder === "dmy") scrollNeighborIntoView(ceremonyServiceYRef.current)
+    else scrollNeighborIntoView(ceremonyServiceDRef.current)
+  }
+  const scrollAfterCeremonyDay = () => {
+    if (ceremonyDateOrder === "dmy") scrollNeighborIntoView(ceremonyServiceMRef.current)
+    else if (ceremonyDateOrder === "mdy") scrollNeighborIntoView(ceremonyServiceYRef.current)
+    else scrollNeighborIntoView(ceremonyHour12Ref.current)
+  }
+  const scrollAfterCeremonyYear = () => {
+    if (ceremonyDateOrder === "ymd") scrollNeighborIntoView(ceremonyServiceMRef.current)
+    else scrollNeighborIntoView(ceremonyHour12Ref.current)
+  }
 
   const showFooterCreateError =
     Boolean(createError) &&
@@ -1405,9 +1552,9 @@ function CreateEventForm() {
               animate={stepPresence.animate}
               exit={stepPresence.exit}
               transition={ARTISAN_SPRING}
-              className="max-w-md text-center font-[var(--font-serif)] text-2xl font-normal tracking-[0.04em] text-[#f4f1ea] md:text-[1.65rem]"
+              className="peaceful-loading-breathe max-w-md text-center font-[var(--font-serif)] text-2xl font-light tracking-[0.04em] text-[#f4f1ea] md:text-[1.65rem]"
             >
-              {a.createWizard.welcomeSacred}
+              {a.common.peacefulMemoryLoading}
             </motion.p>
           </motion.div>
         )}
@@ -1557,22 +1704,24 @@ function CreateEventForm() {
                     <div className="mx-auto mt-10 flex flex-col items-center gap-4">
                       <div
                         role="img"
-                        aria-label="Profile preview — drag to reposition"
-                        className="touch-none cursor-grab active:cursor-grabbing select-none"
+                        aria-label="Profile preview — drag to reposition left, right, up, or down"
+                        className="relative h-48 w-48 touch-none cursor-grab select-none overflow-hidden rounded-full bg-white/[0.04] ring-1 ring-[var(--aeterna-gold)]/28 active:cursor-grabbing md:h-56 md:w-56"
                         onPointerDown={handleProfilePanPointerDown}
                         onPointerMove={handleProfilePanPointerMove}
                         onPointerUp={handleProfilePanPointerEnd}
                         onPointerCancel={handleProfilePanPointerEnd}
                       >
-                        <div className="h-48 w-48 overflow-hidden rounded-full bg-white/[0.04] ring-1 ring-[var(--aeterna-gold)]/28 md:h-56 md:w-56">
-                          <img
-                            src={profilePreview}
-                            alt=""
-                            className="pointer-events-none h-full w-full object-cover"
-                            style={{ objectPosition: `${profilePan.x}% ${profilePan.y}%` }}
-                            draggable={false}
-                          />
-                        </div>
+                        {/*
+                          Slightly oversized image vs. the circle so object-position can pan on both axes.
+                          (Tall portraits often only had meaningful vertical range with 100% sizing.)
+                        */}
+                        <img
+                          src={profilePreview}
+                          alt=""
+                          className="pointer-events-none absolute left-1/2 top-1/2 h-[135%] w-[135%] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover"
+                          style={{ objectPosition: `${profilePan.x}% ${profilePan.y}%` }}
+                          draggable={false}
+                        />
                       </div>
                       <button
                         type="button"
@@ -1639,12 +1788,33 @@ function CreateEventForm() {
                     <p className="text-base text-white/50 leading-relaxed">{a.createWizard.memorialBackgroundSubtitle}</p>
                   </div>
                   {backgroundPreview ? (
-                    <div className="mx-auto w-full max-w-xl overflow-hidden rounded-2xl ring-1 ring-[var(--aeterna-gold)]/25">
-                      <img
-                        src={backgroundPreview}
-                        alt=""
-                        className="h-40 w-full object-cover md:h-48"
-                      />
+                    <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-2">
+                      <div
+                        role="img"
+                        aria-label="Background preview — drag to reposition left, right, up, or down"
+                        className="w-full touch-none cursor-grab select-none active:cursor-grabbing"
+                        onPointerDown={handleBackgroundPanPointerDown}
+                        onPointerMove={handleBackgroundPanPointerMove}
+                        onPointerUp={handleBackgroundPanPointerEnd}
+                        onPointerCancel={handleBackgroundPanPointerEnd}
+                      >
+                        {/*
+                          Oversized image vs. the clip so object-position can pan on both axes
+                          (wide preview + tall photos often had only meaningful vertical range at 100% sizing).
+                        */}
+                        <div className="relative h-40 w-full overflow-hidden rounded-2xl ring-1 ring-[var(--aeterna-gold)]/25 md:h-48">
+                          <img
+                            src={backgroundPreview}
+                            alt=""
+                            className="pointer-events-none absolute left-1/2 top-1/2 h-[135%] w-[135%] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover"
+                            style={{
+                              objectPosition: `${backgroundPan.x}% ${backgroundPan.y}%`,
+                            }}
+                            draggable={false}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-white/35">{a.createWizard.backgroundDragHint}</p>
                     </div>
                   ) : (
                     <button
@@ -1760,6 +1930,13 @@ function CreateEventForm() {
                         className="w-full space-y-6"
                       >
                         <h3 className={stepSectionTitleClass}>{a.createWizard.atRest}</h3>
+                        <div
+                          className={
+                            datePassingBeforeBirthInvalid
+                              ? "rounded-xl p-3 -mx-1 ring-1 ring-red-400/45 ring-offset-2 ring-offset-[#030303]"
+                              : ""
+                          }
+                        >
                         <div className="grid grid-cols-3 gap-4 md:gap-5">
                           <select
                             ref={deathMRef}
@@ -1769,6 +1946,7 @@ function CreateEventForm() {
                               if (e.target.value) scrollNeighborIntoView(deathDRef.current)
                             }}
                             className={ghostDateSelectClass}
+                            aria-invalid={datePassingBeforeBirthInvalid}
                             aria-label="Month of passing"
                           >
                             <option value="">MM</option>
@@ -1786,6 +1964,7 @@ function CreateEventForm() {
                               if (e.target.value) scrollNeighborIntoView(deathYRef.current)
                             }}
                             className={ghostDateSelectClass}
+                            aria-invalid={datePassingBeforeBirthInvalid}
                             aria-label="Day of passing"
                           >
                             <option value="">DD</option>
@@ -1800,6 +1979,7 @@ function CreateEventForm() {
                             value={deathY}
                             onChange={(e) => setDeathY(e.target.value)}
                             className={ghostDateSelectClass}
+                            aria-invalid={datePassingBeforeBirthInvalid}
                             aria-label="Year of passing"
                           >
                             <option value="">YYYY</option>
@@ -1809,6 +1989,12 @@ function CreateEventForm() {
                               </option>
                             ))}
                           </select>
+                        </div>
+                        {datePassingBeforeBirthInvalid ? (
+                          <p className="mt-3 text-left text-sm leading-relaxed text-red-300/95" role="alert">
+                            {a.createWizard.datePassingBeforeBirth}
+                          </p>
+                        ) : null}
                         </div>
                       </motion.div>
                     )}
@@ -1916,107 +2102,302 @@ function CreateEventForm() {
                     </div>
 
                     <div className="space-y-6">
-                      <h3 className={stepSectionTitleClass}>{a.createWizard.date}</h3>
+                      <div>
+                        <h3 className={stepSectionTitleClass}>{a.createWizard.date}</h3>
+                        <p className="mt-1.5 text-center text-xs text-white/40 tabular-nums md:text-left">
+                          {ceremonyDateFormatHint(locale)}
+                        </p>
+                      </div>
                       <div className="grid grid-cols-3 gap-4 md:gap-5">
-                        <select
-                          ref={ceremonyServiceMRef}
-                          value={ceremonyPickM}
-                          onChange={(e) => {
-                            const m = e.target.value
-                            setCeremonyPickM(m)
-                            scrollNeighborIntoView(ceremonyServiceDRef.current)
-                          }}
-                          className={ghostDateSelectClass}
-                          aria-label="Service month"
-                        >
-                          {MONTHS.map((mo) => (
-                            <option key={mo} value={mo}>
-                              {mo}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          ref={ceremonyServiceDRef}
-                          value={ceremonyPickD}
-                          onChange={(e) => {
-                            const d = e.target.value
-                            setCeremonyPickD(d)
-                            scrollNeighborIntoView(ceremonyServiceYRef.current)
-                          }}
-                          className={ghostDateSelectClass}
-                          aria-label="Service day"
-                        >
-                          {ceremonyDayOptions.map((day) => (
-                            <option key={day} value={day}>
-                              {day}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          ref={ceremonyServiceYRef}
-                          value={ceremonyPickY}
-                          onChange={(e) => {
-                            const y = e.target.value
-                            setCeremonyPickY(y)
-                            scrollNeighborIntoView(ceremonyHour12Ref.current)
-                          }}
-                          className={ghostDateSelectClass}
-                          aria-label="Service year"
-                        >
-                          {CEREMONY_YEARS.map((y) => (
-                            <option key={y} value={y}>
-                              {y}
-                            </option>
-                          ))}
-                        </select>
+                        {ceremonyDateColumnLabels.map((label, i) => (
+                          <span
+                            key={`ceremony-date-col-${i}`}
+                            className={`${fieldLabelClass} text-center text-[10px] md:text-[11px]`}
+                          >
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 md:gap-5">
+                        {ceremonyDateOrder === "mdy" && (
+                          <>
+                            <select
+                              ref={ceremonyServiceMRef}
+                              value={ceremonyPickM}
+                              onChange={(e) => {
+                                setCeremonyPickM(e.target.value)
+                                scrollAfterCeremonyMonth()
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={ceremonyDateTimeFieldLabel(locale, "month")}
+                            >
+                              {MONTHS.map((mo) => (
+                                <option key={mo} value={mo}>
+                                  {formatCeremonyMonthOption(mo, locale)}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              ref={ceremonyServiceDRef}
+                              value={ceremonyPickD}
+                              onChange={(e) => {
+                                setCeremonyPickD(e.target.value)
+                                scrollAfterCeremonyDay()
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={ceremonyDateTimeFieldLabel(locale, "day")}
+                            >
+                              {ceremonyDayOptions.map((day) => (
+                                <option key={day} value={day}>
+                                  {formatCeremonyNumericPick(Number(day), locale)}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              ref={ceremonyServiceYRef}
+                              value={ceremonyPickY}
+                              onChange={(e) => {
+                                setCeremonyPickY(e.target.value)
+                                scrollAfterCeremonyYear()
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={ceremonyDateTimeFieldLabel(locale, "year")}
+                            >
+                              {CEREMONY_YEARS.map((y) => (
+                                <option key={y} value={y}>
+                                  {formatCeremonyNumericPick(y, locale)}
+                                </option>
+                              ))}
+                            </select>
+                          </>
+                        )}
+                        {ceremonyDateOrder === "dmy" && (
+                          <>
+                            <select
+                              ref={ceremonyServiceDRef}
+                              value={ceremonyPickD}
+                              onChange={(e) => {
+                                setCeremonyPickD(e.target.value)
+                                scrollAfterCeremonyDay()
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={ceremonyDateTimeFieldLabel(locale, "day")}
+                            >
+                              {ceremonyDayOptions.map((day) => (
+                                <option key={day} value={day}>
+                                  {formatCeremonyNumericPick(Number(day), locale)}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              ref={ceremonyServiceMRef}
+                              value={ceremonyPickM}
+                              onChange={(e) => {
+                                setCeremonyPickM(e.target.value)
+                                scrollAfterCeremonyMonth()
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={ceremonyDateTimeFieldLabel(locale, "month")}
+                            >
+                              {MONTHS.map((mo) => (
+                                <option key={mo} value={mo}>
+                                  {formatCeremonyMonthOption(mo, locale)}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              ref={ceremonyServiceYRef}
+                              value={ceremonyPickY}
+                              onChange={(e) => {
+                                setCeremonyPickY(e.target.value)
+                                scrollAfterCeremonyYear()
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={ceremonyDateTimeFieldLabel(locale, "year")}
+                            >
+                              {CEREMONY_YEARS.map((y) => (
+                                <option key={y} value={y}>
+                                  {formatCeremonyNumericPick(y, locale)}
+                                </option>
+                              ))}
+                            </select>
+                          </>
+                        )}
+                        {ceremonyDateOrder === "ymd" && (
+                          <>
+                            <select
+                              ref={ceremonyServiceYRef}
+                              value={ceremonyPickY}
+                              onChange={(e) => {
+                                setCeremonyPickY(e.target.value)
+                                scrollAfterCeremonyYear()
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={ceremonyDateTimeFieldLabel(locale, "year")}
+                            >
+                              {CEREMONY_YEARS.map((y) => (
+                                <option key={y} value={y}>
+                                  {formatCeremonyNumericPick(y, locale)}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              ref={ceremonyServiceMRef}
+                              value={ceremonyPickM}
+                              onChange={(e) => {
+                                setCeremonyPickM(e.target.value)
+                                scrollAfterCeremonyMonth()
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={ceremonyDateTimeFieldLabel(locale, "month")}
+                            >
+                              {MONTHS.map((mo) => (
+                                <option key={mo} value={mo}>
+                                  {formatCeremonyMonthOption(mo, locale)}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              ref={ceremonyServiceDRef}
+                              value={ceremonyPickD}
+                              onChange={(e) => {
+                                setCeremonyPickD(e.target.value)
+                                scrollAfterCeremonyDay()
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={ceremonyDateTimeFieldLabel(locale, "day")}
+                            >
+                              {ceremonyDayOptions.map((day) => (
+                                <option key={day} value={day}>
+                                  {formatCeremonyNumericPick(Number(day), locale)}
+                                </option>
+                              ))}
+                            </select>
+                          </>
+                        )}
                       </div>
                     </div>
 
                     <div className="space-y-6">
-                      <h3 className={stepSectionTitleClass}>{a.createWizard.time}</h3>
-                      <div className="grid grid-cols-3 gap-4 md:gap-5">
-                        <select
-                          ref={ceremonyHour12Ref}
-                          value={String(ceremonyHour12)}
-                          onChange={(e) => {
-                            setCeremonyHour12(Number(e.target.value))
-                            scrollNeighborIntoView(ceremonyMinuteRef.current)
-                          }}
-                          className={ghostDateSelectClass}
-                          aria-label="Service hour"
+                      <div>
+                        <h3 className={stepSectionTitleClass}>{a.createWizard.time}</h3>
+                        <p className="mt-1.5 text-center text-xs text-white/40 tabular-nums md:text-left">
+                          {ceremonyTimeFormatHint(locale)}
+                        </p>
+                      </div>
+                      <div
+                        className={`grid gap-4 md:gap-5 ${
+                          ceremonyUses12hClock ? "grid-cols-3" : "grid-cols-2"
+                        }`}
+                      >
+                        <span
+                          className={`${fieldLabelClass} text-center text-[10px] md:text-[11px]`}
                         >
-                          {HOURS_12.map((h) => (
-                            <option key={h} value={h}>
-                              {h}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          ref={ceremonyMinuteRef}
-                          value={ceremonyM}
-                          onChange={(e) => {
-                            setCeremonyM(e.target.value)
-                            scrollNeighborIntoView(ceremonyPeriodRef.current)
-                          }}
-                          className={ghostDateSelectClass}
-                          aria-label="Service minute"
+                          {a.createWizard.hour}
+                        </span>
+                        <span
+                          className={`${fieldLabelClass} text-center text-[10px] md:text-[11px]`}
                         >
-                          {MINUTES.map((m) => (
-                            <option key={m} value={m}>
-                              {m}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          ref={ceremonyPeriodRef}
-                          value={ceremonyPeriod}
-                          onChange={(e) => setCeremonyPeriod(e.target.value as "AM" | "PM")}
-                          className={ghostDateSelectClass}
-                          aria-label="AM or PM"
-                        >
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                        </select>
+                          {a.createWizard.min}
+                        </span>
+                        {ceremonyUses12hClock ? (
+                          <span
+                            className={`${fieldLabelClass} text-center text-[10px] md:text-[11px]`}
+                          >
+                            {a.createWizard.amPm}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div
+                        className={`grid gap-4 md:gap-5 ${
+                          ceremonyUses12hClock ? "grid-cols-3" : "grid-cols-2"
+                        }`}
+                      >
+                        {ceremonyUses12hClock ? (
+                          <>
+                            <select
+                              ref={ceremonyHour12Ref}
+                              value={String(ceremonyHour12)}
+                              onChange={(e) => {
+                                setCeremonyHour12(Number(e.target.value))
+                                scrollNeighborIntoView(ceremonyMinuteRef.current)
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={a.createWizard.hour}
+                            >
+                              {HOURS_12.map((h) => (
+                                <option key={h} value={h}>
+                                  {formatCeremonyNumericPick(h, locale)}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              ref={ceremonyMinuteRef}
+                              value={ceremonyM}
+                              onChange={(e) => {
+                                setCeremonyM(e.target.value)
+                                scrollNeighborIntoView(ceremonyPeriodRef.current)
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={a.createWizard.min}
+                            >
+                              {MINUTES.map((m) => (
+                                <option key={m} value={m}>
+                                  {m}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              ref={ceremonyPeriodRef}
+                              value={ceremonyPeriod}
+                              onChange={(e) =>
+                                setCeremonyPeriod(e.target.value as "AM" | "PM")
+                              }
+                              className={ghostDateSelectClass}
+                              aria-label={a.createWizard.amPm}
+                            >
+                              <option value="AM">{ceremonyAmPmLabels.am}</option>
+                              <option value="PM">{ceremonyAmPmLabels.pm}</option>
+                            </select>
+                          </>
+                        ) : (
+                          <>
+                            <select
+                              ref={ceremonyHour12Ref}
+                              value={String(to24Hour(ceremonyHour12, ceremonyPeriod))}
+                              onChange={(e) => {
+                                const h24 = Number(e.target.value)
+                                const conv = from24hTo12(h24)
+                                setCeremonyHour12(conv.hour12)
+                                setCeremonyPeriod(conv.period)
+                                scrollNeighborIntoView(ceremonyMinuteRef.current)
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={a.createWizard.hour}
+                            >
+                              {HOURS_24.map((h) => (
+                                <option key={h} value={h}>
+                                  {formatCeremonyNumericPick(h, locale)}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              ref={ceremonyMinuteRef}
+                              value={ceremonyM}
+                              onChange={(e) => {
+                                setCeremonyM(e.target.value)
+                              }}
+                              className={ghostDateSelectClass}
+                              aria-label={a.createWizard.min}
+                            >
+                              {MINUTES.map((m) => (
+                                <option key={m} value={m}>
+                                  {m}
+                                </option>
+                              ))}
+                            </select>
+                          </>
+                        )}
                       </div>
                     </div>
 

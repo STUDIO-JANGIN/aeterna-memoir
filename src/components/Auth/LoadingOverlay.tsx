@@ -1,7 +1,8 @@
 "use client"
 
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion, type HTMLMotionProps } from "framer-motion"
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
+import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 
 const TEXT_TRANSITION = { duration: 1.2, ease: "easeInOut" } as const
 
@@ -33,7 +34,24 @@ function ObsidianSacredCanvas({ children }: { children: ReactNode }) {
 }
 
 const welcomeTextClassName =
-  "max-w-md font-[var(--font-serif)] text-xl leading-snug text-[#f5f5f7]/80 tracking-[0.05em] sm:text-2xl"
+  "max-w-md font-[var(--font-serif)] font-light leading-relaxed text-[#f5f5f7]/85 tracking-[0.03em] text-lg sm:text-2xl"
+
+function PeacefulLoadingMotionP({
+  breathe,
+  ...motionProps
+}: { breathe?: boolean } & HTMLMotionProps<"p">) {
+  const { app } = useLandingLocale()
+  return (
+    <motion.p
+      role="status"
+      aria-live="polite"
+      className={`${welcomeTextClassName} ${breathe ? "peaceful-loading-breathe" : ""}`}
+      {...motionProps}
+    >
+      {app.common.peacefulMemoryLoading}
+    </motion.p>
+  )
+}
 
 type SacredWelcomeOverlayProps = {
   /** When true, the ritual runs: fade in → dwell → fade out → onExitComplete */
@@ -44,7 +62,8 @@ type SacredWelcomeOverlayProps = {
 }
 
 /**
- * Sacred welcome ritual: slow fade/scale in, one breath, fade/scale out — then hand off to the app.
+ * Welcome ritual: slow fade/scale in, one breath, fade/scale out — then hand off to the app.
+ * Copy: peaceful memory space (non-religious), localized.
  */
 export function SacredWelcomeOverlay({ open, onExitComplete, dwellMs = 2400 }: SacredWelcomeOverlayProps) {
   const [textStage, setTextStage] = useState<"in" | "out">("in")
@@ -91,8 +110,8 @@ export function SacredWelcomeOverlay({ open, onExitComplete, dwellMs = 2400 }: S
           transition={{ duration: 1.2, ease: "easeInOut" }}
         >
           <ObsidianSacredCanvas>
-            <motion.p
-              className={welcomeTextClassName}
+            <PeacefulLoadingMotionP
+              breathe={textStage === "in"}
               initial={{ opacity: 0, scale: 0.98 }}
               animate={
                 textStage === "in"
@@ -101,9 +120,7 @@ export function SacredWelcomeOverlay({ open, onExitComplete, dwellMs = 2400 }: S
               }
               transition={TEXT_TRANSITION}
               onAnimationComplete={onTextMotionComplete}
-            >
-              Welcome to your sacred space
-            </motion.p>
+            />
           </ObsidianSacredCanvas>
         </motion.div>
       ) : null}
@@ -114,18 +131,16 @@ export function SacredWelcomeOverlay({ open, onExitComplete, dwellMs = 2400 }: S
 /** Alias — matches requested filename semantics */
 export const LoadingOverlay = SacredWelcomeOverlay
 
-/** Suspense / route shell: obsidian + grain + glow + one gentle in-breath (content swaps when ready). */
+/** Suspense / route shell: obsidian + grain + glow + localized copy + slow pulse */
 export function SacredWelcomeLoadingFallback() {
   return (
     <ObsidianSacredCanvas>
-      <motion.p
-        className={welcomeTextClassName}
+      <PeacefulLoadingMotionP
+        breathe
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={TEXT_TRANSITION}
-      >
-        Welcome to your sacred space
-      </motion.p>
+      />
     </ObsidianSacredCanvas>
   )
 }

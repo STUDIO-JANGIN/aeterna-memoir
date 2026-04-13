@@ -19,6 +19,7 @@ export function buildLocalRemembranceVariants(
     case "ja":
       return buildJa(punctuated, n)
     case "zh":
+    case "zh-hk":
       return buildZh(punctuated, n)
     case "fr":
       return buildFr(punctuated, n)

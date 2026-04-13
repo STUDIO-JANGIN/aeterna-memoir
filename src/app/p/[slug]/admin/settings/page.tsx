@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/browser"
 import { getEventBySlugAction, type AdminEvent } from "@/app/actions/setStorySelected"
 import { updateEventBySlugAction } from "@/app/actions/updateEventBySlug"
-import { generateInvitePdfAction } from "@/app/actions/generateInvitePdf"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import { resolveInvitePdfUrl } from "@/lib/resolveInvitePdfUrl"
 
@@ -28,8 +27,6 @@ export default function AdminSettingsPage({ params }: PageProps) {
   const [profileError, setProfileError] = useState<string | null>(null)
   const [invitationBio, setInvitationBio] = useState("")
   const [invitationContactPhone, setInvitationContactPhone] = useState("")
-  const [inviteLoading, setInviteLoading] = useState(false)
-  const [inviteError, setInviteError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!slug) {
@@ -121,27 +118,6 @@ export default function AdminSettingsPage({ params }: PageProps) {
     }
   }
 
-  const handleGenerateInvite = async () => {
-    if (!slug) return
-    setInviteLoading(true)
-    setInviteError(null)
-    try {
-      const result = await generateInvitePdfAction(slug)
-      if (result.ok) {
-        const openUrl = result.urls?.[locale] ?? result.url
-        if (typeof window !== "undefined") {
-          window.open(openUrl, "_blank")
-        }
-      } else {
-        setInviteError(result.error)
-      }
-    } catch (err) {
-      setInviteError(err instanceof Error ? err.message : ap.generatePdfFailed)
-    } finally {
-      setInviteLoading(false)
-    }
-  }
-
   if (loading) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-landing text-landing-label">
@@ -184,7 +160,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
             </svg>
             {ap.backToAdmin}
           </Link>
-          <h1 className="text-lg font-medium text-[var(--aeterna-headline)] tracking-[0.02em] text-center px-12">
+          <h1 className="text-xs font-normal text-[var(--aeterna-gold-muted)] uppercase tracking-wider text-center px-12 [font-family:var(--font-sans)]">
             {ap.pageTitle}
           </h1>
         </div>
@@ -194,12 +170,12 @@ export default function AdminSettingsPage({ params }: PageProps) {
         <section aria-labelledby="profile-form-heading">
           <h2
             id="profile-form-heading"
-            className="text-sm font-medium text-[var(--aeterna-gold)] uppercase tracking-widest mb-6"
+            className="text-xs font-normal text-[var(--aeterna-gold-muted)] uppercase tracking-wider mb-6 [font-family:var(--font-sans)]"
           >
             {ap.editProfileSection}
           </h2>
           <form onSubmit={handleProfileSubmit} className="space-y-5">
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-3 w-full">
               <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/[0.1] bg-[#030303]/50 flex items-center justify-center shrink-0">
                 {event.profile_image ? (
                   <img src={event.profile_image} alt="" className="w-full h-full object-cover" />
@@ -209,13 +185,17 @@ export default function AdminSettingsPage({ params }: PageProps) {
                   </span>
                 )}
               </div>
-              <input
-                id="profile_image"
-                name="profile_image"
-                type="file"
-                accept="image/*"
-                className="w-full max-w-sm text-sm text-[var(--aeterna-body)] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--aeterna-gold-pale)] file:text-[var(--aeterna-charcoal)]"
-              />
+              <div className="w-full flex justify-center">
+                <div className="w-full max-w-sm translate-x-2 sm:translate-x-3">
+                  <input
+                    id="profile_image"
+                    name="profile_image"
+                    type="file"
+                    accept="image/*"
+                    className="w-full min-w-0 text-sm text-[var(--aeterna-body)] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--aeterna-gold-pale)] file:text-[var(--aeterna-charcoal)]"
+                  />
+                </div>
+              </div>
             </div>
             <div>
               <label
@@ -350,7 +330,7 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 name="bank_info"
                 rows={2}
                 defaultValue={event.bank_info ?? ""}
-                className="w-full max-w-lg px-3 py-2 text-sm rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-y min-h-[4.5rem] max-h-32"
+                className="w-full px-4 py-3 text-sm rounded-xl bg-[#030303]/30 border border-white/[0.08] text-[var(--landing-text-hero)] placeholder:text-[var(--landing-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold)] resize-y min-h-[4.5rem] max-h-32"
                 placeholder={ap.condolencePlaceholder}
               />
             </div>
@@ -359,28 +339,15 @@ export default function AdminSettingsPage({ params }: PageProps) {
                 {profileError}
               </p>
             )}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-3">
+            <div>
               <button
                 type="submit"
                 disabled={savingProfile}
-                className="min-h-[48px] flex-1 rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm tracking-[0.04em] hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60 transition-colors sm:max-w-[14rem]"
+                className="min-h-[48px] w-full sm:w-auto sm:max-w-[14rem] rounded-xl bg-[var(--aeterna-gold)] text-[var(--aeterna-charcoal)] font-medium text-sm tracking-[0.04em] hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60 transition-colors px-6"
               >
                 {savingProfile ? ap.saving : ap.saveProfile}
               </button>
-              <button
-                type="button"
-                onClick={() => void handleGenerateInvite()}
-                disabled={inviteLoading}
-                className="min-h-[48px] flex-1 rounded-xl border border-[var(--aeterna-gold)]/40 bg-transparent text-[var(--aeterna-gold)] font-medium text-sm tracking-[0.04em] hover:bg-[var(--aeterna-gold)]/10 disabled:opacity-60 transition-colors sm:max-w-[14rem]"
-              >
-                {inviteLoading ? ap.generating : ap.generateQrInvitation}
-              </button>
             </div>
-            {inviteError && (
-              <p className="text-sm text-red-400 text-right" role="alert">
-                {inviteError}
-              </p>
-            )}
             {invitePdfHref ? (
               <p className="text-right">
                 <a

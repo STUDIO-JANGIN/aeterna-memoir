@@ -37,6 +37,8 @@ export type PublicMemorialEvent = {
   invite_pdf_urls: Record<string, string> | null
   /** Remembrance text from create flow / admin — shown on public memorial. */
   invitation_bio: string | null
+  /** Optional blurred page background; if null, derived from guest stories. */
+  memorial_background_image: string | null
 }
 
 export type PublicMemorialStory = {
@@ -118,6 +120,7 @@ function rowToPublicEvent(row: Record<string, unknown>): PublicMemorialEvent {
     invite_pdf_url: (row.invite_pdf_url as string | null) ?? null,
     invite_pdf_urls: (row.invite_pdf_urls as Record<string, string> | null) ?? null,
     invitation_bio: (row.invitation_bio as string | null) ?? null,
+    memorial_background_image: (row.memorial_background_image as string | null) ?? null,
   }
 }
 

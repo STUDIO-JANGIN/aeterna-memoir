@@ -37,6 +37,7 @@ import { coerceIdString, parseUuidString } from "@/lib/uuid"
 import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
 import { OptimisticImage } from "@/components/Upload"
 import { eventRowIsPaidMemorial, PAID_MEMORIAL_DEADLINE_MS } from "@/lib/paidMemorialDeadlines"
+import { resolveMemorialBackgroundUrl } from "@/lib/resolveMemorialBackgroundUrl"
 
 function normalizeStoryIdForHearts(raw: string): string {
   return parseUuidString(raw) ?? coerceIdString(raw)
@@ -70,6 +71,7 @@ type FeedEvent = {
   invite_pdf_url: string | null
   invite_pdf_urls?: Record<string, string> | null
   invitation_bio: string | null
+  memorial_background_image: string | null
 }
 
 // Deadline time: prefer expired_at, then collection_end_at, else created_at + 7 days.
@@ -431,6 +433,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         invite_pdf_url?: string | null
         invite_pdf_urls?: Record<string, string> | null
         invitation_bio?: string | null
+        memorial_background_image?: string | null
       }, list: Story[]) => {
         setEvent({
           id: eventData.id,
@@ -458,6 +461,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           invite_pdf_url: eventData.invite_pdf_url ?? null,
           invite_pdf_urls: eventData.invite_pdf_urls ?? null,
           invitation_bio: eventData.invitation_bio ?? null,
+          memorial_background_image: eventData.memorial_background_image ?? null,
         })
         const storiesNormalized: Story[] = list.map((s) => ({
           ...s,
@@ -898,6 +902,10 @@ export default function GuestFeedPage({ params }: PageProps) {
   const birth = formatLongDate(event.birth_date)
   const death = formatLongDate(event.death_date)
   const profileSrc = resolveProfileImageUrl(event.profile_image)
+  const memorialBackdropUrl = useMemo(
+    () => resolveMemorialBackgroundUrl(event, stories),
+    [event, stories],
+  )
   const isOwner =
     !!sessionUser &&
     isMemorialOwner(sessionUser, {
@@ -917,6 +925,17 @@ export default function GuestFeedPage({ params }: PageProps) {
         filmReleased || (isLocked && showUnlockUpsell && !filmReleased) ? "pb-28 md:pb-0" : ""
       }`}
     >
+      {memorialBackdropUrl ? (
+        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+          <img
+            src={memorialBackdropUrl}
+            alt=""
+            className="h-full w-full scale-105 object-cover opacity-[0.35] blur-md"
+          />
+          <div className="absolute inset-0 bg-landing/85" />
+        </div>
+      ) : null}
+      <div className="relative z-[1]">
       <AnimatePresence>
         {showPremiumBlurPopup && (
           <motion.div
@@ -1926,6 +1945,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           </motion.div>
         </div>
       )}
+    </div>
     </div>
 
     </LayoutGroup>

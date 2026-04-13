@@ -234,6 +234,8 @@ export type AppStrings = {
     adminPremiumAllClipsComplete: string
     adminPremiumNoClipCredits: string
     adminPreserveForeverCta: string
+    /** Free tier — Stripe Premium (AI tribute film) checkout */
+    adminEternalFilmCta: string
     adminProcessing: string
     adminMemoriesSectionTitle: string
     adminTabPending: (count: number) => string
@@ -277,6 +279,10 @@ export type AppStrings = {
     chooseDifferentPhoto: string
     addSparkAria: string
     addSparkLabel: string
+    memorialBackgroundTitle: string
+    memorialBackgroundSubtitle: string
+    memorialBackgroundChoose: string
+    memorialBackgroundSkip: string
     step3Title: string
     step3Subtitle: string
     born: string
@@ -557,7 +563,7 @@ const EN: AppStrings = {
     adminDashboardWelcome:
       "Curate memories, protect the legacy, and share this sanctuary. Manage profile and media anytime in Settings.",
     adminEdit: "Edit",
-    adminSharePdfInvitation: "Share PDF invitation",
+    adminSharePdfInvitation: "QR INVITATION",
     adminPdfGenerating: "Generating…",
     adminBackToFeed: "Back to feed",
     adminCurrentPlan: "Current plan",
@@ -603,6 +609,7 @@ const EN: AppStrings = {
       "All five tribute chapters are ready. You can revisit them above or on the public memorial.",
     adminPremiumNoClipCredits: "No clip credits left. Contact support if you need help.",
     adminPreserveForeverCta: "Preserve Forever — $19.99",
+    adminEternalFilmCta: "Eternal Film — $39.99",
     adminProcessing: "Processing…",
     adminMemoriesSectionTitle: "Memories",
     adminTabPending: (count: number) => `Pending (${count})`,
@@ -646,6 +653,11 @@ const EN: AppStrings = {
     chooseDifferentPhoto: "Choose a different photo",
     addSparkAria: "Add a Spark of Memory",
     addSparkLabel: "Add a Spark of Memory",
+    memorialBackgroundTitle: "A gentle backdrop",
+    memorialBackgroundSubtitle:
+      "Optional — a wide image behind the memorial page (softly blurred). Skip to use a guest photo later — we’ll pick the most-loved memory, or the first shared.",
+    memorialBackgroundChoose: "Choose background image",
+    memorialBackgroundSkip: "Skip for now",
     step3Title: "Honoring Their Journey",
     step3Subtitle: "Exact dates are lovely; a year alone is fine if that's what you have.",
     born: "Born",
@@ -921,7 +933,7 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     adminDashboardWelcome:
       "추억을 큐레이션하고, 유산을 보호하며, 이 성소를 공유하세요. 프로필과 미디어는 설정에서 언제든 관리할 수 있습니다.",
     adminEdit: "편집",
-    adminSharePdfInvitation: "PDF 초대장",
+    adminSharePdfInvitation: "QR 초대장",
     adminPdfGenerating: "생성 중…",
     adminBackToFeed: "피드로 돌아가기",
     adminCurrentPlan: "현재 플랜",
@@ -964,6 +976,7 @@ const KO_PATCH: DeepPartial<AppStrings> = {
       "다섯 개의 헌정 챕터가 모두 준비되었습니다. 위에서 다시 보거나 공개 기념관에서 확인하세요.",
     adminPremiumNoClipCredits: "남은 클립 크레딧이 없습니다. 지원이 필요하면 문의해 주세요.",
     adminPreserveForeverCta: "영원히 보존하기 — $19.99",
+    adminEternalFilmCta: "이터널 필름 — $39.99",
     adminProcessing: "처리 중…",
     adminMemoriesSectionTitle: "추억들",
     adminTabPending: (count: number) => `대기 중 (${count})`,
@@ -1008,6 +1021,11 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     chooseDifferentPhoto: "다른 사진 선택",
     addSparkAria: "추억의 조각 추가하기",
     addSparkLabel: "추억의 조각 추가하기",
+    memorialBackgroundTitle: "부드러운 배경",
+    memorialBackgroundSubtitle:
+      "선택 사항 — 추모 페이지 뒤에 넓게 깔릴 이미지입니다(살짝 흐림). 건너뛰면 나중에 방문자 사진을 사용하며, 하트가 가장 많거나 가장 먼저 올린 사진을 고릅니다.",
+    memorialBackgroundChoose: "배경 이미지 선택",
+    memorialBackgroundSkip: "나중에 하기",
     step3Title: "그들이 걸어온 길",
     step3Subtitle: "정확한 날짜도 좋고, 연도만 입력하셔도 무방합니다.",
     born: "생년월일",
@@ -1272,7 +1290,7 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     adminDashboardWelcome:
       "想い出を整え、遺産を守り、この聖所を共有しましょう。プロフィールやメディアは設定からいつでも管理できます。",
     adminEdit: "編集",
-    adminSharePdfInvitation: "PDF招待状",
+    adminSharePdfInvitation: "QR招待状",
     adminPdfGenerating: "生成中…",
     adminBackToFeed: "フィードに戻る",
     adminCurrentPlan: "現在のプラン",
@@ -1315,6 +1333,7 @@ const JA_PATCH: DeepPartial<AppStrings> = {
       "5章すべてのトリビュートが揃いました。上で再生するか、公開メモリアルでご覧ください。",
     adminPremiumNoClipCredits: "クリップのクレジットがありません。サポートへご連絡ください。",
     adminPreserveForeverCta: "永遠に保存する — $19.99",
+    adminEternalFilmCta: "エターナルフィルム — $39.99",
     adminProcessing: "処理中…",
     adminMemoriesSectionTitle: "思い出",
     adminTabPending: (count: number) => `承認待ち (${count})`,
@@ -1353,6 +1372,11 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     chooseDifferentPhoto: "別の写真を選ぶ",
     addSparkAria: "思い出の輝きを添える",
     addSparkLabel: "思い出の輝きを添える",
+    memorialBackgroundTitle: "穏やかな背景",
+    memorialBackgroundSubtitle:
+      "任意 — 追悼ページの背後に広がる画像です（やわらかくぼかして表示）。スキップした場合は、のちにご参列の方の写真を使い、ハートが最も多いもの、または最初に共有されたものを選びます。",
+    memorialBackgroundChoose: "背景画像を選ぶ",
+    memorialBackgroundSkip: "今はスキップ",
     step3Title: "歩んできた道のり",
     step3Subtitle: "正確な日付でも、年だけでも構いません。",
     born: "生年月日",

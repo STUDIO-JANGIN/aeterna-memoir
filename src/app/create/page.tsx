@@ -15,6 +15,7 @@ import { createEventAction } from "@/app/actions/createEvent"
 import { createPlusCheckoutSessionAction } from "@/app/actions/createPlusCheckoutSession"
 import { createPremiumTierCheckoutSessionAction } from "@/app/actions/createPremiumTierCheckoutSession"
 import { uploadNewEventProfileAction } from "@/app/actions/uploadNewEventProfile"
+import { uploadNewEventBackgroundAction } from "@/app/actions/uploadNewEventBackground"
 import {
   type CreateDraftV1,
   type PendingCheckoutV1,
@@ -51,7 +52,7 @@ function parsePlanQueryParam(param: string | null): StoragePlan | null {
   return null
 }
 
-const WIZARD_STEPS_FULL = 9
+const WIZARD_STEPS_FULL = 10
 
 /** Step-2 profile file survives OAuth redirect / refresh (sessionStorage cap ~5MB). */
 const LS_PROFILE_IMAGE_DRAFT_KEY = "aeterna.create.profile-image.v1"
@@ -276,6 +277,10 @@ function CreateEventForm() {
   const [profilePreview, setProfilePreview] = useState<string | null>(null)
   /** Set when the memorial row exists but storage upload failed (user can fix from admin). */
   const [profileUploadError, setProfileUploadError] = useState<string | null>(null)
+  /** Optional full-page background on /p/[slug] (uploaded after event row exists). */
+  const [backgroundFile, setBackgroundFile] = useState<File | null>(null)
+  const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null)
+  const [backgroundUploadError, setBackgroundUploadError] = useState<string | null>(null)
   /** Framing inside the circle (CSS object-position %; 50 = center). */
   const [profilePan, setProfilePan] = useState({ x: 50, y: 50 })
   const profileDragRef = useRef<{
@@ -308,7 +313,7 @@ function CreateEventForm() {
   const [fundLink, setFundLink] = useState("")
   /** Printable invitation — words of remembrance */
   const [invitationBio, setInvitationBio] = useState("")
-  /** Step 4: whether they host a service; if false, steps 5–6 are skipped. */
+  /** Step 6: whether they host a service; if false, service/support steps are skipped. */
   const [willHostMemorialService, setWillHostMemorialService] = useState<boolean | null>(null)
   /** When URL locked a plan, user can open full plan grid to switch. */
   const [showPlanChangeOptions, setShowPlanChangeOptions] = useState(false)
@@ -324,6 +329,7 @@ function CreateEventForm() {
   const resumeToastAfterAuthRef = useRef(false)
   const welcomeLastShownAtRef = useRef(0)
   const profileInputRef = useRef<HTMLInputElement>(null)
+  const backgroundInputRef = useRef<HTMLInputElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const locationInputRef = useRef<HTMLInputElement>(null)
   const fundInputRef = useRef<HTMLInputElement>(null)
@@ -344,7 +350,7 @@ function CreateEventForm() {
   const atRestDateBlockRef = useRef<HTMLDivElement>(null)
   const wizardStepRef = useRef(wizardStep)
   const memorialTypeRef = useRef(memorialType)
-  /** When user taps Back from Plan (8) → Account (7), skip the OAuth auto-advance effect so they can stay on 7. */
+  /** When user taps Back from Plan (10) → Account (9), skip the OAuth auto-advance effect. */
   const blockPlanAutoAdvanceRef = useRef(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -384,11 +390,11 @@ function CreateEventForm() {
   const planParam = searchParams.get("plan")?.trim().toLowerCase() ?? null
   const planLockedFromUrl = parsePlanQueryParam(planParam) !== null
   const serviceStepsSkipped = willHostMemorialService === false
-  const stepsForProgress = serviceStepsSkipped ? 7 : 9
+  const stepsForProgress = serviceStepsSkipped ? 8 : 10
   const progressStep = useMemo(() => {
     if (!serviceStepsSkipped) return wizardStep
-    if (wizardStep <= 5) return wizardStep
-    if (wizardStep >= 8) return wizardStep - 2
+    if (wizardStep <= 6) return wizardStep
+    if (wizardStep >= 9) return wizardStep - 2
     return wizardStep
   }, [wizardStep, serviceStepsSkipped])
 
@@ -424,9 +430,9 @@ function CreateEventForm() {
     if (!memorialType) return
     const t = window.setTimeout(() => {
       if (wizardStep === 1) nameInputRef.current?.focus()
-      if (wizardStep === 4) invitationBioRef.current?.focus()
-      if (wizardStep === 6) locationInputRef.current?.focus()
-      if (wizardStep === 7) fundInputRef.current?.focus()
+      if (wizardStep === 5) invitationBioRef.current?.focus()
+      if (wizardStep === 7) locationInputRef.current?.focus()
+      if (wizardStep === 8) fundInputRef.current?.focus()
     }, 80)
     return () => window.clearTimeout(t)
   }, [wizardStep, memorialType])
@@ -658,10 +664,10 @@ function CreateEventForm() {
         await refreshAuthUser()
         router.refresh()
         const draft = readCreateDraft()
-        if (draft?.memorialType && draft.wizardStep === 8) {
+        if (draft?.memorialType && draft.wizardStep === 9) {
           setStepSlideDir(1)
-          setWizardStep(9)
-          writeCreateDraft({ ...draft, wizardStep: 9 })
+          setWizardStep(10)
+          writeCreateDraft({ ...draft, wizardStep: 10 })
         }
         // If React state lags behind the new session (common right after OAuth), resync once.
         fallbackTimer = window.setTimeout(async () => {
@@ -717,6 +723,16 @@ function CreateEventForm() {
     setProfilePreview(url)
     return () => URL.revokeObjectURL(url)
   }, [profileFile])
+
+  useEffect(() => {
+    if (!backgroundFile) {
+      setBackgroundPreview(null)
+      return
+    }
+    const url = URL.createObjectURL(backgroundFile)
+    setBackgroundPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [backgroundFile])
 
   /**
    * Restore profile image only when returning from Google OAuth (`code` + oauth-return flag).
@@ -877,9 +893,9 @@ function CreateEventForm() {
     }
     clearPendingCheckout()
     setPendingCheckout(null)
-    if (wizardStep >= 9) {
+    if (wizardStep >= 10) {
       setStepSlideDir(1)
-      setWizardStep(8)
+      setWizardStep(9)
     }
   }
 
@@ -895,6 +911,8 @@ function CreateEventForm() {
     setName("")
     setProfileFile(null)
     setProfileUploadError(null)
+    setBackgroundFile(null)
+    setBackgroundUploadError(null)
     try {
       sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
       sessionStorage.removeItem(LS_OAUTH_PROFILE_RETURN_KEY)
@@ -976,7 +994,7 @@ function CreateEventForm() {
   const buildCreateDraft = (stepForDraft: number): CreateDraftV1 | null => {
     if (!memorialType) return null
     return {
-      v: 6,
+      v: 7,
       memorialType,
       wizardStep: stepForDraft,
       willHostMemorialService,
@@ -1006,14 +1024,15 @@ function CreateEventForm() {
       case 2:
       case 3:
       case 4:
-      case 6:
-      case 7:
-        return true
       case 5:
-        return willHostMemorialService !== null
+      case 7:
       case 8:
-        return authReady && !signingOut
+        return true
+      case 6:
+        return willHostMemorialService !== null
       case 9:
+        return authReady && !signingOut
+      case 10:
         return true
       default:
         return false
@@ -1030,7 +1049,7 @@ function CreateEventForm() {
     if (!memorialType) return
 
     /** Step 9 + URL-locked plan: first Back closes the plan grid and returns to summary. */
-    if (wizardStep === 9 && planLockedFromUrl && showPlanChangeOptions) {
+    if (wizardStep === 10 && planLockedFromUrl && showPlanChangeOptions) {
       setShowPlanChangeOptions(false)
       window.scrollTo({ top: 0, behavior: "smooth" })
       return
@@ -1039,11 +1058,11 @@ function CreateEventForm() {
     if (wizardStep > 1) {
       setStepSlideDir(-1)
       let nextStep: number
-      if (wizardStep === 9) nextStep = 8
-      else if (wizardStep === 8 && serviceStepsSkipped) nextStep = 5
+      if (wizardStep === 10) nextStep = 9
+      else if (wizardStep === 9 && serviceStepsSkipped) nextStep = 6
       else nextStep = wizardStep - 1
 
-      if (wizardStep === 9 && nextStep === 8) {
+      if (wizardStep === 10 && nextStep === 9) {
         blockPlanAutoAdvanceRef.current = true
       }
       const d = buildCreateDraft(nextStep)
@@ -1060,7 +1079,7 @@ function CreateEventForm() {
     if (!canContinue() || !memorialType) return
     setCreateError(null)
 
-    if (wizardStep === 5) {
+    if (wizardStep === 6) {
       if (willHostMemorialService !== true && willHostMemorialService !== false) return
       setStepSlideDir(1)
       if (willHostMemorialService === false) {
@@ -1075,12 +1094,12 @@ function CreateEventForm() {
         setCeremonyM("00")
         setCeremonyPeriod("AM")
         setFundLink("")
-        const next = 8
+        const next = 9
         const d = buildCreateDraft(next)
         if (d) writeCreateDraft(d)
         setWizardStep(next)
       } else {
-        const next = 6
+        const next = 7
         const d = buildCreateDraft(next)
         if (d) writeCreateDraft(d)
         setWizardStep(next)
@@ -1089,7 +1108,7 @@ function CreateEventForm() {
     }
 
     if (wizardStep < WIZARD_STEPS_FULL) {
-      if (wizardStep === 8) blockPlanAutoAdvanceRef.current = false
+      if (wizardStep === 9) blockPlanAutoAdvanceRef.current = false
       setStepSlideDir(1)
       const d = buildCreateDraft(wizardStep + 1)
       if (d) writeCreateDraft(d)
@@ -1099,11 +1118,11 @@ function CreateEventForm() {
 
   /** After Google OAuth, advance from Account (8) → Plan (9) as soon as the session is confirmed. */
   useEffect(() => {
-    if (wizardStep !== 8 || !signedIn || !memorialType || !authReady) return
+    if (wizardStep !== 9 || !signedIn || !memorialType || !authReady) return
     if (blockPlanAutoAdvanceRef.current) return
     setStepSlideDir(1)
-    setWizardStep(9)
-    const d = buildCreateDraft(9)
+    setWizardStep(10)
+    const d = buildCreateDraft(10)
     if (d) writeCreateDraft(d)
   }, [wizardStep, signedIn, memorialType, authReady])
 
@@ -1164,6 +1183,7 @@ function CreateEventForm() {
     setLoading(true)
     setCreateError(null)
     setProfileUploadError(null)
+    setBackgroundUploadError(null)
     const birth_date = buildDateString(birthY, birthM, birthD) || "—"
     const death_date = buildDateString(deathY, deathM, deathD) || "—"
     const ceremony_time =
@@ -1212,6 +1232,17 @@ function CreateEventForm() {
           setProfileUploadError(
             uploadRes.error ||
               "Profile photo could not be uploaded. You can add it from the memorial admin.",
+          )
+        }
+      }
+
+      if (backgroundFile && result.slug) {
+        const bgFd = new FormData()
+        bgFd.set("memorial_background_image", backgroundFile)
+        const bgRes = await uploadNewEventBackgroundAction(result.slug, bgFd)
+        if (!bgRes.ok) {
+          setBackgroundUploadError(
+            bgRes.error || "Background image could not be uploaded. You can set it later from admin.",
           )
         }
       }
@@ -1292,7 +1323,7 @@ function CreateEventForm() {
 
   const onPrimaryPress = () => {
     if (!memorialType) return
-    if (wizardStep === 8 && authReady && !signedIn) {
+    if (wizardStep === 9 && authReady && !signedIn) {
       void handleContinueWithGoogle()
       return
     }
@@ -1304,7 +1335,7 @@ function CreateEventForm() {
 
   const isPlanSummaryView =
     memorialType !== null &&
-    wizardStep === 9 &&
+    wizardStep === 10 &&
     planLockedFromUrl &&
     !showPlanChangeOptions
 
@@ -1324,7 +1355,7 @@ function CreateEventForm() {
     Boolean(createError) &&
       !(
       isMemorialSignInFooterNoise(createError) &&
-      (wizardStep === 8 || wizardStep === 9 || signedIn)
+      (wizardStep === 9 || wizardStep === 10 || signedIn)
     )
 
   return (
@@ -1591,6 +1622,60 @@ function CreateEventForm() {
               )}
 
               {wizardStep === 3 && (
+                <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-6 pt-4 text-center">
+                  <div className="space-y-3 max-w-lg mx-auto">
+                    <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
+                      {a.createWizard.memorialBackgroundTitle}
+                    </h2>
+                    <p className="text-base text-white/50 leading-relaxed">{a.createWizard.memorialBackgroundSubtitle}</p>
+                  </div>
+                  {backgroundPreview ? (
+                    <div className="mx-auto w-full max-w-xl overflow-hidden rounded-2xl ring-1 ring-[var(--aeterna-gold)]/25">
+                      <img
+                        src={backgroundPreview}
+                        alt=""
+                        className="h-40 w-full object-cover md:h-48"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => backgroundInputRef.current?.click()}
+                      className="mx-auto flex min-h-[160px] w-full max-w-xl items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-6 text-sm text-white/45 transition-colors hover:border-[var(--aeterna-gold)]/35 hover:text-white/65"
+                    >
+                      {a.createWizard.memorialBackgroundChoose}
+                    </button>
+                  )}
+                  <input
+                    ref={backgroundInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => setBackgroundFile(e.target.files?.[0] ?? null)}
+                  />
+                  {backgroundPreview ? (
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                      <button
+                        type="button"
+                        onClick={() => backgroundInputRef.current?.click()}
+                        className="text-sm text-white/45 underline decoration-white/20 underline-offset-4"
+                      >
+                        {a.createWizard.chooseDifferentPhoto}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBackgroundFile(null)}
+                        className="text-sm text-white/45 underline decoration-white/20 underline-offset-4"
+                      >
+                        {a.createWizard.memorialBackgroundSkip}
+                      </button>
+                    </div>
+                  ) : null}
+                  <LegalFormCaption className="mt-4 max-w-md mx-auto" />
+                </div>
+              )}
+
+              {wizardStep === 4 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
@@ -1722,7 +1807,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 4 && (
+              {wizardStep === 5 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
@@ -1750,7 +1835,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 5 && (
+              {wizardStep === 6 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4 text-center">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
@@ -1791,7 +1876,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 6 && (
+              {wizardStep === 7 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
@@ -1929,7 +2014,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 7 && (
+              {wizardStep === 8 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
@@ -1961,7 +2046,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 8 && (
+              {wizardStep === 9 && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-10 pt-4">
                   <div className="space-y-3">
                     <h2 className="font-[var(--font-serif)] text-2xl font-normal text-[#f4f1ea] md:text-3xl">
@@ -2069,7 +2154,7 @@ function CreateEventForm() {
                 </div>
               )}
 
-              {wizardStep === 9 && (!isPlanSummaryView || showPlanChangeOptions) && (
+              {wizardStep === 10 && (!isPlanSummaryView || showPlanChangeOptions) && (
                 <div className="flex min-h-[min(68vh,640px)] flex-col justify-start md:justify-center space-y-6 pt-4">
                   {planLockedFromUrl && showPlanChangeOptions && (
                     <button
@@ -2152,9 +2237,9 @@ function CreateEventForm() {
               >
                 {loading
                   ? a.createWizard.creating
-                  : wizardStep === 8 && !authReady
+                  : wizardStep === 9 && !authReady
                     ? a.createWizard.checkingAccountBtn
-                    : wizardStep === 8 && !signedIn
+                    : wizardStep === 9 && !signedIn
                       ? a.createWizard.continueWithGoogle
                       : wizardStep < WIZARD_STEPS_FULL
                         ? a.common.continueStory
@@ -2196,6 +2281,11 @@ function CreateEventForm() {
                   {profileUploadError ? (
                     <p className="mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-100/95">
                       {profileUploadError}
+                    </p>
+                  ) : null}
+                  {backgroundUploadError ? (
+                    <p className="mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-100/95">
+                      {backgroundUploadError}
                     </p>
                   ) : null}
                 </div>

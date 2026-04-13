@@ -18,6 +18,7 @@ import { approveStoryAction, unapproveStoryAction } from "@/app/actions/approveS
 import { extendDeadlineAction, closeDeadlineNowAction } from "@/app/actions/updateEventDeadline"
 import { deleteStoryAction } from "@/app/actions/deleteStory"
 import { createPlusCheckoutSessionAction } from "@/app/actions/createPlusCheckoutSession"
+import { createPremiumTierCheckoutSessionAction } from "@/app/actions/createPremiumTierCheckoutSession"
 import { autoSelectTop20ByLikesAction } from "@/app/actions/autoSelectTop20ByLikes"
 import { savePreviewFilmAction } from "@/app/actions/savePreviewFilm"
 import { requestFullFilmAction } from "@/app/actions/requestFullFilm"
@@ -182,12 +183,27 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     if (!event || !slug) return
     setPlusCheckoutLoading(true)
     setPlusCheckoutError(null)
+    setPremiumCheckoutError(null)
     const result: any = await createPlusCheckoutSessionAction(event.id, slug)
     setPlusCheckoutLoading(false)
     if (result.ok && result.url) {
       window.location.href = result.url
     } else {
       setPlusCheckoutError(result.error || "Unable to start checkout.")
+    }
+  }
+
+  const handlePremiumFilmCheckout = async () => {
+    if (!event || !slug) return
+    setPremiumCheckoutLoading(true)
+    setPremiumCheckoutError(null)
+    setPlusCheckoutError(null)
+    const result: any = await createPremiumTierCheckoutSessionAction(event.id, slug)
+    setPremiumCheckoutLoading(false)
+    if (result.ok && result.url) {
+      window.location.href = result.url
+    } else {
+      setPremiumCheckoutError(result.error || "Unable to start checkout.")
     }
   }
 
@@ -376,15 +392,23 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
             <div
               id="memorial-preserve-upgrade"
               tabIndex={-1}
-              className="scroll-mt-8 flex flex-col items-stretch justify-center sm:items-center"
+              className="scroll-mt-8 flex flex-col sm:flex-row gap-3 items-stretch justify-center w-full max-w-2xl mx-auto"
             >
               <button
                 type="button"
                 onClick={handlePlusCheckout}
-                disabled={plusCheckoutLoading}
-                className="w-full sm:max-w-md min-h-[52px] items-center justify-center px-6 btn-landing-gold disabled:pointer-events-none inline-flex"
+                disabled={plusCheckoutLoading || premiumCheckoutLoading}
+                className="flex-1 min-w-0 min-h-[52px] items-center justify-center px-4 sm:px-6 btn-landing-gold disabled:pointer-events-none inline-flex text-center"
               >
                 {plusCheckoutLoading ? tx.memorial.adminProcessing : tx.memorial.adminPreserveForeverCta}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handlePremiumFilmCheckout()}
+                disabled={plusCheckoutLoading || premiumCheckoutLoading}
+                className="flex-1 min-w-0 min-h-[52px] items-center justify-center px-4 sm:px-6 btn-landing-outline-gold disabled:pointer-events-none disabled:opacity-60 inline-flex text-center"
+              >
+                {premiumCheckoutLoading ? tx.memorial.adminProcessing : tx.memorial.adminEternalFilmCta}
               </button>
             </div>
           )}
@@ -395,9 +419,9 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
             </p>
           )}
 
-          {plusCheckoutError ? (
+          {plusCheckoutError || premiumCheckoutError ? (
             <p className="mt-6 text-sm text-[var(--aeterna-gold-muted)] text-center" role="alert">
-              {plusCheckoutError}
+              {plusCheckoutError ?? premiumCheckoutError}
             </p>
           ) : null}
         </div>

@@ -145,7 +145,7 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     adminDashboardWelcome:
       "Organisez les souvenirs, protégez l'héritage et partagez ce sanctuaire. Gérez le profil et les médias à tout moment dans les Paramètres.",
     adminEdit: "Modifier",
-    adminSharePdfInvitation: "Invitation PDF",
+    adminSharePdfInvitation: "INVITATION QR",
     adminPdfGenerating: "Génération…",
     adminBackToFeed: "Retour au flux",
     adminCurrentPlan: "Forfait actuel",
@@ -190,6 +190,7 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
       "Les cinq chapitres sont prêts. Retrouvez-les ci-dessus ou sur le mémorial public.",
     adminPremiumNoClipCredits: "Plus de crédits clip. Contactez le support si besoin.",
     adminPreserveForeverCta: "Préserver à jamais — $19.99",
+    adminEternalFilmCta: "Film éternel — $39.99",
     adminProcessing: "Traitement…",
     adminMemoriesSectionTitle: "Souvenirs",
     adminTabPending: (count: number) => `En attente (${count})`,

@@ -138,7 +138,7 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
     adminDashboardWelcome:
       "نسّق الذكريات، واحْمِ الإرث، وشارك هذا الملاذ. يمكنك إدارة الملف الشخصي والوسائط في أي وقت من الإعدادات.",
     adminEdit: "تعديل",
-    adminSharePdfInvitation: "دعوة PDF",
+    adminSharePdfInvitation: "دعوة QR",
     adminPdfGenerating: "جاري الإنشاء…",
     adminBackToFeed: "العودة للموجز",
     adminCurrentPlan: "الخطة الحالية",
@@ -183,6 +183,7 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
       "اكتملت الفصول الخمسة. يمكنك إعادة المشاهدة أعلاه أو على المزار العام.",
     adminPremiumNoClipCredits: "لا يوجد رصيد مقاطع. تواصل مع الدعم إذا احتجت مساعدة.",
     adminPreserveForeverCta: "حفظ للأبد — $19.99",
+    adminEternalFilmCta: "فيلم الأبد — $39.99",
     adminProcessing: "جاري المعالجة…",
     adminMemoriesSectionTitle: "الذكريات",
     adminTabPending: (count: number) => `قيد الانتظار (${count})`,

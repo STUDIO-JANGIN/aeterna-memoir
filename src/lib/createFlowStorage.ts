@@ -7,8 +7,8 @@ export type MemorialType = "person" | "pet"
 export type StoragePlan = "free" | "plus" | "premium"
 
 export type CreateDraftV1 = {
-  /** `6` = 9-step flow (remembrance → hosting? → …). Older drafts migrated on read. */
-  v: 3 | 4 | 5 | 6
+  /** `7` = 10-step flow (+ memorial background after profile). Older drafts migrated on read. */
+  v: 3 | 4 | 5 | 6 | 7
   memorialType: MemorialType | null
   wizardStep: number
   /** Step 5: if false, Memorial Service + Support Family are skipped. */
@@ -72,8 +72,8 @@ export function clearPendingCheckout(): void {
   localStorage.removeItem(LS_PENDING_CHECKOUT_KEY)
 }
 
-/** Create wizard: 9 steps — remembrance 4; hosting 5; service 6; support 7; account 8; plan 9. */
-const DRAFT_MAX_STEP = 9
+/** Create wizard: 10 steps — … account 9; plan 10. */
+const DRAFT_MAX_STEP = 10
 const LEGACY_V3_MAX_STEP = 6
 
 /** Map drafts from older 10-step wizard into the current flow. */
@@ -102,7 +102,7 @@ export function readCreateDraft(): CreateDraftV1 | null {
     if (!raw) return null
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const ver = parsed.v
-    if (ver !== 1 && ver !== 2 && ver !== 3 && ver !== 4 && ver !== 5 && ver !== 6) return null
+    if (ver !== 1 && ver !== 2 && ver !== 3 && ver !== 4 && ver !== 5 && ver !== 6 && ver !== 7) return null
     const rawStep = typeof parsed.wizardStep === "number" ? (parsed.wizardStep as number) : 1
     let step: number
     if (ver === 1) step = migrateV1WizardStep(rawStep)
@@ -142,9 +142,16 @@ export function readCreateDraft(): CreateDraftV1 | null {
       step = 1
     }
 
+    /** v6 → v7: insert “memorial background” step after profile; shift steps ≥3 up by one. */
+    let draftVersion: 6 | 7 = ver === 7 ? 7 : 6
+    if (ver === 6 && step >= 3) {
+      step = Math.min(step + 1, DRAFT_MAX_STEP)
+      draftVersion = 7
+    }
+
     return {
       ...(parsed as unknown as Partial<CreateDraftV1>),
-      v: 6,
+      v: draftVersion,
       memorialType,
       wizardStep: step,
       willHostMemorialService: willHost ?? null,

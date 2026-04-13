@@ -136,7 +136,7 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
     adminDashboardWelcome:
       "策劃回憶、守護傳承，並分享這片神聖之地。您隨時可以在設定中管理個人資料與媒體。",
     adminEdit: "編輯",
-    adminSharePdfInvitation: "PDF 邀請函",
+    adminSharePdfInvitation: "QR 邀請",
     adminPdfGenerating: "產生中…",
     adminBackToFeed: "回到動態",
     adminCurrentPlan: "目前方案",
@@ -179,6 +179,7 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
       "五章追思短片皆已就緒。您可於上方重播，或至公開紀念頁觀看。",
     adminPremiumNoClipCredits: "短片額度已用完。如需協助請聯絡客服。",
     adminPreserveForeverCta: "永久保存 — $19.99",
+    adminEternalFilmCta: "永恆影片 — $39.99",
     adminProcessing: "處理中…",
     adminMemoriesSectionTitle: "回憶紀錄",
     adminTabPending: (count: number) => `待審核 (${count})`,

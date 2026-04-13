@@ -35,26 +35,64 @@ async function getSessionUser() {
   return user
 }
 
+function rowToOwnerStub(row: unknown): EventOwnerStub | null {
+  if (!row || typeof row !== "object" || !("id" in row)) return null
+  const r = row as Record<string, unknown>
+  const id = typeof r.id === "string" ? r.id : null
+  if (!id) return null
+  return {
+    id,
+    creator_user_id: typeof r.creator_user_id === "string" ? r.creator_user_id : null,
+    creator_email: typeof r.creator_email === "string" ? r.creator_email : null,
+  }
+}
+
 async function findEventOwnerStubBySlug(norm: string): Promise<EventOwnerStub | null> {
   const admin = getSupabaseAdmin()
-  let { data: event, error } = await admin
-    .from("events")
-    .select("id, creator_user_id, creator_email")
-    .eq("slug", norm)
-    .maybeSingle()
+  let { data: raw, error } = await admin.from("events").select("*").eq("slug", norm).maybeSingle()
 
-  if (error || !event) {
-    const { data: fb } = await admin
-      .from("events")
-      .select("id, creator_user_id, creator_email")
-      .ilike("slug", norm)
-      .limit(1)
-      .maybeSingle()
-    event = fb
+  if (error || !raw) {
+    const { data: fb } = await admin.from("events").select("*").ilike("slug", norm).limit(1).maybeSingle()
+    raw = fb
   }
 
-  if (!event?.id) return null
-  return event as EventOwnerStub
+  return rowToOwnerStub(raw)
+}
+
+async function findEventOwnerStubById(eventId: string): Promise<EventOwnerStub | null> {
+  const admin = getSupabaseAdmin()
+  const { data: raw, error } = await admin
+    .from("events")
+    .select("*")
+    .eq("id", eventId.trim())
+    .maybeSingle()
+
+  if (error) {
+    console.error("[findEventOwnerStubById]", error.message)
+    return null
+  }
+  return rowToOwnerStub(raw)
+}
+
+/**
+ * Same as {@link resolveMemorialOwnerForSlug} but keyed by `events.id`.
+ * Use from server actions after the client has already loaded the memorial (avoids slug/session edge cases).
+ */
+export async function resolveMemorialOwnerForEventId(
+  eventId: string,
+): Promise<{ ok: true; eventId: string } | { ok: false }> {
+  const id = eventId?.trim()
+  if (!id) return { ok: false }
+
+  const user = await getSessionUser()
+  if (!user?.id) return { ok: false }
+
+  const event = await findEventOwnerStubById(id)
+  if (!event) return { ok: false }
+
+  if (!isMemorialOwner(user, event)) return { ok: false }
+
+  return { ok: true, eventId: event.id }
 }
 
 /**

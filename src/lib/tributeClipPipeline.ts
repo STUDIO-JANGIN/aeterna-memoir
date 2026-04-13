@@ -19,6 +19,18 @@ type StoryRow = {
   likes_count: number | null
 }
 
+/** Loaded with `select("*")` so optional columns never break the query if migrations lag. */
+type EventRowForClip = {
+  id: string
+  slug?: string | null
+  name?: string | null
+  is_paid?: boolean | null
+  tier?: string | null
+  video_credits?: number | null
+  tribute_film_urls?: unknown
+  video_status?: string | null
+}
+
 export type TributeClipAttemptResult =
   | { ok: true; message: string }
   | { ok: false; error: string; code?: "skip" }
@@ -32,17 +44,18 @@ export async function attemptTributeClipGenerationForEvent(
   options: { revalidate: boolean; source: "admin" | "payment_webhook" }
 ): Promise<TributeClipAttemptResult> {
   const supabase = getSupabaseAdmin()
-  const { data: event, error: eventErr } = await supabase
+  const { data: rawEvent, error: eventErr } = await supabase
     .from("events")
-    .select(
-      "id, slug, name, is_paid, tier, video_credits, tribute_film_urls, video_status"
-    )
+    .select("*")
     .eq("id", eventId)
-    .single()
+    .maybeSingle()
 
-  if (eventErr || !event) {
+  if (eventErr || !rawEvent || typeof rawEvent !== "object" || !("id" in rawEvent)) {
+    console.error("[tributeClipPipeline] event load failed:", eventErr?.message ?? "no row")
     return { ok: false, error: "Event not found." }
   }
+
+  const event = rawEvent as EventRowForClip
 
   const slug = typeof event.slug === "string" ? event.slug : ""
   if (!slug.trim()) {

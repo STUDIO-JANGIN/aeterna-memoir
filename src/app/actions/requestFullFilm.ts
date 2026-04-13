@@ -9,11 +9,10 @@ export type RequestFullFilmResult =
 
 /**
  * Premium: request the next ~10s Luma Ray 2 clip (five clips total per purchase).
- * Resolves the memorial the same way as admin (`resolveMemorialOwnerForSlug`: exact slug, then case-insensitive fallback)
- * so URL casing matches never yield "Event not found" while the dashboard loads.
+ * Resolves ownership via `resolveMemorialOwnerForSlug` (same rules as loading admin stories by URL slug).
  */
 export async function requestFullFilmAction(slug: string): Promise<RequestFullFilmResult> {
-  const resolved = await resolveMemorialOwnerForSlug(slug)
+  const resolved = await resolveMemorialOwnerForSlug(slug?.trim() ?? "")
   if (!resolved.ok) {
     return { ok: false, error: "Event not found." }
   }

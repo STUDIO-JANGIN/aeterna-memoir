@@ -1373,6 +1373,8 @@ export default function GuestFeedPage({ params }: PageProps) {
               {stories.map((story, index) => {
                 const isBlurredByPaywall = isLocked && index >= paywallThreshold
                 const isBlurred = showBlurByDeadline || isBlurredByPaywall
+                const heartKey = normalizeStoryIdForHearts(story.id)
+                const heartCount = heartKey ? (likesMap[heartKey] ?? story.likes_count ?? 0) : (story.likes_count ?? 0)
                 return (
                   <motion.li
                     key={story.id}
@@ -1414,6 +1416,13 @@ export default function GuestFeedPage({ params }: PageProps) {
                         </div>
                       )}
                     </motion.button>
+                    <div
+                      className="pointer-events-none absolute bottom-1.5 right-1.5 z-[20] flex items-center gap-0.5 rounded-md bg-black/55 px-1.5 py-0.5 text-[11px] font-sans tabular-nums text-white/95 shadow-[0_1px_6px_rgba(0,0,0,0.45)] backdrop-blur-[2px]"
+                      aria-label={`${heartCount} hearts`}
+                    >
+                      <span aria-hidden>❤️</span>
+                      <span>{heartCount}</span>
+                    </div>
                     {isBlurred && (
                       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#030303]/35">
                         <svg className="h-7 w-7 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

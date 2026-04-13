@@ -1,7 +1,7 @@
 "use server"
 
 import { attemptTributeClipGenerationForEvent } from "@/lib/tributeClipPipeline"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { resolveMemorialOwnerForSlug } from "@/lib/verifyMemorialOwner"
 
 export type RequestFullFilmResult =
   | { ok: true; message: string }
@@ -9,16 +9,16 @@ export type RequestFullFilmResult =
 
 /**
  * Premium: request the next ~10s Luma Ray 2 clip (five clips total per purchase).
+ * Resolves the memorial the same way as admin (`resolveMemorialOwnerForSlug`: exact slug, then case-insensitive fallback)
+ * so URL casing matches never yield "Event not found" while the dashboard loads.
  */
 export async function requestFullFilmAction(slug: string): Promise<RequestFullFilmResult> {
-  const supabase = getSupabaseAdmin()
-  const { data: row, error } = await supabase.from("events").select("id").eq("slug", slug).maybeSingle()
-
-  if (error || !row?.id) {
+  const resolved = await resolveMemorialOwnerForSlug(slug)
+  if (!resolved.ok) {
     return { ok: false, error: "Event not found." }
   }
 
-  const result = await attemptTributeClipGenerationForEvent(row.id, {
+  const result = await attemptTributeClipGenerationForEvent(resolved.eventId, {
     revalidate: true,
     source: "admin",
   })

@@ -188,6 +188,12 @@ export default function GuestFeedPage({ params }: PageProps) {
     return `${base}/p/${encodeURIComponent(slug)}`
   }, [slug])
 
+  /** Home landing `#pricing` — `?locale=` matches `app/page.tsx` so KO/JA/ZH/etc. see the right landing copy. */
+  const landingPricingHref = useMemo(
+    () => `/?locale=${encodeURIComponent(appLocale)}#pricing`,
+    [appLocale],
+  )
+
   const dualRouteShareText = useMemo(() => {
     if (!event) return ""
     const name = event.name?.trim() || "our loved one"
@@ -1049,7 +1055,7 @@ export default function GuestFeedPage({ params }: PageProps) {
             <MemorialTrialCountdown
               variant="banner"
               remainingMs={photoDeadlineRemainingMs}
-              upgradeHref={`/?locale=${encodeURIComponent(appLocale)}#pricing`}
+              upgradeHref={landingPricingHref}
               copy={memorialTrialBannerCopy}
             />
           </div>
@@ -1288,7 +1294,10 @@ export default function GuestFeedPage({ params }: PageProps) {
                 </div>
                 ) : (
                   <p className="text-center text-sm text-[var(--aeterna-gold-muted)] max-w-md mx-auto">
-                    <Link href="/create?plan=film&new=1" className="text-[var(--aeterna-gold)] underline underline-offset-2 hover:text-[var(--aeterna-gold-light)]">
+                    <Link
+                      href={landingPricingHref}
+                      className="text-[var(--aeterna-gold)] underline underline-offset-2 hover:text-[var(--aeterna-gold-light)]"
+                    >
                       {tx.memorial.upgradePremiumCta}
                     </Link>{" "}
                     {tx.memorial.upgradePremiumTail}
@@ -1437,23 +1446,12 @@ export default function GuestFeedPage({ params }: PageProps) {
                 <p className="text-sm leading-relaxed text-[var(--landing-text-body)] mb-4">
                   {tx.memorial.memorialUpgradeAnchorIntro}
                 </p>
-                <motion.button
-                  type="button"
-                  onClick={() => {
-                    if (!PAYMENT_ENABLED) {
-                      setShowPaymentComingSoon(true)
-                      return
-                    }
-                    void handleUnlockMemories()
-                  }}
-                  disabled={checkoutLoading}
-                  className="inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl bg-[var(--aeterna-gold)] px-6 py-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60"
-                  whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
-                  whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
-                  transition={ARTISAN_SPRING}
+                <Link
+                  href={landingPricingHref}
+                  className="inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl bg-[var(--aeterna-gold)] px-6 py-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)]"
                 >
-                  {checkoutLoading ? tx.common.redirecting : tx.memorial.upgradePremiumCta}
-                </motion.button>
+                  {tx.memorial.upgradePremiumCta}
+                </Link>
               </div>
             </section>
           )}

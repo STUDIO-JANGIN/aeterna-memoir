@@ -141,26 +141,49 @@ export async function getStoryCommentsAction(
   let data: Record<string, unknown>[] | null = (first.data ?? null) as Record<string, unknown>[] | null
   let error = first.error
 
-  if (error && (isReportColumnOrCacheError(error.message ?? "") || isLikesCountColumnError(error.message ?? ""))) {
-    const second = await supabase
-      .from("comments")
-      .select("id, visitor_name, text, created_at, is_reported")
-      .eq("photo_id", photoIdUuid)
-      .eq("event_id", eventIdUuid)
-      .eq("is_reported", false)
-      .order("created_at", { ascending: true })
-    if (second.error && isReportColumnOrCacheError(second.error.message ?? "")) {
-      const third = await supabase
+  if (error) {
+    const msg = error.message ?? ""
+    /** Prefer targeted retries so we do not drop `likes_count` when only `is_reported` is missing (common). */
+    if (isLikesCountColumnError(msg)) {
+      const second = await supabase
         .from("comments")
-        .select("id, visitor_name, text, created_at")
+        .select("id, visitor_name, text, created_at, is_reported")
         .eq("photo_id", photoIdUuid)
         .eq("event_id", eventIdUuid)
+        .eq("is_reported", false)
         .order("created_at", { ascending: true })
-      data = (third.data ?? null) as Record<string, unknown>[] | null
-      error = third.error
-    } else {
       data = (second.data ?? null) as Record<string, unknown>[] | null
       error = second.error
+      if (error && isReportColumnOrCacheError(error.message ?? "")) {
+        const third = await supabase
+          .from("comments")
+          .select("id, visitor_name, text, created_at")
+          .eq("photo_id", photoIdUuid)
+          .eq("event_id", eventIdUuid)
+          .order("created_at", { ascending: true })
+        data = (third.data ?? null) as Record<string, unknown>[] | null
+        error = third.error
+      }
+    } else if (isReportColumnOrCacheError(msg)) {
+      const second = await supabase
+        .from("comments")
+        .select("id, visitor_name, text, created_at, likes_count")
+        .eq("photo_id", photoIdUuid)
+        .eq("event_id", eventIdUuid)
+        .eq("is_reported", false)
+        .order("created_at", { ascending: true })
+      data = (second.data ?? null) as Record<string, unknown>[] | null
+      error = second.error
+      if (error && isReportColumnOrCacheError(error.message ?? "")) {
+        const third = await supabase
+          .from("comments")
+          .select("id, visitor_name, text, created_at, likes_count")
+          .eq("photo_id", photoIdUuid)
+          .eq("event_id", eventIdUuid)
+          .order("created_at", { ascending: true })
+        data = (third.data ?? null) as Record<string, unknown>[] | null
+        error = third.error
+      }
     }
   }
 

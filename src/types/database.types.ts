@@ -1,7 +1,11 @@
 /**
- * Manual sync with Supabase `public.comments` (mirror updates when the schema changes).
- * Rows with `is_reported: true` are excluded from memorial UI queries.
+ * Manual sync with Supabase `public.*` tables (mirror updates when the schema changes).
+ *
+ * - **`EventsRow`**: `public.events` — see `events.schema.ts` (full column list + migration notes).
+ * - **`Comment`**: `public.comments` — rows with `is_reported: true` are excluded from memorial UI.
  */
+export type { EventsRow } from "./events.schema"
+
 export interface Comment {
   id: string
   visitor_name: string

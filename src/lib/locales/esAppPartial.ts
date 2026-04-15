@@ -171,7 +171,7 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
     adminPdfGenerating: "Generando…",
     adminInvitationSheetTitle: "Compartir y descargar",
     adminInvitationSheetPreparing: "Preparando la invitación…",
-    adminInvitationShareKakao: "Compartir con KakaoTalk",
+    adminInvitationShareInstagram: "Compartir con Instagram",
     adminInvitationShareLine: "Compartir con LINE",
     adminInvitationShareWhatsApp: "Compartir con WhatsApp",
     adminInvitationNativeShare: "Compartir con…",
@@ -221,6 +221,9 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
     adminPremiumAllClipsComplete:
       "Los cinco capítulos están listos. Vuelva a verlos arriba o en el memorial público.",
     adminPremiumNoClipCredits: "No le quedan créditos de clip. Contacte a soporte si necesita ayuda.",
+    adminPremiumAiWaitlistTitle: "Está en la lista de espera",
+    adminPremiumAiWaitlistBody:
+      "La generación de clips homenaje con IA aún no está disponible en el servidor. Le hemos añadido a la lista de espera; nos pondremos en contacto cuando esté listo. Para cualquier consulta: hoon@aya.yale.edu",
     adminPreserveForeverCta: "Preservar para siempre",
     adminEternalFilmCta: "Película eterna",
     adminPlusPreservedBody:
@@ -229,6 +232,16 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
     adminMemoriesSectionTitle: "Recuerdos",
     adminTabPending: (count: number) => `Pendientes (${count})`,
     adminTabApproved: (count: number) => `Aprobados (${count})`,
+    adminStoryApprove: "Aprobar",
+    adminStoryDelete: "Eliminar",
+    adminStoryUnapprove: "Desaprobar",
+    adminStoryDeleteAria: "Eliminar recuerdo",
+    adminStoryDeletePermanentAria: "Eliminar recuerdo de forma permanente",
+    adminApprovedEmpty:
+      "Aún no hay recuerdos aprobados. Revise las solicitudes pendientes para completar el santuario.",
+    adminDeleteMemoryConfirm:
+      "¿Eliminar permanentemente este recuerdo? Esta acción no se puede deshacer.",
+    adminToastStoryMovedToPending: "La foto volvió a pendiente.",
     upgradePremiumCta: "Pasarse a Premium",
     upgradePremiumTail: "para clips homenaje con IA en futuros memoriales.",
     recentSupportAria: "Apoyos recientes",

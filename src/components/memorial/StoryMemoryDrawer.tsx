@@ -17,6 +17,13 @@ import { formatMemorialCommentTime } from "@/lib/formatDate"
 import { bcp47ForLandingLocale } from "@/lib/invitePdfLocale"
 import { coerceIdString, parseUuidString } from "@/lib/uuid"
 
+function sameCommentId(a: string, b: string): boolean {
+  const pa = parseUuidString(a)
+  const pb = parseUuidString(b)
+  if (pa && pb) return pa === pb
+  return String(a).trim() === String(b).trim()
+}
+
 type Story = {
   id: string
   author_name: string | null
@@ -255,7 +262,17 @@ export function StoryMemoryDrawer({
             return next
           })
           setComments((prev) =>
-            prev.map((c) => (c.id === id ? { ...c, likes_count: result.likesCount } : c)),
+            prev.map((c) => {
+              if (!sameCommentId(c.id, id)) return c
+              const fromServer = result.likesCount
+              const fallback = Math.max(
+                0,
+                (c.likes_count ?? 0) + (removing ? -1 : 1),
+              )
+              const nextCount =
+                typeof fromServer === "number" && !Number.isNaN(fromServer) ? fromServer : fallback
+              return { ...c, likes_count: nextCount }
+            }),
           )
         }
       } finally {

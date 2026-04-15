@@ -7,7 +7,7 @@ import type { LandingLocale } from "@/lib/landingTranslations"
 import type { AppStrings } from "@/lib/appTranslations"
 import {
   getMemorialShareChannelOrder,
-  openKakaoMemorialShare,
+  openInstagramMemorialShare,
   openLineWithText,
   type MemorialShareChannel,
 } from "@/lib/invitationShare"
@@ -48,15 +48,12 @@ function IconLine({ className }: { className?: string }) {
   )
 }
 
-function IconKakao({ className }: { className?: string }) {
+function IconInstagram({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M12 4c-4.42 0-8 2.69-8 6.01 0 2.05 1.33 3.87 3.39 5.03L6.5 20l4.47-2.47c.65.09 1.32.14 2.03.14 4.42 0 8-2.69 8-6s-3.58-6-8-6z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" aria-hidden>
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
     </svg>
   )
 }
@@ -67,8 +64,8 @@ function channelIcon(ch: MemorialShareChannel, cls: string) {
       return <IconWhatsApp className={cls} />
     case "line":
       return <IconLine className={cls} />
-    case "kakao":
-      return <IconKakao className={cls} />
+    case "instagram":
+      return <IconInstagram className={cls} />
     case "sms":
       return <MessageSquare className={cls} strokeWidth={1.5} />
     case "email":
@@ -82,8 +79,8 @@ function channelIcon(ch: MemorialShareChannel, cls: string) {
 
 function channelLabel(ch: MemorialShareChannel, m: MemorialTx): string {
   switch (ch) {
-    case "kakao":
-      return "KakaoTalk"
+    case "instagram":
+      return m.shareChannelInstagram
     case "line":
       return "LINE"
     case "whatsapp":
@@ -149,8 +146,8 @@ export function ShareMemorialModal({
       }
 
       switch (ch) {
-        case "kakao":
-          openKakaoMemorialShare(text, url)
+        case "instagram":
+          openInstagramMemorialShare(text, url)
           break
         case "line":
           openLineWithText(text)

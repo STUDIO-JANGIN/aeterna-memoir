@@ -23,6 +23,8 @@ function extForMime(mime: string): string {
 
 /**
  * Upload optional memorial page background image after event creation (same pattern as profile).
+ * Requires columns `memorial_background_image` and `memorial_background_position` on `events`
+ * — apply `supabase-sync-events-optional-columns.sql` (or the individual `supabase-add-memorial-background-*.sql` files) before production use.
  */
 export async function uploadNewEventBackgroundAction(
   slug: string,

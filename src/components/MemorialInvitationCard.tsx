@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { Download, Printer, X } from "lucide-react"
-import { PDFDocument } from "pdf-lib"
 import {
   canvasToPngBlob,
   renderMemorialInvitationCanvas,
   type MemorialInvitationCanvasInput,
 } from "@/lib/memorialInvitationCanvas"
+import { renderMemorialInvitationPdfFromCanvasInput } from "@/lib/memorialInvitationPdfExport"
 import { shareOrDownloadPng } from "@/lib/shareImage"
 import { MemorialCard } from "@/components/MemorialCard"
 
@@ -120,15 +120,20 @@ export function MemorialInvitationCard({
   const handlePrintPdf = useCallback(async () => {
     setBusy(true)
     try {
-      const canvas = await renderCanvas()
-      const blob = await canvasToPngBlob(canvas)
-      const bytes = new Uint8Array(await blob.arrayBuffer())
-      const pdfDoc = await PDFDocument.create()
-      const png = await pdfDoc.embedPng(bytes)
-      const page = pdfDoc.addPage([png.width, png.height])
-      page.drawImage(png, { x: 0, y: 0, width: png.width, height: png.height })
-      const pdfBytes = await pdfDoc.save()
-      const pdfBlob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" })
+      const input = buildCanvasInput({
+        name,
+        slug,
+        guestUrl,
+        birthDate,
+        deathDate,
+        location,
+        ceremonyTime,
+        fundLink,
+        profileImageUrl,
+        profileImagePan,
+        remembranceBio,
+      })
+      const pdfBlob = await renderMemorialInvitationPdfFromCanvasInput(input)
       const url = URL.createObjectURL(pdfBlob)
       const w = window.open(url, "_blank", "noopener,noreferrer")
       if (w) {
@@ -154,7 +159,19 @@ export function MemorialInvitationCard({
     } finally {
       setBusy(false)
     }
-  }, [renderCanvas, slug])
+  }, [
+    name,
+    slug,
+    guestUrl,
+    birthDate,
+    deathDate,
+    location,
+    ceremonyTime,
+    fundLink,
+    profileImageUrl,
+    profileImagePan,
+    remembranceBio,
+  ])
 
   useEffect(() => {
     if (!zoomOpen) return

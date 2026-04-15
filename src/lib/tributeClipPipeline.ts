@@ -33,7 +33,7 @@ type EventRowForClip = {
 
 export type TributeClipAttemptResult =
   | { ok: true; message: string }
-  | { ok: false; error: string; code?: "skip" }
+  | { ok: false; error: string; code?: "skip" | "missing_ai_config" }
 
 /**
  * Generate the next ~10s Luma clip for a memorial (by Supabase events.id).
@@ -203,11 +203,16 @@ export async function attemptTributeClipGenerationForEvent(
       }
     )
     const isMissingKey = jobResult.error.includes("LUMA_API_KEY")
+    if (isMissingKey) {
+      return {
+        ok: false,
+        error: "missing_ai_config",
+        code: "missing_ai_config",
+      }
+    }
     return {
       ok: false,
-      error: isMissingKey
-        ? "AI video isn’t configured on the server yet (missing API key). Please contact support."
-        : "We couldn’t start AI video generation. Please try again shortly.",
+      error: "We couldn’t start AI video generation. Please try again shortly.",
     }
   }
 

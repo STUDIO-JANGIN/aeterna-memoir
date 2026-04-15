@@ -164,7 +164,7 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
     adminPdfGenerating: "جاري الإنشاء…",
     adminInvitationSheetTitle: "مشاركة وتنزيل",
     adminInvitationSheetPreparing: "جاري تجهيز الدعوة…",
-    adminInvitationShareKakao: "مشاركة عبر KakaoTalk",
+    adminInvitationShareInstagram: "مشاركة عبر Instagram",
     adminInvitationShareLine: "مشاركة عبر LINE",
     adminInvitationShareWhatsApp: "مشاركة عبر واتساب",
     adminInvitationNativeShare: "مشاركة عبر…",
@@ -214,6 +214,9 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
     adminPremiumAllClipsComplete:
       "اكتملت الفصول الخمسة. يمكنك إعادة المشاهدة أعلاه أو على المزار العام.",
     adminPremiumNoClipCredits: "لا يوجد رصيد مقاطع. تواصل مع الدعم إذا احتجت مساعدة.",
+    adminPremiumAiWaitlistTitle: "أُضِفتَ إلى قائمة الانتظار",
+    adminPremiumAiWaitlistBody:
+      "توليد مقاطع التحية بالذكاء الاصطناعي غير متاح بعد على الخادم. تم تسجيلك في قائمة الانتظار وسنتواصل عند الجاهزية. للاستفسارات: hoon@aya.yale.edu",
     adminPreserveForeverCta: "حفظ للأبد",
     adminEternalFilmCta: "فيلم الأبد",
     adminPlusPreservedBody:
@@ -222,6 +225,16 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
     adminMemoriesSectionTitle: "الذكريات",
     adminTabPending: (count: number) => `قيد الانتظار (${count})`,
     adminTabApproved: (count: number) => `تم الموافقة (${count})`,
+    adminStoryApprove: "موافقة",
+    adminStoryDelete: "حذف",
+    adminStoryUnapprove: "إلغاء الموافقة",
+    adminStoryDeleteAria: "حذف الذكرى",
+    adminStoryDeletePermanentAria: "حذف الذكرى نهائياً",
+    adminApprovedEmpty:
+      "لا توجد ذكريات موافق عليها بعد. راجع الطلبات المعلّقة لإكمال المزار.",
+    adminDeleteMemoryConfirm:
+      "هل تريد حذف هذه الذكرى نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+    adminToastStoryMovedToPending: "عادت الصورة إلى قائمة الانتظار.",
     upgradePremiumCta: "الترقية إلى بريميوم",
     upgradePremiumTail: "لمقاطع تحية بالذكاء الاصطناعي في المزارات القادمة.",
     recentSupportAria: "دعم حديث",

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Suspense } from "react"
 import { getEventBySlug } from "@/app/actions/setStorySelected"
 import { getAppBaseUrl } from "@/lib/appUrl"
+import { verifyMemorialOwnerBySlug } from "@/lib/verifyMemorialOwner"
 import GuestFeedPage from "./MemorialGuestFeedClient"
 
 /** Guest memorial feed loads story comments via client + server actions; avoid stale empty lists from ISR. */
@@ -50,10 +51,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function MemorialPage(props: Props) {
+export default async function MemorialPage(props: Props) {
+  const { slug } = await props.params
+  const slugNorm = typeof slug === "string" ? slug.trim() : ""
+  const initialViewerIsOwner = slugNorm ? await verifyMemorialOwnerBySlug(slugNorm) : false
+
   return (
     <Suspense fallback={<div className="min-h-dvh bg-landing aeterna-page-fade" aria-hidden />}>
-      <GuestFeedPage {...props} />
+      <GuestFeedPage params={props.params} initialViewerIsOwner={initialViewerIsOwner} />
     </Suspense>
   )
 }

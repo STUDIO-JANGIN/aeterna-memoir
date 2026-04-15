@@ -2,7 +2,7 @@ import { PDFDocument, rgb } from "pdf-lib"
 import type { PDFPage, PDFFont } from "pdf-lib"
 import QRCode from "qrcode"
 import sharp from "sharp"
-import { parseCeremonyForInvitePdf } from "@/lib/invitePdfCeremony"
+import { parseCeremonyForInvitePdf, type CeremonyParts } from "@/lib/invitePdfCeremony"
 import { shapeArabicLineForPdf } from "@/lib/invitePdfArabic"
 import { formatInvitePdfIsoDate } from "@/lib/invitePdfFormat"
 import {
@@ -14,18 +14,20 @@ import {
 import type { LandingLocale } from "@/lib/landingTranslations"
 import { formatInvitePdfContactLine, getInvitePdfStrings } from "@/lib/invitePdfTranslations"
 
-/** A5 portrait (pt); print-friendly memorial card. */
+/** A5 portrait (pt); print-friendly memorial invitation. */
 const PAGE_WIDTH = 420
 const PAGE_HEIGHT = 595
 
-const PAPER = rgb(249 / 255, 249 / 255, 247 / 255)
+/** Warm cream paper (reference-style). */
+const PAPER = rgb(252 / 255, 250 / 255, 245 / 255)
 const INK = rgb(26 / 255, 26 / 255, 26 / 255)
-const INK_MUTED = rgb(110 / 255, 108 / 255, 104 / 255)
-const GOLD = rgb(197 / 255, 160 / 255, 89 / 255)
+const INK_MUTED = rgb(95 / 255, 90 / 255, 86 / 255)
+/** Dusty rose / terracotta for the name (reference). */
+const NAME_ACCENT = rgb(175 / 255, 105 / 255, 98 / 255)
 
-const MARGIN = 48
-const FOOTER_RESERVE = 168
-const BODY_FLOOR = FOOTER_RESERVE + 24
+const FRAME_INSET = 34
+const CONTENT_PAD = 26
+const MARGIN = FRAME_INSET + CONTENT_PAD
 
 function pdfSafeLine(s: string): string {
   return s
@@ -85,30 +87,9 @@ function wrapText(
   return lines
 }
 
-function drawHairline(
-  page: PDFPage,
-  x1: number,
-  y: number,
-  x2: number,
-  color: ReturnType<typeof rgb> = GOLD
-) {
-  page.drawLine({
-    start: { x: x1, y },
-    end: { x: x2, y },
-    thickness: 0.35,
-    color,
-    opacity: 0.95,
-  })
-}
-
 type Align = "left" | "center" | "right"
 
-function textX(
-  align: Align,
-  pageWidth: number,
-  margin: number,
-  lineWidth: number
-): number {
+function textX(align: Align, pageWidth: number, margin: number, lineWidth: number): number {
   if (align === "center") return (pageWidth - lineWidth) / 2
   if (align === "right") return pageWidth - margin - lineWidth
   return margin
@@ -157,6 +138,32 @@ async function toCircularProfilePng(bytes: Uint8Array, diameter: number): Promis
   return new Uint8Array(out)
 }
 
+function buildServiceLines(
+  ceremonyTime: string | null | undefined,
+  ceremony: CeremonyParts,
+  locale: LandingLocale
+): string[] {
+  const raw = ceremonyTime?.trim()
+  if (!raw || /^time\s*tbd$/i.test(raw)) return []
+  if (raw.includes("·")) {
+    return raw
+      .split("·")
+      .map((s) => prepareLineForPdf(s.trim(), locale))
+      .filter(Boolean)
+  }
+  const out: string[] = []
+  if (ceremony.dateLine && ceremony.dateLine !== "—") {
+    out.push(prepareLineForPdf(ceremony.dateLine, locale))
+  }
+  if (ceremony.timeLine) {
+    out.push(prepareLineForPdf(ceremony.timeLine, locale))
+  }
+  if (out.length === 0) {
+    out.push(prepareLineForPdf(raw, locale))
+  }
+  return out
+}
+
 export type InvitePdfRenderInput = {
   guestUrl: string
   name: string | null
@@ -179,22 +186,19 @@ export async function renderInvitePdfBytes(input: InvitePdfRenderInput): Promise
     deathDate,
     location,
     ceremonyTime,
-    invitationBio,
     invitationContactPhone,
-    bankInfo,
     profileImageUrl,
     locale,
   } = input
 
   const strings = getInvitePdfStrings(locale)
   const align: Align = locale === "ar" ? "right" : "center"
-  const rowAlign: Align = locale === "ar" ? "right" : "left"
 
   const qrDataUrl = await QRCode.toDataURL(guestUrl, {
-    margin: 2,
-    scale: 11,
+    margin: 1,
+    scale: 10,
     errorCorrectionLevel: "M",
-    color: { dark: "#1a1a1a", light: "#f9f9f7" },
+    color: { dark: "#1a1a1a", light: "#fcf8f5" },
   })
   const qrBase64 = qrDataUrl.split(",")[1]
   const qrBytes = Buffer.from(qrBase64, "base64")
@@ -210,15 +214,23 @@ export async function renderInvitePdfBytes(input: InvitePdfRenderInput): Promise
   const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
   const width = PAGE_WIDTH
   const height = PAGE_HEIGHT
+  const margin = MARGIN
+  const textW = width - margin * 2
 
   page.drawRectangle({ x: 0, y: 0, width, height, color: PAPER })
 
-  const margin = MARGIN
-  const textW = width - margin * 2
-  const bodySize = 10
-  const jaGap = locale === "ja" ? 1.12 : 1.05
+  const fw = width - FRAME_INSET * 2
+  const fh = height - FRAME_INSET * 2
+  const fx = FRAME_INSET
+  const fy = FRAME_INSET
+  const stroke = { thickness: 0.75 as const, color: INK }
+  page.drawLine({ start: { x: fx, y: fy }, end: { x: fx + fw, y: fy }, ...stroke })
+  page.drawLine({ start: { x: fx + fw, y: fy }, end: { x: fx + fw, y: fy + fh }, ...stroke })
+  page.drawLine({ start: { x: fx + fw, y: fy + fh }, end: { x: fx, y: fy + fh }, ...stroke })
+  page.drawLine({ start: { x: fx, y: fy + fh }, end: { x: fx, y: fy }, ...stroke })
 
-  let y = height - 56
+  const jaGap = locale === "ja" ? 1.12 : 1.05
+  let y = height - margin - 8
 
   const lead = prepareLineForPdf(strings.nameLead, locale)
   if (lead) {
@@ -228,13 +240,20 @@ export async function renderInvitePdfBytes(input: InvitePdfRenderInput): Promise
       x: textX(align, width, margin, w),
       y,
       size: leadSize,
-      font,
+      font: remembranceFont,
       color: INK_MUTED,
     })
-    y -= 18 * jaGap
+    y -= 20 * jaGap
   }
 
-  const photoSide = 128
+  const displayName = prepareLineForPdf(name?.trim() || strings.fallbackName, locale)
+  const nameSize = locale === "ko" || locale === "ja" || locale === "zh" || locale === "zh-hk" ? 21 : 23
+  const nameLines = wrapText(emphasis, displayName, nameSize, textW, locale)
+  const nameGap = Math.round(nameSize * 1.12)
+  y = drawLines(page, emphasis, nameLines, nameSize, width, margin, y, NAME_ACCENT, nameGap, align)
+  y -= 18 * jaGap
+
+  const photoSide = 118
   if (profileImageUrl?.startsWith("http")) {
     try {
       const res = await fetch(profileImageUrl)
@@ -249,177 +268,76 @@ export async function renderInvitePdfBytes(input: InvitePdfRenderInput): Promise
           img = isJpeg ? await pdfDoc.embedJpg(buf) : await pdfDoc.embedPng(buf)
         }
         const ix = textX("center", width, margin, photoSide)
-        const iy = y - photoSide - 16
+        const iy = y - photoSide - 10
         page.drawImage(img, { x: ix, y: iy, width: photoSide, height: photoSide })
         y = iy - 22 * jaGap
       }
     } catch {
-      y -= 6
+      y -= 6 * jaGap
     }
   } else {
-    y -= 8
+    y -= 10 * jaGap
   }
 
-  const displayName = prepareLineForPdf(name?.trim() || strings.fallbackName, locale)
-  const nameSize =
-    locale === "ko" || locale === "ja" || locale === "zh" || locale === "zh-hk" ? 22 : 24
-  const nameLines = wrapText(emphasis, displayName, nameSize, textW, locale)
-  const nameGap = Math.round(nameSize * 1.08)
-  y = drawLines(page, emphasis, nameLines, nameSize, width, margin, y, INK, nameGap, align)
-
-  y -= 14 * jaGap
   const bStr = formatInvitePdfIsoDate(birthDate)
   const dStr = formatInvitePdfIsoDate(deathDate)
   const sep = " — "
   const dateLine = `${bStr}${sep}${dStr}`
-  const dateSize = 10
+  const dateSize = 10.5
   const dl = prepareLineForPdf(dateLine, locale)
-  const dw = font.widthOfTextAtSize(dl, dateSize)
+  const dw = emphasis.widthOfTextAtSize(dl, dateSize)
   page.drawText(dl, {
     x: textX(align, width, margin, dw),
     y,
     size: dateSize,
-    font,
-    color: INK_MUTED,
+    font: emphasis,
+    color: INK,
   })
   y -= 22 * jaGap
 
-  drawHairline(page, margin + 32, y + 10, width - margin - 32)
-  y -= 6
-
-  const inviteLines = wrapText(font, strings.inviteLine, bodySize, textW, locale)
-  const inviteGap = locale === "ja" ? 15 : 14
-  y = drawLines(page, font, inviteLines, bodySize, width, margin, y, INK_MUTED, inviteGap, align)
-
-  y -= 12 * jaGap
-
-  const bioRaw = invitationBio?.trim()
-  if (bioRaw && y > BODY_FLOOR + 48) {
-    const bioPrep = prepareLineForPdf(bioRaw, locale)
-    const bioLines = wrapText(remembranceFont, bioPrep, 10.5, textW, locale).slice(0, 3)
-    const bioGap = locale === "ja" ? 15 : 14
-    y = drawLines(
-      page,
-      remembranceFont,
-      bioLines,
-      10.5,
-      width,
-      margin,
-      y,
-      INK_MUTED,
-      bioGap,
-      align
-    )
-    y -= 8 * jaGap
-  }
-
   const ceremony = parseCeremonyForInvitePdf(ceremonyTime, locale)
-
-  /** Thin marker + label + value; LTR uses left margin, RTL right-aligns each line. */
-  const drawCeremonyRow = (label: string, value: string) => {
-    const lab = prepareLineForPdf(label, locale)
-    const val = prepareLineForPdf(value, locale)
-    if (!val || y < BODY_FLOOR + 24) return
-
-    if (rowAlign === "left") {
-      page.drawText("·", { x: margin, y, size: bodySize, font, color: GOLD, opacity: 0.85 })
-      const labW = emphasis.widthOfTextAtSize(lab, bodySize)
-      page.drawText(lab, { x: margin + 12, y, size: bodySize, font: emphasis, color: INK })
-      const mid = "  "
-      const midW = font.widthOfTextAtSize(mid, bodySize)
-      const restW = textW - 12 - labW - midW - 4
-      const vl = wrapText(font, val, bodySize, restW, locale)
-      let vy = y
-      if (vl[0]) {
-        page.drawText(vl[0], {
-          x: margin + 12 + labW + midW,
-          y: vy,
-          size: bodySize,
-          font,
-          color: INK_MUTED,
-        })
-      }
-      for (let i = 1; i < vl.length; i++) {
-        vy -= 14
-        page.drawText(vl[i], { x: margin + 12, y: vy, size: bodySize, font, color: INK_MUTED })
-      }
-      y = vy - 16 * jaGap
-    } else {
-      const labLine = prepareLineForPdf(`·  ${lab}`, locale)
-      const lw = emphasis.widthOfTextAtSize(labLine, bodySize)
-      page.drawText(labLine, {
-        x: width - margin - lw,
-        y,
-        size: bodySize,
-        font: emphasis,
-        color: INK,
-      })
-      let vy = y - 16 * jaGap
-      const vl = wrapText(font, val, bodySize, textW - 8, locale)
-      for (const line of vl) {
-        const w = font.widthOfTextAtSize(line, bodySize)
-        page.drawText(line, {
-          x: width - margin - w,
-          y: vy,
-          size: bodySize,
-          font,
-          color: INK_MUTED,
-        })
-        vy -= 14
-      }
-      y = vy - 10 * jaGap
-    }
+  const serviceLines = buildServiceLines(ceremonyTime, ceremony, locale)
+  const bodySize = 10
+  for (const line of serviceLines) {
+    if (!line || y < 120) break
+    const wrapped = wrapText(font, line, bodySize, textW, locale)
+    const gap = locale === "ja" ? 15 : 14
+    y = drawLines(page, font, wrapped, bodySize, width, margin, y, INK, gap, align)
+    y -= 4 * jaGap
   }
 
-  if (ceremony.dateLine && ceremony.dateLine !== "—") {
-    drawCeremonyRow(strings.dateLabel, ceremony.dateLine)
-  }
-  if (ceremony.timeLine) {
-    drawCeremonyRow(strings.timeLabel, ceremony.timeLine)
-  }
-  if (location?.trim()) {
-    drawCeremonyRow(strings.locationLabel, pdfSafeLine(location))
+  const locRaw = location?.trim()
+  if (locRaw && y > 110) {
+    const locPrep = prepareLineForPdf(locRaw, locale)
+    const locLines = wrapText(font, locPrep, bodySize, textW, locale)
+    const gap = locale === "ja" ? 15 : 14
+    y = drawLines(page, font, locLines, bodySize, width, margin, y, INK_MUTED, gap, align)
+    y -= 10 * jaGap
   }
 
   const phoneRaw = invitationContactPhone?.trim()
-  if (phoneRaw && y > BODY_FLOOR + 28) {
-    drawCeremonyRow(strings.contactLabel, phoneRaw)
+  if (phoneRaw && y > 100) {
+    const contactLine = formatInvitePdfContactLine(locale, phoneRaw)
+    const cl = wrapText(font, prepareLineForPdf(contactLine, locale), 9.5, textW, locale)
+    y = drawLines(page, font, cl, 9.5, width, margin, y, INK_MUTED, locale === "ja" ? 14 : 13, align)
+    y -= 8 * jaGap
   }
 
-  const bankRaw = bankInfo?.trim()
-  if (bankRaw && y > BODY_FLOOR + 28) {
-    drawCeremonyRow(strings.bankLabel, bankRaw)
-  }
-
-  const qrBottom = 42
-  const qrSize = 118
-  const scanBaseline = qrBottom + qrSize + 12
-  const footerMinTop = scanBaseline + 56
-
-  let fy = Math.min(y - 20, height - margin - 24)
-  if (fy < footerMinTop) {
-    fy = footerMinTop
-  }
-
-  const c1 = wrapText(font, strings.closing1, 10, textW, locale)
-  fy = drawLines(page, font, c1, 10, width, margin, fy, INK_MUTED, locale === "ja" ? 15 : 14, align)
-  fy -= 4
-  const c2 = wrapText(font, strings.closing2, 10, textW, locale)
-  fy = drawLines(page, font, c2, 10, width, margin, fy, INK_MUTED, locale === "ja" ? 15 : 14, align)
-
-  const contactLine = phoneRaw ? formatInvitePdfContactLine(locale, phoneRaw) : ""
-  if (contactLine) {
-    fy -= 6
-    const cl = wrapText(font, prepareLineForPdf(contactLine, locale), 9, textW, locale)
-    fy = drawLines(page, font, cl, 9, width, margin, fy, INK_MUTED, 13, align)
-  }
-
+  const qrSize = 100
+  const qrBottom = 44
+  const scanBaseline = qrBottom + qrSize + 11
   const cap = prepareLineForPdf(strings.scanQr, locale)
   const capSize = 8.5
   const capW = font.widthOfTextAtSize(cap, capSize)
+
+  let scanY = Math.min(y - 18, scanBaseline)
+  if (scanY < qrBottom + qrSize + 36) {
+    scanY = qrBottom + qrSize + 36
+  }
+
   page.drawText(cap, {
     x: textX("center", width, margin, capW),
-    y: scanBaseline,
+    y: scanY,
     size: capSize,
     font,
     color: INK_MUTED,
@@ -428,36 +346,6 @@ export async function renderInvitePdfBytes(input: InvitePdfRenderInput): Promise
   const qrImage = await pdfDoc.embedPng(qrBytes)
   const qx = (width - qrSize) / 2
   page.drawImage(qrImage, { x: qx, y: qrBottom, width: qrSize, height: qrSize })
-
-  const pad = 6
-  page.drawLine({
-    start: { x: qx - pad, y: qrBottom - pad },
-    end: { x: qx + qrSize + pad, y: qrBottom - pad },
-    thickness: 0.35,
-    color: GOLD,
-    opacity: 0.9,
-  })
-  page.drawLine({
-    start: { x: qx + qrSize + pad, y: qrBottom - pad },
-    end: { x: qx + qrSize + pad, y: qrBottom + qrSize + pad },
-    thickness: 0.35,
-    color: GOLD,
-    opacity: 0.9,
-  })
-  page.drawLine({
-    start: { x: qx + qrSize + pad, y: qrBottom + qrSize + pad },
-    end: { x: qx - pad, y: qrBottom + qrSize + pad },
-    thickness: 0.35,
-    color: GOLD,
-    opacity: 0.9,
-  })
-  page.drawLine({
-    start: { x: qx - pad, y: qrBottom + qrSize + pad },
-    end: { x: qx - pad, y: qrBottom - pad },
-    thickness: 0.35,
-    color: GOLD,
-    opacity: 0.9,
-  })
 
   return pdfDoc.save()
 }

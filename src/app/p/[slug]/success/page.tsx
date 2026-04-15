@@ -235,7 +235,7 @@ function SuccessContent({ slug }: { slug: string }) {
               {isOwner && (
                 <Link
                   href={`/p/${slug}/admin`}
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/[0.15] px-8 text-[11px] tracking-[0.16em] uppercase text-[#a3a3a3] hover:bg-white/[0.04] transition-colors"
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/[0.15] px-8 text-[11px] font-medium tracking-[0.18em] uppercase text-[#a3a3a3] hover:bg-white/[0.04] transition-colors [font-family:var(--font-sans)]"
                 >
                   {ps.btnDashboard}
                 </Link>
@@ -271,7 +271,7 @@ function SuccessContent({ slug }: { slug: string }) {
             {isOwner && (
               <Link
                 href={`/p/${slug}/admin`}
-                className="flex w-full min-h-[48px] items-center justify-center rounded-full text-[11px] tracking-[0.16em] uppercase text-[#a3a3a3] hover:text-[#e8e4dc] transition-colors"
+                className="flex w-full min-h-[52px] items-center justify-center rounded-full border border-white/[0.15] text-[11px] font-medium tracking-[0.18em] uppercase text-[#a3a3a3] hover:bg-white/[0.04] hover:text-[#e8e4dc] transition-colors [font-family:var(--font-sans)]"
               >
                 {ps.btnDashboard}
               </Link>

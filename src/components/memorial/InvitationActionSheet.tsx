@@ -1,10 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useId, useState } from "react"
+import { useCallback, useEffect, useId, useMemo, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Download, MessageCircle, Share2, X } from "lucide-react"
-import { generateInvitePdfAction } from "@/app/actions/generateInvitePdf"
 import type { AppStrings } from "@/lib/appTranslations"
+import { getAppBaseUrl } from "@/lib/appUrl"
 import {
   buildInvitationPdfFilename,
   buildInvitationShareMessage,
@@ -16,26 +16,23 @@ import {
   sharePdfAsFile,
   type PrimaryMessenger,
 } from "@/lib/invitationShare"
+import { renderMemorialInvitationPdfFromCanvasInput } from "@/lib/memorialInvitationPdfExport"
 import type { LandingLocale } from "@/lib/landingTranslations"
-import type { InvitePdfUrlsMap } from "@/lib/resolveInvitePdfUrl"
+import { ARTISAN_SPRING } from "@/lib/artisanMotion"
 
 type MemorialTx = AppStrings["memorial"]
 
-function base64ToPdfBlob(base64: string): Blob {
-  const binary = atob(base64)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  return new Blob([bytes], { type: "application/pdf" })
-}
-
-function pickInvitePdfUrl(urls: InvitePdfUrlsMap | undefined, primaryUrl: string, locale: LandingLocale): string {
-  const fromLocale = urls?.[locale]?.trim()
-  if (fromLocale) return fromLocale
-  if (locale === "zh-hk") {
-    const zh = urls?.zh?.trim()
-    if (zh) return zh
-  }
-  return primaryUrl.trim()
+/** Matches create-flow {@link MemorialInvitationCard} / canvas PDF export. */
+export type InvitationCanvasData = {
+  name: string
+  birthDate: string | null
+  deathDate: string | null
+  location: string | null
+  ceremonyTime: string | null
+  fundLink: string | null
+  profileImageUrl: string | null
+  profileImagePan: { x: number; y: number } | null
+  remembranceBio: string | null
 }
 
 type Props = {
@@ -45,6 +42,8 @@ type Props = {
   deceasedName: string | null
   locale: LandingLocale
   memorial: MemorialTx
+  /** Required — same inputs as the create wizard invitation preview (9:16 canvas → PDF). */
+  invitationCanvasData: InvitationCanvasData | null
 }
 
 type LoadState = "idle" | "loading" | "ready" | "error"
@@ -62,7 +61,7 @@ function useIsDesktop(): boolean {
 }
 
 function primaryLabel(m: PrimaryMessenger, tx: MemorialTx): string {
-  if (m === "kakao") return tx.adminInvitationShareKakao
+  if (m === "instagram") return tx.adminInvitationShareInstagram
   if (m === "line") return tx.adminInvitationShareLine
   return tx.adminInvitationShareWhatsApp
 }
@@ -75,15 +74,25 @@ function PrimaryIcon({ kind }: { kind: PrimaryMessenger }) {
       </svg>
     )
   }
-  if (kind === "kakao") {
+  if (kind === "instagram") {
     return (
-      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-        <ellipse cx="12" cy="11" rx="8" ry="7" />
-        <path d="M8.5 9.5h.01M12 9.5h.01M15.5 9.5h.01M9 13c1 1 2.5 1.5 4 1s2.5-1 3-2" strokeLinecap="round" />
+      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} aria-hidden>
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="17.5" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
       </svg>
     )
   }
   return <MessageCircle className="h-5 w-5 shrink-0" strokeWidth={1.5} aria-hidden />
+}
+
+function guestMemorialUrl(slug: string): string {
+  const base =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : getAppBaseUrl())
+  const origin = String(base || getAppBaseUrl()).replace(/\/+$/, "")
+  return `${origin}/p/${encodeURIComponent(slug.trim())}`
 }
 
 export function InvitationActionSheet({
@@ -93,13 +102,14 @@ export function InvitationActionSheet({
   deceasedName,
   locale,
   memorial: m,
+  invitationCanvasData,
 }: Props) {
   const titleId = useId()
   const isDesktop = useIsDesktop()
   const [loadState, setLoadState] = useState<LoadState>("idle")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [guestPageUrl, setGuestPageUrl] = useState<string | null>(null)
   const [busy, setBusy] = useState<"primary" | "native" | "download" | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [pdfPreviewObjectUrl, setPdfPreviewObjectUrl] = useState<string | null>(null)
@@ -113,7 +123,7 @@ export function InvitationActionSheet({
     setLoadState("idle")
     setErrorMsg(null)
     setPdfBlob(null)
-    setPdfUrl(null)
+    setGuestPageUrl(null)
     setBusy(null)
   }, [])
 
@@ -122,30 +132,32 @@ export function InvitationActionSheet({
       reset()
       return
     }
+    if (!invitationCanvasData) {
+      setErrorMsg(m.adminInvitationError)
+      setLoadState("error")
+      return
+    }
     let cancelled = false
     setLoadState("loading")
     setErrorMsg(null)
     ;(async () => {
       try {
-        const result = await generateInvitePdfAction(slug, { returnBase64ForLocale: locale })
-        if (cancelled) return
-        if (!result.ok) {
-          setErrorMsg(result.error)
-          setLoadState("error")
-          return
-        }
-        const url = pickInvitePdfUrl(result.urls, result.url, locale)
-        let blob: Blob
-        if (result.pdfBase64) {
-          blob = base64ToPdfBlob(result.pdfBase64)
-        } else {
-          const res = await fetch(url)
-          if (!res.ok) throw new Error("fetch failed")
-          blob = await res.blob()
-        }
+        const gu = guestMemorialUrl(slug)
+        const blob = await renderMemorialInvitationPdfFromCanvasInput({
+          name: invitationCanvasData.name.trim() || "Beloved",
+          guestUrl: gu,
+          birthDate: invitationCanvasData.birthDate,
+          deathDate: invitationCanvasData.deathDate,
+          location: invitationCanvasData.location,
+          ceremonyTime: invitationCanvasData.ceremonyTime,
+          fundLink: invitationCanvasData.fundLink,
+          profileImageUrl: invitationCanvasData.profileImageUrl,
+          profileImagePan: invitationCanvasData.profileImagePan,
+          remembranceBio: invitationCanvasData.remembranceBio,
+        })
         if (cancelled) return
         setPdfBlob(blob)
-        setPdfUrl(url)
+        setGuestPageUrl(gu)
         setLoadState("ready")
       } catch {
         if (!cancelled) {
@@ -157,7 +169,7 @@ export function InvitationActionSheet({
     return () => {
       cancelled = true
     }
-  }, [open, slug, locale, m.adminInvitationError, reset])
+  }, [open, slug, invitationCanvasData, m.adminInvitationError, reset])
 
   useEffect(() => {
     if (!pdfBlob) {
@@ -184,30 +196,41 @@ export function InvitationActionSheet({
     return () => window.clearTimeout(t)
   }, [toast])
 
+  const shareBodyWithLink = useMemo(() => {
+    if (!guestPageUrl) return shareText
+    return `${shareText}\n\n${guestPageUrl}`
+  }, [shareText, guestPageUrl])
+
   const handlePrimary = async () => {
-    if (!pdfBlob || !pdfUrl || busy) return
+    if (!pdfBlob || busy) return
     setBusy("primary")
     try {
       const okFile = await sharePdfAsFile(pdfBlob, filename, shareTitle, shareText)
       if (okFile) return
-      const okUrl = await shareInvitationUrl(pdfUrl, shareText)
-      if (okUrl) return
-      runPrimaryMessengerFallback(primary, pdfUrl, shareText)
+      if (guestPageUrl) {
+        const okUrl = await shareInvitationUrl(guestPageUrl, shareBodyWithLink)
+        if (okUrl) return
+        runPrimaryMessengerFallback(primary, shareText, guestPageUrl, null)
+        return
+      }
     } finally {
       setBusy(null)
     }
   }
 
   const handleNativeShare = async () => {
-    if (!pdfBlob || !pdfUrl || busy) return
+    if (!pdfBlob || busy) return
     setBusy("native")
     try {
       const okFile = await sharePdfAsFile(pdfBlob, filename, shareTitle, shareText)
       if (okFile) return
-      const okUrl = await shareInvitationUrl(pdfUrl, shareText)
-      if (okUrl) return
-      const copied = await copyTextToClipboard(`${shareText}\n${pdfUrl}`)
-      setToast(copied ? m.adminInvitationCopied : m.adminInvitationError)
+      if (guestPageUrl) {
+        const okUrl = await shareInvitationUrl(guestPageUrl, shareBodyWithLink)
+        if (okUrl) return
+        const copied = await copyTextToClipboard(shareBodyWithLink)
+        setToast(copied ? m.adminInvitationCopied : m.adminInvitationError)
+        return
+      }
     } finally {
       setBusy(null)
     }
@@ -235,82 +258,108 @@ export function InvitationActionSheet({
   }, [open, close])
 
   const sheetContent = (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      className="flex max-h-[min(92dvh,720px)] flex-col overflow-hidden rounded-t-2xl border border-[#E2E2E2] bg-[#F9F9F7] shadow-[0_-8px_40px_rgba(0,0,0,0.12)] sm:rounded-2xl sm:shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
-    >
-      <div className="flex items-center justify-between border-b border-[#E2E2E2] px-5 py-4">
-        <h2 id={titleId} className="font-[family-name:var(--font-serif)] text-lg font-normal tracking-[-0.02em] text-[#1a1a1a]">
-          {m.adminInvitationSheetTitle}
-        </h2>
-        <button
-          type="button"
-          onClick={close}
-          className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-[#1a1a1a]/70 transition hover:bg-black/[0.04] hover:text-[#1a1a1a]"
-          aria-label={m.adminInvitationClose}
-        >
-          <X className="h-5 w-5" strokeWidth={1.5} />
-        </button>
-      </div>
+    <div className="card-treasure max-h-[min(92dvh,720px)] w-full rounded-t-2xl p-[1px] shadow-[0_-16px_56px_rgba(0,0,0,0.55)] sm:rounded-[var(--radius-artisan)] sm:shadow-[0_28px_80px_rgba(0,0,0,0.55)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="flex max-h-[min(92dvh,720px)] flex-col overflow-hidden rounded-t-[calc(var(--radius-artisan)-1px)] card-treasure-inner sm:rounded-[calc(var(--radius-artisan)-1px)]"
+      >
+        <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-4">
+          <h2
+            id={titleId}
+            className="font-[var(--font-serif)] text-[1.05rem] font-medium leading-snug tracking-tight text-[var(--landing-text-hero)]"
+          >
+            {m.adminInvitationSheetTitle}
+          </h2>
+          <button
+            type="button"
+            onClick={close}
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-white/65 transition hover:bg-white/[0.06] hover:text-[var(--landing-text-hero)]"
+            aria-label={m.adminInvitationClose}
+          >
+            <X className="h-5 w-5" strokeWidth={1.5} />
+          </button>
+        </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-5">
-        {loadState === "loading" && (
-          <p className="font-[family-name:var(--font-serif)] text-sm text-[#1a1a1a]/65">{m.adminInvitationSheetPreparing}</p>
-        )}
-        {loadState === "error" && (
-          <p className="text-sm text-red-700" role="alert">
-            {errorMsg ?? m.adminInvitationError}
-          </p>
-        )}
-        {loadState === "ready" && pdfBlob && pdfUrl && (
-          <div className="flex flex-col gap-3">
-            <div className="h-[min(50vh,420px)] w-full overflow-hidden rounded-lg border border-[#E2E2E2] bg-[#f0f0ed]">
-              <iframe
-                title={m.adminInvitationSheetTitle}
-                src={pdfPreviewObjectUrl ?? pdfUrl}
-                className="h-full min-h-[240px] w-full"
-              />
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          {loadState === "loading" && (
+            <div
+              className="flex min-h-[min(280px,42dvh)] flex-col items-center justify-center gap-8 px-2 py-6"
+              aria-busy
+              aria-live="polite"
+            >
+              <div className="w-full max-w-[240px] space-y-3 text-center">
+                <div className="relative mx-auto h-1 overflow-hidden rounded-full bg-[var(--aeterna-charcoal-muted)]">
+                  <div
+                    className="absolute inset-y-0 left-0 w-[42%] rounded-full bg-gradient-to-r from-transparent via-[var(--aeterna-gold)] to-transparent shadow-[0_0_14px_rgba(197,160,89,0.45)] animate-[goldLoad_2s_ease-in-out_infinite]"
+                    aria-hidden
+                  />
+                </div>
+                <p className="font-[var(--font-serif)] text-sm leading-relaxed text-[var(--landing-text-body)]">
+                  {m.adminInvitationSheetPreparing}
+                </p>
+                <p className="text-[10px] label-uppercase tracking-[0.22em] text-[var(--landing-text-muted)]">
+                  {m.adminSharePdfInvitation}
+                </p>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => void handlePrimary()}
-              disabled={busy !== null}
-              className="flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-[#C5A059]/50 bg-[#1a1a1a] px-4 text-sm font-medium tracking-wide text-[#F9F9F7] transition hover:bg-[#2a2a2a] disabled:opacity-50"
-            >
-              <PrimaryIcon kind={primary} />
-              {busy === "primary" ? m.adminPdfGenerating : primaryLabel(primary, m)}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => void handleNativeShare()}
-              disabled={busy !== null}
-              className="flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-[#E2E2E2] bg-white px-4 text-sm font-medium tracking-wide text-[#1a1a1a] transition hover:bg-[#fafafa] disabled:opacity-50"
-            >
-              <Share2 className="h-5 w-5 shrink-0" strokeWidth={1.5} />
-              <span className="flex flex-col items-start text-left">
-                <span className="font-[family-name:var(--font-serif)]">{m.adminInvitationNativeShare}</span>
-                <span className="text-[11px] font-normal text-[#1a1a1a]/55">{m.adminInvitationNativeShareHint}</span>
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={busy !== null}
-              className="flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-[#E2E2E2] bg-white px-4 text-sm font-medium tracking-wide text-[#1a1a1a] transition hover:bg-[#fafafa] disabled:opacity-50"
-            >
-              <Download className="h-5 w-5 shrink-0" strokeWidth={1.5} />
-              {busy === "download" ? m.adminPdfGenerating : m.adminInvitationDownload}
-            </button>
-
-            <p className="pt-1 text-center text-[11px] leading-relaxed text-[#1a1a1a]/45">
-              {buildInvitationShareMessage(deceasedName)}
+          )}
+          {loadState === "error" && (
+            <p className="rounded-xl border border-red-500/25 bg-red-950/30 px-4 py-3 text-sm text-red-200/95" role="alert">
+              {errorMsg ?? m.adminInvitationError}
             </p>
-          </div>
-        )}
+          )}
+          {loadState === "ready" && pdfBlob && guestPageUrl && (
+            <div className="flex flex-col gap-3">
+              <div className="h-[min(50vh,420px)] w-full overflow-hidden rounded-xl border border-[var(--border-gold-subtle)]/55 bg-[#080808]/95 ring-1 ring-[var(--aeterna-gold)]/10">
+                <iframe
+                  title={m.adminInvitationSheetTitle}
+                  src={pdfPreviewObjectUrl ?? undefined}
+                  className="h-full min-h-[240px] w-full bg-[#faf8f5]"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => void handlePrimary()}
+                disabled={busy !== null}
+                className="flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-[var(--aeterna-gold)]/45 bg-[var(--aeterna-gold)]/12 px-4 text-sm font-medium tracking-wide text-[var(--aeterna-gold)] transition hover:bg-[var(--aeterna-gold)]/18 disabled:opacity-50"
+              >
+                <PrimaryIcon kind={primary} />
+                {busy === "primary" ? m.adminPdfGenerating : primaryLabel(primary, m)}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleNativeShare()}
+                disabled={busy !== null}
+                className="flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 text-sm font-medium tracking-wide text-[var(--landing-text-hero)] transition hover:bg-white/[0.07] disabled:opacity-50"
+              >
+                <Share2 className="h-5 w-5 shrink-0 text-[var(--aeterna-gold)]/90" strokeWidth={1.5} />
+                <span className="flex flex-col items-start text-left">
+                  <span className="font-[var(--font-serif)]">{m.adminInvitationNativeShare}</span>
+                  <span className="text-[11px] font-normal text-[var(--landing-text-muted)]">
+                    {m.adminInvitationNativeShareHint}
+                  </span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={busy !== null}
+                className="flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 text-sm font-medium tracking-wide text-[var(--landing-text-hero)] transition hover:bg-white/[0.07] disabled:opacity-50"
+              >
+                <Download className="h-5 w-5 shrink-0 text-[var(--aeterna-gold)]/90" strokeWidth={1.5} />
+                {busy === "download" ? m.adminPdfGenerating : m.adminInvitationDownload}
+              </button>
+
+              <p className="pt-1 text-center text-[11px] leading-relaxed text-[var(--landing-text-muted)]">
+                {buildInvitationShareMessage(deceasedName)}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -322,7 +371,7 @@ export function InvitationActionSheet({
           <motion.button
             type="button"
             aria-label={m.adminInvitationClose}
-            className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-black/65 backdrop-blur-[4px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -330,19 +379,19 @@ export function InvitationActionSheet({
             onClick={close}
           />
           {isDesktop ? (
-            <div className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
               <motion.div
-                className="pointer-events-auto w-full max-w-md"
+                className="pointer-events-auto w-full max-w-[min(100vw-2rem,26rem)]"
                 initial={{ opacity: 0, scale: 0.96, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96, y: 8 }}
-                transition={{ type: "spring", damping: 28, stiffness: 320 }}
+                transition={ARTISAN_SPRING}
               >
                 {sheetContent}
               </motion.div>
             </div>
           ) : (
-            <div className="absolute inset-x-0 bottom-0 flex justify-center p-0 pt-8 pointer-events-none">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-0 pt-10">
               <motion.div
                 className="pointer-events-auto w-full max-w-lg"
                 initial={{ y: "100%" }}
@@ -357,7 +406,7 @@ export function InvitationActionSheet({
           {toast ? (
             <div
               role="status"
-              className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-[101] w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-[#E2E2E2] bg-[#F9F9F7] px-4 py-3 text-center text-sm text-[#1a1a1a] shadow-lg"
+              className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-[101] w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 rounded-full border border-[var(--border-gold)] bg-[#1e1e1e]/95 px-4 py-2.5 text-center text-[12px] text-[var(--landing-text-body)] shadow-lg backdrop-blur-sm"
             >
               {toast}
             </div>

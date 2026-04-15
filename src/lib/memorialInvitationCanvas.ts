@@ -7,10 +7,12 @@ import QRCode from "qrcode"
 const W = 1080
 const H = 1920
 
-const PAPER = "#faf8f5"
+const PAPER = "#fcf8f5"
 const INK = "#333333"
 const INK_SOFT = "#4a4a6a"
 const INK_MUTED = "#6b6b6b"
+/** Reference-style dusty rose for the name */
+const NAME_ROSE = "#af6962"
 /** Subtle monument dividers */
 const DIVIDER_GOLD = "rgba(212, 175, 55, 0.1)"
 /** Outer deckle frame */
@@ -193,10 +195,10 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.textAlign = "center"
   ctx.fillStyle = INK_MUTED
   ctx.font = `400 20px ${FONT_SANS}`
-  ctx.fillText("In Loving Memory of", centerX, y)
+  ctx.fillText("In Loving Memory Of", centerX, y)
   y += 44
 
-  ctx.fillStyle = INK
+  ctx.fillStyle = NAME_ROSE
   ctx.font = `600 ${NAME_SIZE_PX}px ${FONT_SERIF}`
   const displayName = name.trim() || "Beloved"
   const nameLines = wrapTitle(ctx, displayName, contentW)
@@ -272,8 +274,8 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   const death = formatDisplayDate(deathDate)
   y = photoY + photoD + 36
   ctx.textAlign = "center"
-  ctx.fillStyle = INK_MUTED
-  ctx.font = `300 ${DATE_QUOTE_SIZE_PX}px ${FONT_SANS}`
+  ctx.fillStyle = INK
+  ctx.font = `500 ${DATE_QUOTE_SIZE_PX + 1}px ${FONT_SANS}`
   ctx.fillText(`${birth}  —  ${death}`, centerX, y)
   y += 52
 
@@ -386,7 +388,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.textAlign = "center"
   ctx.fillStyle = INK
   ctx.font = fontScanCta
-  ctx.fillText("Scan to share a memory", centerX, y)
+  ctx.fillText("Scan to visit the memorial", centerX, y)
 
   y += 40
   ctx.fillStyle = INK_MUTED

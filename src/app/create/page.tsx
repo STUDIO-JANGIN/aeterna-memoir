@@ -44,10 +44,8 @@ import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appU
 import {
   buildCeremonyDisplay,
   ceremonyDateFieldOrder,
-  ceremonyDateFormatHint,
   ceremonyDateTimeFieldLabel,
   ceremonyPeriodOptionLabels,
-  ceremonyTimeFormatHint,
   ceremonyTimeUses12HourClock,
   formatCeremonyMonthOption,
   formatCeremonyNumericPick,
@@ -141,10 +139,9 @@ const MINUTES = ["00", "15", "30", "45"]
 const CEREMONY_YEAR_COUNT = 8
 const CEREMONY_YEARS = Array.from({ length: CEREMONY_YEAR_COUNT }, (_, i) => CURRENT_YEAR + i)
 
-function defaultCeremonyDateParts(): { y: string; m: string; d: string } {
-  const n = new Date()
-  return { y: String(n.getFullYear()), m: String(n.getMonth() + 1), d: String(n.getDate()) }
-}
+/** Empty `<option>` labels for ceremony date/time (match Step 4 birth date pattern). */
+const CEREMONY_PH_DATE = { mm: "MM", dd: "DD", yyyy: "YYYY" } as const
+const CEREMONY_PH_TIME = { hh: "HH", mm: "MM", ampm: "AM/PM" } as const
 
 function daysInCalendarMonth(year: number, month1to12: number): number {
   if (!year || !month1to12) return 31
@@ -152,17 +149,23 @@ function daysInCalendarMonth(year: number, month1to12: number): number {
 }
 
 function clampCeremonyDay(yStr: string, mStr: string, dStr: string): string {
-  const y = Number(yStr)
-  const m = Number(mStr)
-  const d = Number(dStr)
-  if (!y || !m || !d) return dStr
+  const yt = yStr?.trim()
+  const mt = mStr?.trim()
+  const dt = dStr?.trim()
+  if (!yt || !mt || !dt) return dStr
+  const y = Number(yt)
+  const m = Number(mt)
+  const d = Number(dt)
+  if (!y || !m || !d || Number.isNaN(d)) return dStr
   const max = daysInCalendarMonth(y, m)
   return String(Math.min(d, max))
 }
 
 function normalizeCeremonyYear(yStr: string): string {
-  const y = Number(yStr)
-  if (!y || Number.isNaN(y)) return String(CEREMONY_YEARS[0])
+  const t = yStr?.trim()
+  if (!t) return ""
+  const y = Number(t)
+  if (Number.isNaN(y)) return ""
   const lo = CEREMONY_YEARS[0]
   const hi = CEREMONY_YEARS[CEREMONY_YEARS.length - 1]
   if (y < lo) return String(lo)
@@ -314,13 +317,13 @@ function CreateEventForm() {
   const atRestRevealRef = useRef(false)
 
   const [location, setLocation] = useState("")
-  /** Service date — always valid values (no empty/placeholder rows). */
-  const [ceremonyPickY, setCeremonyPickY] = useState(() => defaultCeremonyDateParts().y)
-  const [ceremonyPickM, setCeremonyPickM] = useState(() => defaultCeremonyDateParts().m)
-  const [ceremonyPickD, setCeremonyPickD] = useState(() => defaultCeremonyDateParts().d)
-  const [ceremonyHour12, setCeremonyHour12] = useState(10)
-  const [ceremonyM, setCeremonyM] = useState("00")
-  const [ceremonyPeriod, setCeremonyPeriod] = useState<"AM" | "PM">("AM")
+  /** Service date — empty until set, like Step 4 birth selects (MM / DD / YYYY options). */
+  const [ceremonyPickY, setCeremonyPickY] = useState("")
+  const [ceremonyPickM, setCeremonyPickM] = useState("")
+  const [ceremonyPickD, setCeremonyPickD] = useState("")
+  const [ceremonyHour12, setCeremonyHour12] = useState<number | "">("")
+  const [ceremonyM, setCeremonyM] = useState("")
+  const [ceremonyPeriod, setCeremonyPeriod] = useState<"AM" | "PM" | "">("")
 
   const [fundLink, setFundLink] = useState("")
   /** Printable invitation — words of remembrance */
@@ -555,15 +558,14 @@ function CreateEventForm() {
           setCeremonyPickM(String(mNum))
           setCeremonyPickD(clampCeremonyDay(yNorm, String(mNum), String(dNum)))
         } else {
-          const def = defaultCeremonyDateParts()
-          setCeremonyPickY(normalizeCeremonyYear(def.y))
-          setCeremonyPickM(def.m)
-          setCeremonyPickD(def.d)
+          setCeremonyPickY("")
+          setCeremonyPickM("")
+          setCeremonyPickD("")
         }
         if (d.ceremonyHour12 !== null && d.ceremonyHour12 !== undefined && typeof d.ceremonyHour12 === "number") {
           setCeremonyHour12(d.ceremonyHour12)
-          setCeremonyM(d.ceremonyM && d.ceremonyM !== "" ? d.ceremonyM : "00")
-          setCeremonyPeriod(d.ceremonyPeriod === "PM" ? "PM" : "AM")
+          setCeremonyM(d.ceremonyM && d.ceremonyM !== "" ? d.ceremonyM : "")
+          setCeremonyPeriod(d.ceremonyPeriod === "PM" ? "PM" : d.ceremonyPeriod === "AM" ? "AM" : "")
         } else {
           const legacyH = (draft as { ceremonyH?: number }).ceremonyH
           if (typeof legacyH === "number") {
@@ -571,10 +573,10 @@ function CreateEventForm() {
             setCeremonyHour12(c.hour12)
             setCeremonyPeriod(c.period)
           } else {
-            setCeremonyHour12(10)
-            setCeremonyPeriod("AM")
+            setCeremonyHour12("")
+            setCeremonyPeriod("")
           }
-          setCeremonyM(d.ceremonyM && d.ceremonyM !== "" ? d.ceremonyM : "00")
+          setCeremonyM(d.ceremonyM && d.ceremonyM !== "" ? d.ceremonyM : "")
         }
       }
       setFundLink(draft.fundLink)
@@ -636,7 +638,7 @@ function CreateEventForm() {
       ceremonyDate,
       ceremonyHour12: typeof ceremonyHour12 === "number" ? ceremonyHour12 : null,
       ceremonyM,
-      ceremonyPeriod,
+      ceremonyPeriod: ceremonyPeriod === "" ? null : ceremonyPeriod,
       fundLink,
       invitationBio,
       serviceContactPhone,
@@ -946,15 +948,12 @@ function CreateEventForm() {
     setDeathM("")
     setDeathD("")
     setLocation("")
-    {
-      const def = defaultCeremonyDateParts()
-      setCeremonyPickY(normalizeCeremonyYear(def.y))
-      setCeremonyPickM(def.m)
-      setCeremonyPickD(def.d)
-    }
-    setCeremonyHour12(10)
-    setCeremonyM("00")
-    setCeremonyPeriod("AM")
+    setCeremonyPickY("")
+    setCeremonyPickM("")
+    setCeremonyPickD("")
+    setCeremonyHour12("")
+    setCeremonyM("")
+    setCeremonyPeriod("")
     setFundLink("")
     setInvitationBio("")
     setWillHostMemorialService(null)
@@ -1065,7 +1064,7 @@ function CreateEventForm() {
       ceremonyDate,
       ceremonyHour12: typeof ceremonyHour12 === "number" ? ceremonyHour12 : null,
       ceremonyM,
-      ceremonyPeriod,
+      ceremonyPeriod: ceremonyPeriod === "" ? null : ceremonyPeriod,
       fundLink,
       invitationBio,
       serviceContactPhone,
@@ -1143,15 +1142,12 @@ function CreateEventForm() {
       setStepSlideDir(1)
       if (willHostMemorialService === false) {
         setLocation("")
-        {
-          const def = defaultCeremonyDateParts()
-          setCeremonyPickY(normalizeCeremonyYear(def.y))
-          setCeremonyPickM(def.m)
-          setCeremonyPickD(def.d)
-        }
-        setCeremonyHour12(10)
-        setCeremonyM("00")
-        setCeremonyPeriod("AM")
+        setCeremonyPickY("")
+        setCeremonyPickM("")
+        setCeremonyPickD("")
+        setCeremonyHour12("")
+        setCeremonyM("")
+        setCeremonyPeriod("")
         setFundLink("")
         const next = 9
         const d = buildCreateDraft(next)
@@ -1321,6 +1317,7 @@ function CreateEventForm() {
         if (profileFile && result.slug) {
           const fd = new FormData()
           fd.set("profile_image", profileFile)
+          fd.set("profile_image_position", `${Math.round(profilePan.x)},${Math.round(profilePan.y)}`)
           const uploadRes = await uploadNewEventProfileAction(result.slug, fd)
           if (uploadRes.ok) {
             try {
@@ -1484,14 +1481,6 @@ function CreateEventForm() {
   const ceremonyDateOrder = useMemo(() => ceremonyDateFieldOrder(locale), [locale])
   const ceremonyUses12hClock = useMemo(() => ceremonyTimeUses12HourClock(locale), [locale])
   const ceremonyAmPmLabels = useMemo(() => ceremonyPeriodOptionLabels(locale), [locale])
-  const ceremonyDateColumnLabels = useMemo(() => {
-    const m = ceremonyDateTimeFieldLabel(locale, "month")
-    const d = ceremonyDateTimeFieldLabel(locale, "day")
-    const y = ceremonyDateTimeFieldLabel(locale, "year")
-    if (ceremonyDateOrder === "mdy") return [m, d, y]
-    if (ceremonyDateOrder === "dmy") return [d, m, y]
-    return [y, m, d]
-  }, [locale, ceremonyDateOrder])
 
   const scrollAfterCeremonyMonth = () => {
     if (ceremonyDateOrder === "dmy") scrollNeighborIntoView(ceremonyServiceYRef.current)
@@ -2102,22 +2091,7 @@ function CreateEventForm() {
                     </div>
 
                     <div className="space-y-6">
-                      <div>
-                        <h3 className={stepSectionTitleClass}>{a.createWizard.date}</h3>
-                        <p className="mt-1.5 text-center text-xs text-white/40 tabular-nums md:text-left">
-                          {ceremonyDateFormatHint(locale)}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 md:gap-5">
-                        {ceremonyDateColumnLabels.map((label, i) => (
-                          <span
-                            key={`ceremony-date-col-${i}`}
-                            className={`${fieldLabelClass} text-center text-[10px] md:text-[11px]`}
-                          >
-                            {label}
-                          </span>
-                        ))}
-                      </div>
+                      <h3 className={stepSectionTitleClass}>{a.createWizard.date}</h3>
                       <div className="grid grid-cols-3 gap-4 md:gap-5">
                         {ceremonyDateOrder === "mdy" && (
                           <>
@@ -2126,11 +2100,12 @@ function CreateEventForm() {
                               value={ceremonyPickM}
                               onChange={(e) => {
                                 setCeremonyPickM(e.target.value)
-                                scrollAfterCeremonyMonth()
+                                if (e.target.value) scrollAfterCeremonyMonth()
                               }}
                               className={ghostDateSelectClass}
                               aria-label={ceremonyDateTimeFieldLabel(locale, "month")}
                             >
+                              <option value="">{CEREMONY_PH_DATE.mm}</option>
                               {MONTHS.map((mo) => (
                                 <option key={mo} value={mo}>
                                   {formatCeremonyMonthOption(mo, locale)}
@@ -2142,11 +2117,12 @@ function CreateEventForm() {
                               value={ceremonyPickD}
                               onChange={(e) => {
                                 setCeremonyPickD(e.target.value)
-                                scrollAfterCeremonyDay()
+                                if (e.target.value) scrollAfterCeremonyDay()
                               }}
                               className={ghostDateSelectClass}
                               aria-label={ceremonyDateTimeFieldLabel(locale, "day")}
                             >
+                              <option value="">{CEREMONY_PH_DATE.dd}</option>
                               {ceremonyDayOptions.map((day) => (
                                 <option key={day} value={day}>
                                   {formatCeremonyNumericPick(Number(day), locale)}
@@ -2157,12 +2133,14 @@ function CreateEventForm() {
                               ref={ceremonyServiceYRef}
                               value={ceremonyPickY}
                               onChange={(e) => {
-                                setCeremonyPickY(e.target.value)
-                                scrollAfterCeremonyYear()
+                                const v = e.target.value
+                                setCeremonyPickY(v ? normalizeCeremonyYear(v) : "")
+                                if (v) scrollAfterCeremonyYear()
                               }}
                               className={ghostDateSelectClass}
                               aria-label={ceremonyDateTimeFieldLabel(locale, "year")}
                             >
+                              <option value="">{CEREMONY_PH_DATE.yyyy}</option>
                               {CEREMONY_YEARS.map((y) => (
                                 <option key={y} value={y}>
                                   {formatCeremonyNumericPick(y, locale)}
@@ -2178,11 +2156,12 @@ function CreateEventForm() {
                               value={ceremonyPickD}
                               onChange={(e) => {
                                 setCeremonyPickD(e.target.value)
-                                scrollAfterCeremonyDay()
+                                if (e.target.value) scrollAfterCeremonyDay()
                               }}
                               className={ghostDateSelectClass}
                               aria-label={ceremonyDateTimeFieldLabel(locale, "day")}
                             >
+                              <option value="">{CEREMONY_PH_DATE.dd}</option>
                               {ceremonyDayOptions.map((day) => (
                                 <option key={day} value={day}>
                                   {formatCeremonyNumericPick(Number(day), locale)}
@@ -2194,11 +2173,12 @@ function CreateEventForm() {
                               value={ceremonyPickM}
                               onChange={(e) => {
                                 setCeremonyPickM(e.target.value)
-                                scrollAfterCeremonyMonth()
+                                if (e.target.value) scrollAfterCeremonyMonth()
                               }}
                               className={ghostDateSelectClass}
                               aria-label={ceremonyDateTimeFieldLabel(locale, "month")}
                             >
+                              <option value="">{CEREMONY_PH_DATE.mm}</option>
                               {MONTHS.map((mo) => (
                                 <option key={mo} value={mo}>
                                   {formatCeremonyMonthOption(mo, locale)}
@@ -2209,12 +2189,14 @@ function CreateEventForm() {
                               ref={ceremonyServiceYRef}
                               value={ceremonyPickY}
                               onChange={(e) => {
-                                setCeremonyPickY(e.target.value)
-                                scrollAfterCeremonyYear()
+                                const v = e.target.value
+                                setCeremonyPickY(v ? normalizeCeremonyYear(v) : "")
+                                if (v) scrollAfterCeremonyYear()
                               }}
                               className={ghostDateSelectClass}
                               aria-label={ceremonyDateTimeFieldLabel(locale, "year")}
                             >
+                              <option value="">{CEREMONY_PH_DATE.yyyy}</option>
                               {CEREMONY_YEARS.map((y) => (
                                 <option key={y} value={y}>
                                   {formatCeremonyNumericPick(y, locale)}
@@ -2229,12 +2211,14 @@ function CreateEventForm() {
                               ref={ceremonyServiceYRef}
                               value={ceremonyPickY}
                               onChange={(e) => {
-                                setCeremonyPickY(e.target.value)
-                                scrollAfterCeremonyYear()
+                                const v = e.target.value
+                                setCeremonyPickY(v ? normalizeCeremonyYear(v) : "")
+                                if (v) scrollAfterCeremonyYear()
                               }}
                               className={ghostDateSelectClass}
                               aria-label={ceremonyDateTimeFieldLabel(locale, "year")}
                             >
+                              <option value="">{CEREMONY_PH_DATE.yyyy}</option>
                               {CEREMONY_YEARS.map((y) => (
                                 <option key={y} value={y}>
                                   {formatCeremonyNumericPick(y, locale)}
@@ -2246,11 +2230,12 @@ function CreateEventForm() {
                               value={ceremonyPickM}
                               onChange={(e) => {
                                 setCeremonyPickM(e.target.value)
-                                scrollAfterCeremonyMonth()
+                                if (e.target.value) scrollAfterCeremonyMonth()
                               }}
                               className={ghostDateSelectClass}
                               aria-label={ceremonyDateTimeFieldLabel(locale, "month")}
                             >
+                              <option value="">{CEREMONY_PH_DATE.mm}</option>
                               {MONTHS.map((mo) => (
                                 <option key={mo} value={mo}>
                                   {formatCeremonyMonthOption(mo, locale)}
@@ -2262,11 +2247,12 @@ function CreateEventForm() {
                               value={ceremonyPickD}
                               onChange={(e) => {
                                 setCeremonyPickD(e.target.value)
-                                scrollAfterCeremonyDay()
+                                if (e.target.value) scrollAfterCeremonyDay()
                               }}
                               className={ghostDateSelectClass}
                               aria-label={ceremonyDateTimeFieldLabel(locale, "day")}
                             >
+                              <option value="">{CEREMONY_PH_DATE.dd}</option>
                               {ceremonyDayOptions.map((day) => (
                                 <option key={day} value={day}>
                                   {formatCeremonyNumericPick(Number(day), locale)}
@@ -2279,35 +2265,7 @@ function CreateEventForm() {
                     </div>
 
                     <div className="space-y-6">
-                      <div>
-                        <h3 className={stepSectionTitleClass}>{a.createWizard.time}</h3>
-                        <p className="mt-1.5 text-center text-xs text-white/40 tabular-nums md:text-left">
-                          {ceremonyTimeFormatHint(locale)}
-                        </p>
-                      </div>
-                      <div
-                        className={`grid gap-4 md:gap-5 ${
-                          ceremonyUses12hClock ? "grid-cols-3" : "grid-cols-2"
-                        }`}
-                      >
-                        <span
-                          className={`${fieldLabelClass} text-center text-[10px] md:text-[11px]`}
-                        >
-                          {a.createWizard.hour}
-                        </span>
-                        <span
-                          className={`${fieldLabelClass} text-center text-[10px] md:text-[11px]`}
-                        >
-                          {a.createWizard.min}
-                        </span>
-                        {ceremonyUses12hClock ? (
-                          <span
-                            className={`${fieldLabelClass} text-center text-[10px] md:text-[11px]`}
-                          >
-                            {a.createWizard.amPm}
-                          </span>
-                        ) : null}
-                      </div>
+                      <h3 className={stepSectionTitleClass}>{a.createWizard.time}</h3>
                       <div
                         className={`grid gap-4 md:gap-5 ${
                           ceremonyUses12hClock ? "grid-cols-3" : "grid-cols-2"
@@ -2317,14 +2275,19 @@ function CreateEventForm() {
                           <>
                             <select
                               ref={ceremonyHour12Ref}
-                              value={String(ceremonyHour12)}
+                              value={ceremonyHour12 === "" ? "" : String(ceremonyHour12)}
                               onChange={(e) => {
-                                setCeremonyHour12(Number(e.target.value))
-                                scrollNeighborIntoView(ceremonyMinuteRef.current)
+                                const v = e.target.value
+                                if (v === "") setCeremonyHour12("")
+                                else {
+                                  setCeremonyHour12(Number(v))
+                                  scrollNeighborIntoView(ceremonyMinuteRef.current)
+                                }
                               }}
                               className={ghostDateSelectClass}
                               aria-label={a.createWizard.hour}
                             >
+                              <option value="">{CEREMONY_PH_TIME.hh}</option>
                               {HOURS_12.map((h) => (
                                 <option key={h} value={h}>
                                   {formatCeremonyNumericPick(h, locale)}
@@ -2335,12 +2298,14 @@ function CreateEventForm() {
                               ref={ceremonyMinuteRef}
                               value={ceremonyM}
                               onChange={(e) => {
-                                setCeremonyM(e.target.value)
-                                scrollNeighborIntoView(ceremonyPeriodRef.current)
+                                const v = e.target.value
+                                setCeremonyM(v)
+                                if (v) scrollNeighborIntoView(ceremonyPeriodRef.current)
                               }}
                               className={ghostDateSelectClass}
                               aria-label={a.createWizard.min}
                             >
+                              <option value="">{CEREMONY_PH_TIME.mm}</option>
                               {MINUTES.map((m) => (
                                 <option key={m} value={m}>
                                   {m}
@@ -2351,11 +2316,12 @@ function CreateEventForm() {
                               ref={ceremonyPeriodRef}
                               value={ceremonyPeriod}
                               onChange={(e) =>
-                                setCeremonyPeriod(e.target.value as "AM" | "PM")
+                                setCeremonyPeriod(e.target.value as "AM" | "PM" | "")
                               }
                               className={ghostDateSelectClass}
                               aria-label={a.createWizard.amPm}
                             >
+                              <option value="">{CEREMONY_PH_TIME.ampm}</option>
                               <option value="AM">{ceremonyAmPmLabels.am}</option>
                               <option value="PM">{ceremonyAmPmLabels.pm}</option>
                             </select>
@@ -2364,17 +2330,29 @@ function CreateEventForm() {
                           <>
                             <select
                               ref={ceremonyHour12Ref}
-                              value={String(to24Hour(ceremonyHour12, ceremonyPeriod))}
+                              value={
+                                ceremonyHour12 !== "" &&
+                                (ceremonyPeriod === "AM" || ceremonyPeriod === "PM")
+                                  ? String(to24Hour(ceremonyHour12 as number, ceremonyPeriod))
+                                  : ""
+                              }
                               onChange={(e) => {
-                                const h24 = Number(e.target.value)
-                                const conv = from24hTo12(h24)
-                                setCeremonyHour12(conv.hour12)
-                                setCeremonyPeriod(conv.period)
-                                scrollNeighborIntoView(ceremonyMinuteRef.current)
+                                const v = e.target.value
+                                if (v === "") {
+                                  setCeremonyHour12("")
+                                  setCeremonyPeriod("")
+                                } else {
+                                  const h24 = Number(v)
+                                  const conv = from24hTo12(h24)
+                                  setCeremonyHour12(conv.hour12)
+                                  setCeremonyPeriod(conv.period)
+                                  scrollNeighborIntoView(ceremonyMinuteRef.current)
+                                }
                               }}
                               className={ghostDateSelectClass}
                               aria-label={a.createWizard.hour}
                             >
+                              <option value="">{CEREMONY_PH_TIME.hh}</option>
                               {HOURS_24.map((h) => (
                                 <option key={h} value={h}>
                                   {formatCeremonyNumericPick(h, locale)}
@@ -2390,6 +2368,7 @@ function CreateEventForm() {
                               className={ghostDateSelectClass}
                               aria-label={a.createWizard.min}
                             >
+                              <option value="">{CEREMONY_PH_TIME.mm}</option>
                               {MINUTES.map((m) => (
                                 <option key={m} value={m}>
                                   {m}
@@ -2725,7 +2704,7 @@ function CreateEventForm() {
                   <button
                     type="button"
                     onClick={() => router.push(`/p/${encodeURIComponent(createdSlug)}/admin`)}
-                    className="flex min-h-[52px] w-full items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.04] px-6 text-base font-semibold text-[var(--landing-text-body)] transition-colors hover:border-[var(--aeterna-gold)]/40 hover:bg-[var(--aeterna-gold)]/10 hover:text-[var(--aeterna-gold)] sm:min-w-[200px] sm:flex-1"
+                    className="flex min-h-[52px] w-full items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.04] px-6 text-base font-semibold uppercase tracking-[0.16em] text-[var(--landing-text-body)] transition-colors hover:border-[var(--aeterna-gold)]/40 hover:bg-[var(--aeterna-gold)]/10 hover:text-[var(--aeterna-gold)] sm:min-w-[200px] sm:flex-1 [font-family:var(--font-sans)]"
                   >
                     {a.memorial.admin}
                   </button>

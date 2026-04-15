@@ -51,6 +51,12 @@ export type AdminEvent = {
   ceremony_time: string | null
   flower_link: string | null
   profile_image: string | null
+  /** "x,y" percents for canvas/PDF portrait framing (create-flow pan). */
+  profile_image_position?: string | null
+  /** Guest page blurred backdrop URL (`supabase-add-memorial-background-image.sql`). */
+  memorial_background_image?: string | null
+  /** "x,y" percents for backdrop `object-position` (`supabase-add-memorial-background-position.sql`). */
+  memorial_background_position?: string | null
   music_url: string | null
   bank_info: string | null
   invitation_bio: string | null

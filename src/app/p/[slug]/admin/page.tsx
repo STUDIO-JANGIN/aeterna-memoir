@@ -17,7 +17,6 @@ import { approveStoryAction, unapproveStoryAction } from "@/app/actions/approveS
 import { extendDeadlineAction, closeDeadlineNowAction } from "@/app/actions/updateEventDeadline"
 import { deleteStoryAction } from "@/app/actions/deleteStory"
 import { createPlusCheckoutSessionAction } from "@/app/actions/createPlusCheckoutSession"
-import { createPremiumTierCheckoutSessionAction } from "@/app/actions/createPremiumTierCheckoutSession"
 import { autoSelectTop20ByLikesAction } from "@/app/actions/autoSelectTop20ByLikes"
 import { savePreviewFilmAction } from "@/app/actions/savePreviewFilm"
 import { requestFullFilmAction } from "@/app/actions/requestFullFilm"
@@ -25,7 +24,11 @@ import { updateEventBySlugAction } from "@/app/actions/updateEventBySlug"
 import { generatePreviewVideo } from "@/lib/generatePreviewVideo"
 import { getMemorialFundTotalBySlugAction } from "@/app/actions/getMemorialFundTotal"
 import { AdminVideoGeneration } from "@/components/memorial/AdminVideoGeneration"
-import { InvitationActionSheet } from "@/components/memorial/InvitationActionSheet"
+import {
+  InvitationActionSheet,
+  type InvitationCanvasData,
+} from "@/components/memorial/InvitationActionSheet"
+import { parseMemorialBackgroundPosition } from "@/lib/memorialBackgroundPosition"
 import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
 import { getAppPricingFootnote } from "@/lib/appTranslations"
 import { formatMemorialAdminCheckoutCta } from "@/lib/landingPricing"
@@ -48,10 +51,6 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   const adminPlusCheckoutLabel = useMemo(
     () => formatMemorialAdminCheckoutCta(tx.memorial.adminPreserveForeverCta, 1, pricingCurrency),
     [pricingCurrency, tx.memorial.adminPreserveForeverCta],
-  )
-  const adminPremiumCheckoutLabel = useMemo(
-    () => formatMemorialAdminCheckoutCta(tx.memorial.adminEternalFilmCta, 2, pricingCurrency),
-    [pricingCurrency, tx.memorial.adminEternalFilmCta],
   )
   const memorialTrialBannerCopy = useMemo<MemorialTrialBannerCopy>(
     () => ({
@@ -77,8 +76,6 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const [premiumCheckoutLoading, setPremiumCheckoutLoading] = useState(false)
-  const [premiumCheckoutError, setPremiumCheckoutError] = useState<string | null>(null)
   const [showPaymentComingSoon, setShowPaymentComingSoon] = useState(false)
   const [countdownNow, setCountdownNow] = useState(() => Date.now())
   const [approvedSort, setApprovedSort] = useState<"likes" | "recent">("likes")
@@ -117,6 +114,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   const hasShownFilmArrived = useRef(false)
   const [adminToast, setAdminToast] = useState<string | null>(null)
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false)
+  const [showAiWaitlistModal, setShowAiWaitlistModal] = useState(false)
 
   const pending = stories.filter((s) => !s.is_approved)
   const approvedRaw = stories.filter((s) => s.is_approved)
@@ -168,6 +166,22 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     return () => clearTimeout(t)
   }, [adminToast])
 
+  const invitationCanvasData = useMemo((): InvitationCanvasData | null => {
+    if (!event) return null
+    const pan = parseMemorialBackgroundPosition(event.profile_image_position ?? null)
+    return {
+      name: event.name?.trim() || "Beloved",
+      birthDate: event.birth_date,
+      deathDate: event.death_date,
+      location: event.location,
+      ceremonyTime: event.ceremony_time,
+      fundLink: event.flower_link,
+      profileImageUrl: event.profile_image,
+      profileImagePan: pan,
+      remembranceBio: event.invitation_bio,
+    }
+  }, [event])
+
   const tributeSlots = useMemo(() => normalizeTributeSlots(event?.tribute_film_urls), [event?.tribute_film_urls])
   const allTributeClipsComplete = tributeSlots.every((u) => u != null && String(u).length > 0)
   const clipCreditsRemaining = typeof event?.video_credits === "number" ? event.video_credits : 0
@@ -198,27 +212,12 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     if (!event || !slug) return
     setPlusCheckoutLoading(true)
     setPlusCheckoutError(null)
-    setPremiumCheckoutError(null)
     const result: any = await createPlusCheckoutSessionAction(event.id, slug, checkoutSessionOptions)
     setPlusCheckoutLoading(false)
     if (result.ok && result.url) {
       window.location.href = result.url
     } else {
       setPlusCheckoutError(result.error || "Unable to start checkout.")
-    }
-  }
-
-  const handlePremiumFilmCheckout = async () => {
-    if (!event || !slug) return
-    setPremiumCheckoutLoading(true)
-    setPremiumCheckoutError(null)
-    setPlusCheckoutError(null)
-    const result: any = await createPremiumTierCheckoutSessionAction(event.id, slug, checkoutSessionOptions)
-    setPremiumCheckoutLoading(false)
-    if (result.ok && result.url) {
-      window.location.href = result.url
-    } else {
-      setPremiumCheckoutError(result.error || "Unable to start checkout.")
     }
   }
 
@@ -244,14 +243,12 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     const res = await unapproveStoryAction(storyId)
     if (res.ok) {
       await loadData()
-      setAdminToast("Photo moved back to pending.")
+      setAdminToast(tx.memorial.adminToastStoryMovedToPending)
     }
   }
 
   const confirmAndDelete = (storyId: string) => {
-    if (
-      !window.confirm("Are you sure you want to permanently delete this memory? This cannot be undone.")
-    ) {
+    if (!window.confirm(tx.memorial.adminDeleteMemoryConfirm)) {
       return
     }
     void deleteStoryAction(storyId).then(() => loadData())
@@ -275,6 +272,8 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     setGenerateFilmLoading(false)
     if (res.ok) {
       await loadData()
+    } else if (res.code === "missing_ai_config") {
+      setShowAiWaitlistModal(true)
     } else {
       setGenerateFilmError(res.error)
     }
@@ -402,18 +401,10 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                 <button
                   type="button"
                   onClick={handlePlusCheckout}
-                  disabled={plusCheckoutLoading || premiumCheckoutLoading}
+                  disabled={plusCheckoutLoading}
                   className="flex-1 min-w-0 min-h-[52px] items-center justify-center px-4 sm:px-6 btn-landing-gold disabled:pointer-events-none inline-flex text-center"
                 >
                   {plusCheckoutLoading ? tx.memorial.adminProcessing : adminPlusCheckoutLabel}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handlePremiumFilmCheckout()}
-                  disabled={plusCheckoutLoading || premiumCheckoutLoading}
-                  className="flex-1 min-w-0 min-h-[52px] items-center justify-center px-4 sm:px-6 btn-landing-outline-gold disabled:pointer-events-none disabled:opacity-60 inline-flex text-center"
-                >
-                  {premiumCheckoutLoading ? tx.memorial.adminProcessing : adminPremiumCheckoutLabel}
                 </button>
               </div>
               <p className="mt-3 text-center text-[10px] leading-relaxed text-[var(--aeterna-gold-muted)] max-w-2xl mx-auto">
@@ -428,9 +419,9 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
             </p>
           )}
 
-          {plusCheckoutError || premiumCheckoutError ? (
+          {plusCheckoutError ? (
             <p className="mt-6 text-sm text-[var(--aeterna-gold-muted)] text-center" role="alert">
-              {plusCheckoutError ?? premiumCheckoutError}
+              {plusCheckoutError}
             </p>
           ) : null}
         </div>
@@ -493,7 +484,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
 
         {tab === "approved" && approved.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-white/[0.12] bg-[color:var(--landing-surface)] px-6 py-12 text-center text-landing-body leading-relaxed text-[var(--landing-text-muted)]">
-            No memories approved yet. Review pending submissions to build the shrine.
+            {tx.memorial.adminApprovedEmpty}
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
@@ -513,18 +504,18 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                         onClick={() => approveStoryAction(story.id).then(() => loadData())}
                         className="btn-landing-gold w-full min-h-[44px] justify-center"
                       >
-                        Approve
+                        {tx.memorial.adminStoryApprove}
                       </button>
                       <button
                         type="button"
                         onClick={() => confirmAndDelete(story.id)}
                         className="btn-landing-outline-gold w-full min-h-[40px] justify-center gap-2"
-                        aria-label="Delete memory"
+                        aria-label={tx.memorial.adminStoryDeleteAria}
                       >
                         <svg className="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        Delete
+                        {tx.memorial.adminStoryDelete}
                       </button>
                     </>
                   ) : (
@@ -534,18 +525,18 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                         onClick={() => void handleUnapprove(story.id)}
                         className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.04] px-4 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--landing-text-hero)] transition-colors hover:bg-white/[0.08] hover:border-white/25"
                       >
-                        Unapprove
+                        {tx.memorial.adminStoryUnapprove}
                       </button>
                       <button
                         type="button"
                         onClick={() => confirmAndDelete(story.id)}
                         className="btn-landing-outline-gold w-full min-h-[40px] justify-center gap-2"
-                        aria-label="Permanently delete memory"
+                        aria-label={tx.memorial.adminStoryDeletePermanentAria}
                       >
                         <svg className="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        Delete
+                        {tx.memorial.adminStoryDelete}
                       </button>
                     </>
                   )}
@@ -571,7 +562,40 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
           deceasedName={event.name}
           locale={locale}
           memorial={tx.memorial}
+          invitationCanvasData={invitationCanvasData}
         />
+
+        {showAiWaitlistModal ? (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/55 backdrop-blur-[2px]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ai-waitlist-title"
+            onClick={() => setShowAiWaitlistModal(false)}
+          >
+            <div
+              className="card-landing-airy max-w-md w-full p-6 md:p-8 shadow-[var(--landing-shadow-deep)] border border-white/[0.1]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2
+                id="ai-waitlist-title"
+                className="font-[var(--font-serif)] text-lg text-[var(--landing-text-title)] mb-4"
+              >
+                {tx.memorial.adminPremiumAiWaitlistTitle}
+              </h2>
+              <p className="text-landing-body leading-relaxed text-[var(--landing-text-body)]">
+                {tx.memorial.adminPremiumAiWaitlistBody}
+              </p>
+              <button
+                type="button"
+                className="btn-landing-gold w-full mt-8 min-h-[48px] justify-center"
+                onClick={() => setShowAiWaitlistModal(false)}
+              >
+                {tx.common.ok}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )

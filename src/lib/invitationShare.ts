@@ -1,15 +1,15 @@
 import type { LandingLocale } from "@/lib/landingTranslations"
 
-export type PrimaryMessenger = "kakao" | "line" | "whatsapp"
+export type PrimaryMessenger = "instagram" | "line" | "whatsapp"
 
-/** Korea → Kakao; Japan & Traditional Chinese (Taiwan) → LINE; Hong Kong & default → WhatsApp. */
+/** Korea → Instagram (system share / paste); Japan & Chinese locales → LINE; default → WhatsApp. */
 export function getPrimaryMessenger(locale: LandingLocale): PrimaryMessenger {
-  if (locale === "ko") return "kakao"
-  if (locale === "ja" || locale === "zh") return "line"
+  if (locale === "ko") return "instagram"
+  if (locale === "ja" || locale === "zh" || locale === "zh-hk") return "line"
   return "whatsapp"
 }
 
-export type MemorialShareChannel = "kakao" | "line" | "whatsapp" | "sms" | "email" | "copy"
+export type MemorialShareChannel = "instagram" | "line" | "whatsapp" | "sms" | "email" | "copy"
 
 /** Primary + secondary share actions for the guest memorial modal (order: primary first). */
 export function getMemorialShareChannelOrder(locale: LandingLocale): {
@@ -18,13 +18,13 @@ export function getMemorialShareChannelOrder(locale: LandingLocale): {
 } {
   switch (locale) {
     case "ko":
-      return { primary: "kakao", secondary: ["sms", "copy"] }
+      return { primary: "instagram", secondary: ["sms", "copy"] }
     case "ja":
       return { primary: "line", secondary: ["sms", "email", "copy"] }
     case "zh":
       return { primary: "line", secondary: ["sms", "copy"] }
     case "zh-hk":
-      return { primary: "whatsapp", secondary: ["sms", "copy"] }
+      return { primary: "line", secondary: ["sms", "copy"] }
     case "ar":
       return { primary: "whatsapp", secondary: ["sms", "copy"] }
     default:
@@ -33,24 +33,31 @@ export function getMemorialShareChannelOrder(locale: LandingLocale): {
 }
 
 /**
- * KakaoTalk / Kakao Story — no JS SDK. Mobile: deep link with prefilled text; desktop: Kakao Story share URL.
+ * Instagram has no URL scheme to prefill DMs from the web. Uses the Web Share API so the user can
+ * pick Instagram from the system sheet (common on mobile); otherwise copies the message for paste into IG.
  */
-export function openKakaoMemorialShare(shareText: string, pageUrl: string): void {
+export function openInstagramMemorialShare(shareText: string, pageUrl: string): void {
   if (typeof window === "undefined") return
   const text = shareText.trim()
   const url = pageUrl.trim()
   const payload = url && !text.includes(url) ? `${text}\n${url}` : text || url
-  const ua = navigator.userAgent || ""
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(ua)
-  if (isMobile) {
-    window.location.href = `kakaotalk://send?text=${encodeURIComponent(payload)}`
+
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    const shareData: ShareData = { text: payload }
+    if (url) shareData.url = url
+    void navigator.share(shareData).catch(() => {
+      void copyTextToClipboard(payload)
+    })
     return
   }
-  window.open(
-    `https://story.kakao.com/share?url=${encodeURIComponent(url || window.location.href)}`,
-    "_blank",
-    "noopener,noreferrer",
-  )
+  void copyTextToClipboard(payload)
+}
+
+/**
+ * @deprecated Legacy Kakao path; prefer {@link openInstagramMemorialShare} for Korea.
+ */
+export function openKakaoMemorialShare(shareText: string, pageUrl: string): void {
+  openInstagramMemorialShare(shareText, pageUrl)
 }
 
 export function sanitizeInvitationFilenameSegment(name: string): string {
@@ -117,9 +124,28 @@ export async function shareInvitationUrl(url: string, text: string): Promise<boo
   }
 }
 
+const WHATSAPP_URL_SAFE_CHARS = 2000
+
+/**
+ * Opens WhatsApp with prefilled text. Uses `api.whatsapp.com` (more reliable on desktop than `wa.me`
+ * in some browsers). Truncates very long payloads so the URL stays within practical limits.
+ */
 export function openWhatsAppWithText(text: string): void {
-  const u = `https://wa.me/?text=${encodeURIComponent(text)}`
-  window.open(u, "_blank", "noopener,noreferrer")
+  if (typeof window === "undefined") return
+  let t = text.trim()
+  let encoded = encodeURIComponent(t)
+  while (encoded.length > WHATSAPP_URL_SAFE_CHARS && t.length > 80) {
+    t = `${t.slice(0, Math.floor(t.length * 0.85))}…`
+    encoded = encodeURIComponent(t)
+  }
+  const u = `https://api.whatsapp.com/send?text=${encoded}`
+  const a = document.createElement("a")
+  a.href = u
+  a.target = "_blank"
+  a.rel = "noopener noreferrer"
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
 }
 
 export function openLineWithText(text: string): void {
@@ -133,12 +159,19 @@ export function openKakaoStoryShareUrl(pdfUrl: string): void {
   window.open(u, "_blank", "noopener,noreferrer")
 }
 
+/**
+ * When native share / PDF file share is unavailable, open the primary chat app or share sheet.
+ * Prefer `primaryLink` (e.g. memorial guest URL). Optional `storyShareUrl` is unused for Instagram;
+ * kept for API compatibility.
+ */
 export function runPrimaryMessengerFallback(
   kind: PrimaryMessenger,
-  pdfUrl: string,
-  shareLine: string
+  shareLine: string,
+  primaryLink: string,
+  storyShareUrl?: string | null
 ): void {
-  const text = `${shareLine}\n${pdfUrl}`
+  const main = primaryLink.trim()
+  const text = `${shareLine.trim()}\n\n${main}`
   if (kind === "whatsapp") {
     openWhatsAppWithText(text)
     return
@@ -147,7 +180,7 @@ export function runPrimaryMessengerFallback(
     openLineWithText(text)
     return
   }
-  openKakaoStoryShareUrl(pdfUrl)
+  openInstagramMemorialShare(text, main)
 }
 
 export async function copyTextToClipboard(text: string): Promise<boolean> {

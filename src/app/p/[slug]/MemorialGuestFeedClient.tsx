@@ -25,10 +25,6 @@ import {
 } from "@/app/actions/getPublicMemorialPageData"
 import { LegalFormCaption } from "@/components/LegalFormCaption"
 import { StoryMemoryDrawer } from "@/components/memorial/StoryMemoryDrawer"
-import {
-  MemorialTrialCountdown,
-  type MemorialTrialBannerCopy,
-} from "@/components/memorial/MemorialTrialCountdown"
 import { buildGlobalShareMessage } from "@/components/MemorialShareActions"
 import { ShareMemorialModal } from "@/components/memorial/ShareMemorialModal"
 import { coerceIdString, parseUuidString } from "@/lib/uuid"
@@ -72,6 +68,7 @@ type FeedEvent = {
   invitation_bio: string | null
   memorial_background_image: string | null
   memorial_background_position: string | null
+  profile_image_position: string | null
 }
 
 // Deadline time: prefer expired_at, then collection_end_at, else created_at + 7 days.
@@ -104,13 +101,15 @@ type TeaserStory = { id: string; image_url: string | null }
 
 type PageProps = {
   params: Promise<{ slug: string }>
+  /** Server: signed-in viewer matches memorial creator (cookies). Client refines after auth hydrates. */
+  initialViewerIsOwner?: boolean
 }
 
 const PAYMENT_ENABLED = process.env.NEXT_PUBLIC_PAYMENT_ENABLED === "true"
 
 const DONATION_STORAGE_KEY = (s: string) => `aeterna_donation_${s}`
 
-export default function GuestFeedPage({ params }: PageProps) {
+export default function GuestFeedPage({ params, initialViewerIsOwner = false }: PageProps) {
   const resolvedParams = use(params)
   const slug = typeof resolvedParams?.slug === "string" ? resolvedParams.slug.trim() : ""
   const router = useRouter()
@@ -152,6 +151,8 @@ export default function GuestFeedPage({ params }: PageProps) {
   const [viewerStory, setViewerStory] = useState<Story | null>(null)
   /** Signed-in user for owner-only UI (admin link). */
   const [sessionUser, setSessionUser] = useState<{ id: string; email: string | null } | null>(null)
+  /** False until first `getUser` / `onAuthStateChange` — until then, owner UI may follow `initialViewerIsOwner` from the server. */
+  const [authReady, setAuthReady] = useState(false)
   const [showPremiumBlurPopup, setShowPremiumBlurPopup] = useState(false)
   const [hasDonatedForBank, setHasDonatedForBank] = useState(false)
   const [revealedBankWithoutDonation, setRevealedBankWithoutDonation] = useState(false)
@@ -159,17 +160,6 @@ export default function GuestFeedPage({ params }: PageProps) {
   const [showDonationThankYou, setShowDonationThankYou] = useState(false)
   const [platformTipChecked, setPlatformTipChecked] = useState(true)
   const { app: tx, locale: appLocale } = useLandingLocale()
-  const memorialTrialBannerCopy = useMemo<MemorialTrialBannerCopy>(
-    () => ({
-      preserveLegacyHeader: tx.memorial.preserveLegacyHeader,
-      trialGatheringTimerLabel: tx.memorial.trialGatheringTimerLabel,
-      trialCountdownFromMs: tx.memorial.trialCountdownFromMs,
-      trialUpgradePart1: tx.memorial.trialUpgradePart1,
-      trialUpgradeLinkLabel: tx.memorial.trialUpgradeLinkLabel,
-      trialUpgradePart2: tx.memorial.trialUpgradePart2,
-    }),
-    [tx.memorial],
-  )
   /** Donation checkout uses KRW only for Korean; other app locales use USD path. */
   const donationLocale: "ko" | "en" = appLocale === "ko" ? "ko" : "en"
   const [showUploadSuccessToast, setShowUploadSuccessToast] = useState(false)
@@ -187,12 +177,6 @@ export default function GuestFeedPage({ params }: PageProps) {
     const base = typeof window !== "undefined" ? window.location.origin : getAppBaseUrl()
     return `${base}/p/${encodeURIComponent(slug)}`
   }, [slug])
-
-  /** Home landing `#pricing` — `?locale=` matches `app/page.tsx` so KO/JA/ZH/etc. see the right landing copy. */
-  const landingPricingHref = useMemo(
-    () => `/?locale=${encodeURIComponent(appLocale)}#pricing`,
-    [appLocale],
-  )
 
   const dualRouteShareText = useMemo(() => {
     if (!event) return ""
@@ -254,15 +238,25 @@ export default function GuestFeedPage({ params }: PageProps) {
   // Show cinematic film when URL exists: Premium can view as soon as Luma finishes; others when collection closed.
   const filmReleased = tributeClipsToPlay.length > 0 && (isClosed || isPremiumTier)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const u = data.session?.user
-      setSessionUser(u ? { id: u.id, email: u.email ?? null } : null)
-    })
+    let cancelled = false
+    const sync = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (cancelled) return
+      setSessionUser(user ? { id: user.id, email: user.email ?? null } : null)
+      setAuthReady(true)
+    }
+    void sync()
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       const u = session?.user
       setSessionUser(u ? { id: u.id, email: u.email ?? null } : null)
+      setAuthReady(true)
     })
-    return () => sub.subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      sub.subscription.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {
@@ -331,7 +325,8 @@ export default function GuestFeedPage({ params }: PageProps) {
   useEffect(() => {
     let cancelled = false
     const POLL_MS = 450
-    const POLL_TOTAL_MS = 3200
+    /** Post-create uploads + DB replication can lag the first read; keep polling longer than Stripe webhook cases. */
+    const POLL_TOTAL_MS = 10_000
 
     const getMemorial = async (id: string) => {
       try {
@@ -388,6 +383,7 @@ export default function GuestFeedPage({ params }: PageProps) {
         invitation_bio?: string | null
         memorial_background_image?: string | null
         memorial_background_position?: string | null
+        profile_image_position?: string | null
       }, list: Story[]) => {
         setEvent({
           id: eventData.id,
@@ -417,6 +413,7 @@ export default function GuestFeedPage({ params }: PageProps) {
           invitation_bio: eventData.invitation_bio ?? null,
           memorial_background_image: eventData.memorial_background_image ?? null,
           memorial_background_position: eventData.memorial_background_position ?? null,
+          profile_image_position: eventData.profile_image_position ?? null,
         })
         const storiesNormalized: Story[] = list.map((s) => ({
           ...s,
@@ -803,6 +800,13 @@ export default function GuestFeedPage({ params }: PageProps) {
     return `${p.x}% ${p.y}%`
   }, [event])
 
+  const profileImageObjectPosition = useMemo(() => {
+    if (!event?.profile_image_position?.trim()) return "50% 50%"
+    const p = parseMemorialBackgroundPosition(event.profile_image_position)
+    if (!p) return "50% 50%"
+    return `${p.x}% ${p.y}%`
+  }, [event])
+
   if (loading) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-3 font-sans text-[var(--landing-text-muted)] text-sm label-uppercase tracking-widest uppercase px-6 text-center">
@@ -838,12 +842,24 @@ export default function GuestFeedPage({ params }: PageProps) {
   const birth = formatLongDateForLandingLocale(event.birth_date, appLocale)
   const death = formatLongDateForLandingLocale(event.death_date, appLocale)
   const profileSrc = resolveProfileImageUrl(event.profile_image)
-  const isOwner =
-    !!sessionUser &&
-    isMemorialOwner(sessionUser, {
-      creator_user_id: event.creator_user_id,
-      creator_email: event.creator_email,
-    })
+  const isOwner = useMemo(() => {
+    if (!authReady) {
+      return initialViewerIsOwner
+    }
+    return (
+      !!sessionUser &&
+      isMemorialOwner(sessionUser, {
+        creator_user_id: event.creator_user_id,
+        creator_email: event.creator_email,
+      })
+    )
+  }, [
+    authReady,
+    initialViewerIsOwner,
+    sessionUser,
+    event.creator_user_id,
+    event.creator_email,
+  ])
 
   const showAddStoryCta =
     !filmReleased && !isClosed && photoDeadlineRemainingMs !== null && photoDeadlineRemainingMs > 0
@@ -1045,27 +1061,18 @@ export default function GuestFeedPage({ params }: PageProps) {
         memorial={tx.memorial}
       />
 
-      {/* Free tier: preservation banner — full width at top (safe area for notched phones) */}
-      {event &&
-        !isPaidMemorial &&
-        photoDeadlineRemainingMs !== null &&
-        photoDeadlineRemainingMs > 0 &&
-        !isPhotoDeadlinePassed && (
-          <div className="w-full pt-[max(0.35rem,env(safe-area-inset-top))]">
-            <MemorialTrialCountdown
-              variant="banner"
-              remainingMs={photoDeadlineRemainingMs}
-              upgradeHref={landingPricingHref}
-              copy={memorialTrialBannerCopy}
-            />
-          </div>
-        )}
-
       <header className="relative w-full px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8">
         <div className="mx-auto flex max-w-lg flex-col items-center text-center">
-          <div className="mb-6 aspect-square w-[min(76vw,20rem)] max-w-[85vw] sm:w-[min(82vw,22rem)] sm:max-w-[90vw] shrink-0 overflow-hidden rounded-full border border-[var(--aeterna-gold)]/22 bg-gradient-to-b from-[#f4f1ea]/[0.1] via-[#3a342c] to-[#252018] shadow-[0_22px_56px_-18px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.07)]">
+          <div className="relative mb-6 aspect-square w-[min(76vw,20rem)] max-w-[85vw] sm:w-[min(82vw,22rem)] sm:max-w-[90vw] shrink-0 overflow-hidden rounded-full border border-[var(--aeterna-gold)]/22 bg-gradient-to-b from-[#f4f1ea]/[0.1] via-[#3a342c] to-[#252018] shadow-[0_22px_56px_-18px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.07)]">
             {profileSrc ? (
-              <img src={profileSrc} alt="" className="memorial-thumbnail h-full w-full object-cover" loading="eager" decoding="async" />
+              <img
+                src={profileSrc}
+                alt=""
+                className="memorial-thumbnail pointer-events-none absolute left-1/2 top-1/2 h-[135%] w-[135%] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover"
+                style={{ objectPosition: profileImageObjectPosition }}
+                loading="eager"
+                decoding="async"
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-[#f4f1ea]/[0.06] font-serif text-[clamp(2.5rem,18vw,4rem)] text-[var(--landing-text-muted)]">
                 {(event.name ?? "?").charAt(0)}
@@ -1104,24 +1111,26 @@ export default function GuestFeedPage({ params }: PageProps) {
                   {addStoryLabel}
                 </motion.button>
               ) : null}
-              <motion.button
-                type="button"
-                onClick={() => setShareModalOpen(true)}
-                className="inline-flex min-h-[52px] items-center justify-center rounded-full border border-[var(--aeterna-gold)]/55 bg-[#030303]/40 px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-gold)] shadow-[0_4px_20px_-6px_rgba(197,160,89,0.25)] transition-colors hover:bg-[var(--aeterna-gold)]/10"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                transition={ARTISAN_SPRING}
-              >
-                {tx.memorial.share}
-              </motion.button>
-              {isOwner ? (
-                <Link
-                  href={`/p/${encodeURIComponent(slug)}/admin`}
-                  className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)]"
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <motion.button
+                  type="button"
+                  onClick={() => setShareModalOpen(true)}
+                  className="inline-flex min-h-[52px] items-center justify-center rounded-full border border-[var(--aeterna-gold)]/55 bg-[#030303]/40 px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-gold)] shadow-[0_4px_20px_-6px_rgba(197,160,89,0.25)] transition-colors hover:bg-[var(--aeterna-gold)]/10"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  transition={ARTISAN_SPRING}
                 >
-                  {tx.memorial.admin}
-                </Link>
-              ) : null}
+                  {tx.memorial.share}
+                </motion.button>
+                {isOwner ? (
+                  <Link
+                    href={`/p/${encodeURIComponent(slug)}/admin`}
+                    className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[var(--aeterna-gold)] px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)]"
+                  >
+                    {tx.memorial.admin}
+                  </Link>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>
@@ -1292,17 +1301,7 @@ export default function GuestFeedPage({ params }: PageProps) {
                     <p className="mt-2 text-center text-[var(--aeterna-gold-muted)] text-sm">{notificationError}</p>
                   )}
                 </div>
-                ) : (
-                  <p className="text-center text-sm text-[var(--aeterna-gold-muted)] max-w-md mx-auto">
-                    <Link
-                      href={landingPricingHref}
-                      className="text-[var(--aeterna-gold)] underline underline-offset-2 hover:text-[var(--aeterna-gold-light)]"
-                    >
-                      {tx.memorial.upgradePremiumCta}
-                    </Link>{" "}
-                    {tx.memorial.upgradePremiumTail}
-                  </p>
-                )}
+                ) : null}
               </div>
             </section>
           ) : null}
@@ -1439,31 +1438,6 @@ export default function GuestFeedPage({ params }: PageProps) {
             </ul>
           </>
         )}
-
-        {/* Free tier: checkout copy + Premium upgrade — below approved photos (all locales) */}
-        {event &&
-          !isPaidMemorial &&
-          photoDeadlineRemainingMs !== null &&
-          photoDeadlineRemainingMs > 0 &&
-          !isPhotoDeadlinePassed && (
-            <section
-              id="memorial-preserve-upgrade"
-              tabIndex={-1}
-              className="mx-auto w-full max-w-lg px-4 pt-8 pb-2 scroll-mt-[max(5.5rem,env(safe-area-inset-top))]"
-            >
-              <div className="rounded-2xl border border-[var(--border-gold-subtle)]/45 bg-[#030303]/30 px-4 py-5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <p className="text-sm leading-relaxed text-[var(--landing-text-body)] mb-4">
-                  {tx.memorial.memorialUpgradeAnchorIntro}
-                </p>
-                <Link
-                  href={landingPricingHref}
-                  className="inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl bg-[var(--aeterna-gold)] px-6 py-3 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--aeterna-charcoal)] shadow-[0_8px_28px_-8px_rgba(197,160,89,0.45)] transition-colors hover:bg-[var(--aeterna-gold-light)]"
-                >
-                  {tx.memorial.upgradePremiumCta}
-                </Link>
-              </div>
-            </section>
-          )}
 
         {/* Condolence gift section: card/Apple Pay/Google Pay with 1% platform support note */}
         {event.bank_info && (

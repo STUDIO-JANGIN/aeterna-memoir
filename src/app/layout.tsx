@@ -37,7 +37,7 @@ const syne = Syne({
   display: 'swap',
 })
 
-/** Korean body: Noto Sans KR variable + Pretendard (globals); titles use Noto Serif KR via globals @import. */
+/** Korean: Pretendard + Noto Sans KR for body and titles (globals — no legacy serif fallbacks). */
 const notoSansKr = Noto_Sans_KR({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],

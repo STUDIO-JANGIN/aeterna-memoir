@@ -77,7 +77,7 @@ export async function generateVideoAction(slug: string): Promise<GenerateVideoRe
     return {
       ok: false,
       error: isMissingKey
-        ? "AI video isn’t configured on the server yet (missing API key). Please contact support."
+        ? "AI video needs a Luma API key on the server: set LUMA_API_KEY in your deployment (e.g. Vercel → Environment Variables) or .env.local locally, then redeploy / restart."
         : "We couldn’t start AI video generation. Please try again shortly.",
     }
   }

@@ -41,6 +41,8 @@ export type PublicMemorialEvent = {
   memorial_background_image: string | null
   /** Optional `x,y` percentages (0–100) for framing when using memorial_background_image. */
   memorial_background_position: string | null
+  /** Optional `x,y` percents for circular profile `object-position` (create-flow pan). */
+  profile_image_position: string | null
 }
 
 export type PublicMemorialStory = {
@@ -124,6 +126,7 @@ function rowToPublicEvent(row: Record<string, unknown>): PublicMemorialEvent {
     invitation_bio: (row.invitation_bio as string | null) ?? null,
     memorial_background_image: (row.memorial_background_image as string | null) ?? null,
     memorial_background_position: (row.memorial_background_position as string | null) ?? null,
+    profile_image_position: (row.profile_image_position as string | null) ?? null,
   }
 }
 
@@ -141,19 +144,26 @@ export async function getPublicMemorialPageDataAction(slug: string): Promise<Get
     const supabase = getSupabaseAdmin()
     const host = supabaseHostFromEnv()
 
-    // Public memorial: match by slug only. Free tier (is_paid: false) must load — never filter .eq("is_paid", true).
-    const { data: row, error: rowError } = await supabase
-      .from("events")
-      .select("*")
-      .eq("slug", slugNorm)
-      .maybeSingle()
-
-    if (rowError && !isNoRowsError(rowError.code)) {
-      logSupabaseDetailedError("getPublicMemorialPageDataAction.events_eq_slug", rowError)
+    // Public memorial: exact slug, then case-insensitive fallback (matches admin / createEvent lookups).
+    let row: Record<string, unknown> | null = null
+    const primary = await supabase.from("events").select("*").eq("slug", slugNorm).maybeSingle()
+    if (primary.error && !isNoRowsError(primary.error.code)) {
+      logSupabaseDetailedError("getPublicMemorialPageDataAction.events_eq_slug", primary.error)
+    }
+    if (primary.data && typeof primary.data === "object" && "id" in primary.data && primary.data.id) {
+      row = primary.data as Record<string, unknown>
+    } else {
+      const fallback = await supabase.from("events").select("*").ilike("slug", slugNorm).limit(1).maybeSingle()
+      if (fallback.error && !isNoRowsError(fallback.error.code)) {
+        logSupabaseDetailedError("getPublicMemorialPageDataAction.events_ilike_slug", fallback.error)
+      }
+      if (fallback.data && typeof fallback.data === "object" && "id" in fallback.data && fallback.data.id) {
+        row = fallback.data as Record<string, unknown>
+      }
     }
 
-    if (row && typeof row === "object" && "id" in row && row.id) {
-      const data = row as Record<string, unknown>
+    if (row && row.id) {
+      const data = row
       const eventId = String(data.id)
 
       const { data: storiesData, error: storiesError } = await supabase

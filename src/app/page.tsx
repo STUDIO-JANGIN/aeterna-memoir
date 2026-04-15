@@ -125,7 +125,7 @@ function LandingPageInner() {
   const showPlaceholder = !hasVideo || videoError
   const stepFlowLabels = t.howItWorks.steps.map((s) => `${s.title}: ${s.description}`)
   const heroImages = getLandingHeroImages(locale)
-  /** Desktop: script-appropriate Noto* on md+ (see globals `.landing-*-md`); mobile keeps default stack. */
+  /** Locale font utilities (see globals `.landing-*-md`); KO serif class applies at all breakpoints. */
   const { serif: locSerif, sans: locSans } = getLandingLocaleFontClasses(locale)
   const heroTitleTracking = getLandingHeroTitleTrackingClass(locale)
   /** Pan KO/JA/ZH hero footage left via object-position so faces clear mockups — do not use translate-x on md+ (it exposes bg-landing as a black strip on the right). */

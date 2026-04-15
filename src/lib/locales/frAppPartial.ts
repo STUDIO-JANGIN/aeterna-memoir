@@ -171,7 +171,7 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     adminPdfGenerating: "Génération…",
     adminInvitationSheetTitle: "Partager et télécharger",
     adminInvitationSheetPreparing: "Préparation de l’invitation…",
-    adminInvitationShareKakao: "Partager via KakaoTalk",
+    adminInvitationShareInstagram: "Partager via Instagram",
     adminInvitationShareLine: "Partager via LINE",
     adminInvitationShareWhatsApp: "Partager via WhatsApp",
     adminInvitationNativeShare: "Partager avec…",
@@ -221,6 +221,9 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     adminPremiumAllClipsComplete:
       "Les cinq chapitres sont prêts. Retrouvez-les ci-dessus ou sur le mémorial public.",
     adminPremiumNoClipCredits: "Plus de crédits clip. Contactez le support si besoin.",
+    adminPremiumAiWaitlistTitle: "Vous êtes sur la liste d’attente",
+    adminPremiumAiWaitlistBody:
+      "La génération de clips hommage par IA n’est pas encore disponible sur le serveur. Vous avez été inscrit·e sur notre liste d’attente — nous vous contacterons dès que ce sera prêt. Pour toute question : hoon@aya.yale.edu",
     adminPreserveForeverCta: "Préserver à jamais",
     adminEternalFilmCta: "Film éternel",
     adminPlusPreservedBody:
@@ -229,6 +232,16 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     adminMemoriesSectionTitle: "Souvenirs",
     adminTabPending: (count: number) => `En attente (${count})`,
     adminTabApproved: (count: number) => `Approuvés (${count})`,
+    adminStoryApprove: "Approuver",
+    adminStoryDelete: "Supprimer",
+    adminStoryUnapprove: "Retirer l'approbation",
+    adminStoryDeleteAria: "Supprimer le souvenir",
+    adminStoryDeletePermanentAria: "Supprimer définitivement le souvenir",
+    adminApprovedEmpty:
+      "Aucun souvenir approuvé pour l'instant. Examinez les soumissions en attente pour nourrir le sanctuaire.",
+    adminDeleteMemoryConfirm:
+      "Supprimer définitivement ce souvenir ? Cette action est irréversible.",
+    adminToastStoryMovedToPending: "La photo est repassée en attente.",
     upgradePremiumCta: "Passer à Premium",
     upgradePremiumTail: "pour des clips hommage IA sur vos futurs sanctuaires.",
     recentSupportAria: "Soutiens récents",

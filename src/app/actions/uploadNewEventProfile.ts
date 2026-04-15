@@ -24,6 +24,7 @@ function extForMime(mime: string): string {
 /**
  * Upload profile image for a newly created event (by slug). Called from create page after event creation.
  * Uses Buffer + explicit content-type so uploads work when FormData yields a Blob (not a live File) on the server.
+ * Optional column `profile_image_position` — apply `supabase-sync-events-optional-columns.sql` or `supabase-add-profile-image-position.sql` if missing.
  */
 export async function uploadNewEventProfileAction(
   slug: string,
@@ -71,9 +72,23 @@ export async function uploadNewEventProfileAction(
   const { data: urlData } = supabase.storage.from("photos").getPublicUrl(path)
   const profile_image = urlData.publicUrl
 
+  const posRaw = formData.get("profile_image_position")
+  let profile_image_position: string | null = null
+  if (typeof posRaw === "string") {
+    const t = posRaw.trim()
+    const m = /^(\d{1,3}),(\d{1,3})$/.exec(t)
+    if (m) {
+      const x = Math.min(100, Math.max(0, Number(m[1])))
+      const y = Math.min(100, Math.max(0, Number(m[2])))
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        profile_image_position = `${Math.round(x)},${Math.round(y)}`
+      }
+    }
+  }
+
   const { error: updateErr } = await supabase
     .from("events")
-    .update({ profile_image })
+    .update({ profile_image, ...(profile_image_position ? { profile_image_position } : {}) })
     .eq("id", eventRow.id)
 
   if (updateErr) {

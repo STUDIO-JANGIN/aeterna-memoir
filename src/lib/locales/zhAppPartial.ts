@@ -160,7 +160,7 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
     adminPdfGenerating: "產生中…",
     adminInvitationSheetTitle: "分享與下載",
     adminInvitationSheetPreparing: "正在準備邀請函…",
-    adminInvitationShareKakao: "透過 KakaoTalk 分享",
+    adminInvitationShareInstagram: "透過 Instagram 分享",
     adminInvitationShareLine: "透過 LINE 分享",
     adminInvitationShareWhatsApp: "透過 WhatsApp 分享",
     adminInvitationNativeShare: "使用其他 App 分享…",
@@ -208,6 +208,9 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
     adminPremiumAllClipsComplete:
       "五章追思短片皆已就緒。您可於上方重播，或至公開紀念頁觀看。",
     adminPremiumNoClipCredits: "短片額度已用完。如需協助請聯絡客服。",
+    adminPremiumAiWaitlistTitle: "您已加入等候名單",
+    adminPremiumAiWaitlistBody:
+      "AI 追思短片生成功能尚未在伺服器上啟用。我們已將您列入等候名單，準備就緒後會與您聯繫。如有疑問請寄信至 hoon@aya.yale.edu。",
     adminPreserveForeverCta: "永久保存",
     adminEternalFilmCta: "永恆影片",
     adminPlusPreservedBody:
@@ -216,6 +219,15 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
     adminMemoriesSectionTitle: "回憶紀錄",
     adminTabPending: (count: number) => `待審核 (${count})`,
     adminTabApproved: (count: number) => `已批准 (${count})`,
+    adminStoryApprove: "批准",
+    adminStoryDelete: "刪除",
+    adminStoryUnapprove: "取消批准",
+    adminStoryDeleteAria: "刪除回憶",
+    adminStoryDeletePermanentAria: "永久刪除回憶",
+    adminApprovedEmpty:
+      "尚無已批准的回憶。請審核待處理的提交以建立紀念空間。",
+    adminDeleteMemoryConfirm: "確定要永久刪除此回憶嗎？此操作無法復原。",
+    adminToastStoryMovedToPending: "照片已移回待審核。",
     upgradePremiumCta: "升級進階方案",
     upgradePremiumTail: "以備日後在紀念頁使用 AI 追思短片。",
     recentSupportAria: "近期援助",

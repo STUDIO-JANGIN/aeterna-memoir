@@ -146,6 +146,8 @@ export type AppStrings = {
     copyLink: string
     /** SMS / mailto share row (e.g. Japanese modal). */
     shareChannelEmail: string
+    /** Korean share modal primary (system share → Instagram). */
+    shareChannelInstagram: string
     filmAria: string
     videoUnsupported: string
     filmLabel: string
@@ -231,7 +233,7 @@ export type AppStrings = {
     /** PDF invitation share sheet (`InvitationActionSheet`) */
     adminInvitationSheetTitle: string
     adminInvitationSheetPreparing: string
-    adminInvitationShareKakao: string
+    adminInvitationShareInstagram: string
     adminInvitationShareLine: string
     adminInvitationShareWhatsApp: string
     adminInvitationNativeShare: string
@@ -272,6 +274,9 @@ export type AppStrings = {
     adminPremiumClipLabel: (clipOneIndexed: number, totalClips: number) => string
     adminPremiumAllClipsComplete: string
     adminPremiumNoClipCredits: string
+    /** When Luma / AI video is not configured — show waitlist popup (admin generate clip). */
+    adminPremiumAiWaitlistTitle: string
+    adminPremiumAiWaitlistBody: string
     adminPreserveForeverCta: string
     /** Free tier — Stripe Premium (AI tribute film) checkout */
     adminEternalFilmCta: string
@@ -281,6 +286,15 @@ export type AppStrings = {
     adminMemoriesSectionTitle: string
     adminTabPending: (count: number) => string
     adminTabApproved: (count: number) => string
+    /** `/p/[slug]/admin` — pending/approved story cards */
+    adminStoryApprove: string
+    adminStoryDelete: string
+    adminStoryUnapprove: string
+    adminStoryDeleteAria: string
+    adminStoryDeletePermanentAria: string
+    adminApprovedEmpty: string
+    adminDeleteMemoryConfirm: string
+    adminToastStoryMovedToPending: string
     upgradePremiumCta: string
     upgradePremiumTail: string
     recentSupportAria: string
@@ -613,6 +627,7 @@ const EN: AppStrings = {
     message: "Message",
     copyLink: "Copy link",
     shareChannelEmail: "Email",
+    shareChannelInstagram: "Instagram",
     filmAria: "AI Memorial Film",
     videoUnsupported: "Your browser does not support the video tag.",
     filmLabel: "Film",
@@ -700,7 +715,7 @@ const EN: AppStrings = {
     adminPdfGenerating: "Generating…",
     adminInvitationSheetTitle: "Share & download",
     adminInvitationSheetPreparing: "Preparing your invitation…",
-    adminInvitationShareKakao: "Share via KakaoTalk",
+    adminInvitationShareInstagram: "Share via Instagram",
     adminInvitationShareLine: "Share via LINE",
     adminInvitationShareWhatsApp: "Share via WhatsApp",
     adminInvitationNativeShare: "Share with…",
@@ -751,6 +766,9 @@ const EN: AppStrings = {
     adminPremiumAllClipsComplete:
       "All five tribute chapters are ready. You can revisit them above or on the public memorial.",
     adminPremiumNoClipCredits: "No clip credits left. Contact support if you need help.",
+    adminPremiumAiWaitlistTitle: "You’re on the waitlist",
+    adminPremiumAiWaitlistBody:
+      "AI tribute video generation isn’t available on the server yet. You’ve been waitlisted—we’ll reach out when it’s ready. If you have any questions, email hoon@aya.yale.edu.",
     adminPreserveForeverCta: "Preserve Forever",
     adminEternalFilmCta: "Eternal Film",
     adminPlusPreservedBody:
@@ -759,6 +777,16 @@ const EN: AppStrings = {
     adminMemoriesSectionTitle: "Memories",
     adminTabPending: (count: number) => `Pending (${count})`,
     adminTabApproved: (count: number) => `Approved (${count})`,
+    adminStoryApprove: "Approve",
+    adminStoryDelete: "Delete",
+    adminStoryUnapprove: "Unapprove",
+    adminStoryDeleteAria: "Delete memory",
+    adminStoryDeletePermanentAria: "Permanently delete memory",
+    adminApprovedEmpty:
+      "No memories approved yet. Review pending submissions to build the shrine.",
+    adminDeleteMemoryConfirm:
+      "Are you sure you want to permanently delete this memory? This cannot be undone.",
+    adminToastStoryMovedToPending: "Photo moved back to pending.",
     upgradePremiumCta: "Upgrade to Premium",
     upgradePremiumTail: "for five ~10s AI tribute clips on future memorials.",
     recentSupportAria: "Recent Support",
@@ -1091,6 +1119,7 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     message: "메시지",
     copyLink: "링크 복사",
     shareChannelEmail: "이메일",
+    shareChannelInstagram: "인스타그램",
     filmAria: "AI 추모 영상",
     videoUnsupported: "브라우저가 비디오 태그를 지원하지 않습니다.",
     filmLabel: "영상",
@@ -1176,7 +1205,7 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     adminPdfGenerating: "생성 중…",
     adminInvitationSheetTitle: "공유 및 저장",
     adminInvitationSheetPreparing: "초대장을 준비하는 중…",
-    adminInvitationShareKakao: "카카오톡으로 공유",
+    adminInvitationShareInstagram: "인스타그램으로 공유",
     adminInvitationShareLine: "LINE으로 공유",
     adminInvitationShareWhatsApp: "WhatsApp으로 공유",
     adminInvitationNativeShare: "다른 앱으로 공유…",
@@ -1224,6 +1253,9 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     adminPremiumAllClipsComplete:
       "다섯 개의 헌정 챕터가 모두 준비되었습니다. 위에서 다시 보거나 공개 기념관에서 확인하세요.",
     adminPremiumNoClipCredits: "남은 클립 크레딧이 없습니다. 지원이 필요하면 문의해 주세요.",
+    adminPremiumAiWaitlistTitle: "대기 명단에 등록되었습니다",
+    adminPremiumAiWaitlistBody:
+      "AI 헌정 영상 생성이 아직 서버에서 준비되지 않았습니다. 대기 명단에 올려 두었으며, 준비되면 연락드리겠습니다. 문의는 hoon@aya.yale.edu 로 보내 주세요.",
     adminPreserveForeverCta: "영원히 보존하기",
     adminEternalFilmCta: "이터널 필름",
     adminPlusPreservedBody:
@@ -1232,6 +1264,16 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     adminMemoriesSectionTitle: "추억들",
     adminTabPending: (count: number) => `대기 중 (${count})`,
     adminTabApproved: (count: number) => `승인됨 (${count})`,
+    adminStoryApprove: "승인",
+    adminStoryDelete: "삭제",
+    adminStoryUnapprove: "승인 취소",
+    adminStoryDeleteAria: "추억 삭제",
+    adminStoryDeletePermanentAria: "추억 영구 삭제",
+    adminApprovedEmpty:
+      "아직 승인된 추억이 없습니다. 대기 중인 제출을 검토해 기념관을 채워 보세요.",
+    adminDeleteMemoryConfirm:
+      "이 추억을 영구적으로 삭제하시겠습니까? 되돌릴 수 없습니다.",
+    adminToastStoryMovedToPending: "사진이 다시 대기 목록으로 이동했습니다.",
     upgradePremiumCta: "프리미엄으로 업그레이드",
     upgradePremiumTail: "향후 기념관에서 AI 헌정 클립(약 10초×5)을 쓰기 위해.",
     recentSupportAria: "최근 후원",
@@ -1558,6 +1600,7 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     message: "メッセージ",
     copyLink: "リンクをコピー",
     shareChannelEmail: "メール",
+    shareChannelInstagram: "Instagram",
     videoUnsupported: "お使いのブラウザは動画タグに対応していません。",
     filmLabel: "映像",
     redirectCheckout: "決済へ移動中…",
@@ -1638,7 +1681,7 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     adminPdfGenerating: "生成中…",
     adminInvitationSheetTitle: "共有・ダウンロード",
     adminInvitationSheetPreparing: "招待状を準備しています…",
-    adminInvitationShareKakao: "KakaoTalkで共有",
+    adminInvitationShareInstagram: "Instagramで共有",
     adminInvitationShareLine: "LINEで共有",
     adminInvitationShareWhatsApp: "WhatsAppで共有",
     adminInvitationNativeShare: "共有…",
@@ -1686,6 +1729,9 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     adminPremiumAllClipsComplete:
       "5章すべてのトリビュートが揃いました。上で再生するか、公開メモリアルでご覧ください。",
     adminPremiumNoClipCredits: "クリップのクレジットがありません。サポートへご連絡ください。",
+    adminPremiumAiWaitlistTitle: "順番待ちリストに登録されました",
+    adminPremiumAiWaitlistBody:
+      "AIによる追悼クリップの生成は、まだサーバー側の準備が整っていません。順番待ちリストに登録済みです。準備ができ次第ご連絡します。ご質問は hoon@aya.yale.edu までご連絡ください。",
     adminPreserveForeverCta: "永遠に保存する",
     adminEternalFilmCta: "エターナルフィルム",
     adminPlusPreservedBody:
@@ -1694,6 +1740,16 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     adminMemoriesSectionTitle: "思い出",
     adminTabPending: (count: number) => `承認待ち (${count})`,
     adminTabApproved: (count: number) => `承認済み (${count})`,
+    adminStoryApprove: "承認",
+    adminStoryDelete: "削除",
+    adminStoryUnapprove: "承認を取り消す",
+    adminStoryDeleteAria: "思い出を削除",
+    adminStoryDeletePermanentAria: "思い出を完全に削除",
+    adminApprovedEmpty:
+      "まだ承認された思い出はありません。承認待ちを確認してメモリアルを整えましょう。",
+    adminDeleteMemoryConfirm:
+      "この思い出を完全に削除しますか？この操作は取り消せません。",
+    adminToastStoryMovedToPending: "写真が承認待ちに戻りました。",
     upgradePremiumCta: "プレミアムにアップグレード",
     upgradePremiumTail: "将来のメモリアルでAI追悼クリップ（各約10秒×5本）を使うために。",
     errors: {

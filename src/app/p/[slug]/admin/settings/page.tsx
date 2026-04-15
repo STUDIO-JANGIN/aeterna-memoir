@@ -150,19 +150,20 @@ export default function AdminSettingsPage({ params }: PageProps) {
   return (
     <div className="min-h-dvh bg-landing text-white font-sans">
       <header className="sticky top-0 z-10 border-b border-white/[0.06] bg-landing/95 backdrop-blur">
-        <div className="relative max-w-2xl mx-auto px-4 py-4 flex items-center justify-center min-h-[3.25rem]">
+        <div className="max-w-2xl mx-auto px-4 py-4 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-x-3 sm:min-h-[3.25rem]">
           <Link
             href={`/p/${slug}/admin`}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-xs uppercase tracking-widest text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)] inline-flex items-center gap-2"
+            className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[var(--aeterna-gold-muted)] hover:text-[var(--aeterna-gold)] justify-self-start min-w-0 max-w-full sm:col-start-1 sm:row-start-1"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            {ap.backToAdmin}
+            <span className="min-w-0 break-words sm:break-normal">{ap.backToAdmin}</span>
           </Link>
-          <h1 className="text-sm font-normal text-white uppercase tracking-wider text-center px-12 [font-family:var(--font-sans)]">
+          <h1 className="text-sm font-normal text-white uppercase tracking-wider text-center [font-family:var(--font-sans)] sm:col-start-2 sm:row-start-1 sm:px-2">
             {ap.pageTitle}
           </h1>
+          <div className="hidden sm:block sm:col-start-3 sm:row-start-1" aria-hidden />
         </div>
       </header>
 

@@ -176,8 +176,6 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "Plus",
     adminTierLabelPremium: "Premium",
     adminContributionsCollected: (count: number) => `已收集 ${count} 份真摯的回憶`,
-    adminPremiumStatusLine: (count: number) =>
-      `目前方案 / 尊榮版 (Premium) / 已收集 ${count} 份真摯的回憶`,
     adminPremiumAiTitle: "Premium：永恆影片生成（5 段短片）",
     adminPremiumAiDescription:
       "每段約 10 秒，由 Luma AI 為畫面帶來輕柔動感。\n每段請選 1–2 張最合適的照片。我們會把照片故事與訪客留言寫進提示詞，呈現最溫暖的瞬間。",

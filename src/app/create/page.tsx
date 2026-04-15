@@ -1336,7 +1336,6 @@ function CreateEventForm() {
 
       if (result.ok) {
         const slug = result.slug
-        const paidTier = storagePlan === "plus" || storagePlan === "premium"
 
         const runProfileUpload = async () => {
           if (!profileFile || !slug) return
@@ -1374,13 +1373,9 @@ function CreateEventForm() {
           }
         }
 
-        if (paidTier) {
-          void runProfileUpload().catch((e) => console.error("[handleCreate] profile upload", e))
-          void runBackgroundUpload().catch((e) => console.error("[handleCreate] background upload", e))
-        } else {
-          await runProfileUpload()
-          await runBackgroundUpload()
-        }
+        /** Don’t await uploads: mobile networks are slow; show “Invitation ready” as soon as the event exists. Errors still surface on that screen. */
+        void runProfileUpload().catch((e) => console.error("[handleCreate] profile upload", e))
+        void runBackgroundUpload().catch((e) => console.error("[handleCreate] background upload", e))
 
         if (storagePlan === "plus") {
           writePendingCheckout({

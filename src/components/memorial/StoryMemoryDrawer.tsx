@@ -18,10 +18,15 @@ import { bcp47ForLandingLocale } from "@/lib/invitePdfLocale"
 import { coerceIdString, parseUuidString } from "@/lib/uuid"
 
 function sameCommentId(a: string, b: string): boolean {
-  const pa = parseUuidString(a)
-  const pb = parseUuidString(b)
+  const pa = parseUuidString(a) ?? parseUuidString(String(a))
+  const pb = parseUuidString(b) ?? parseUuidString(String(b))
   if (pa && pb) return pa === pb
   return String(a).trim() === String(b).trim()
+}
+
+/** Canonical id for Set / server — PostgREST may emit UUIDs in different string shapes. */
+function canonicalCommentId(raw: string): string | null {
+  return parseUuidString(raw) ?? parseUuidString(String(raw))
 }
 
 type Story = {
@@ -116,7 +121,10 @@ export function StoryMemoryDrawer({
       if (!raw) return
       const ids = JSON.parse(raw) as unknown
       if (Array.isArray(ids)) {
-        setHeartedCommentIds(new Set(ids.map((id) => String(id)).filter(Boolean)))
+        const keys = ids
+          .map((x) => canonicalCommentId(String(x)) ?? String(x).trim())
+          .filter(Boolean)
+        setHeartedCommentIds(new Set(keys))
       }
     } catch {
       // ignore
@@ -240,12 +248,24 @@ export function StoryMemoryDrawer({
   }, [photoStoryId, memorialEventId, authorName, body, persistName, sessionUser, loadComments, m])
 
   const handleCommentHeart = useCallback(
-    async (commentId: string) => {
-      const id = String(commentId)
+    async (rawCommentId: string) => {
+      const id = canonicalCommentId(rawCommentId)
       if (!id || commentHeartBusyId) return
+      const removing = heartedCommentIds.has(id)
       setCommentHeartBusyId(id)
+
+      const bump = (delta: number) => {
+        setComments((prev) =>
+          prev.map((c) => {
+            if (!sameCommentId(c.id, id)) return c
+            return { ...c, likes_count: Math.max(0, (c.likes_count ?? 0) + delta) }
+          }),
+        )
+      }
+
+      bump(removing ? -1 : 1)
+
       try {
-        const removing = heartedCommentIds.has(id)
         const result = removing ? await unheartCommentAction(id) : await heartCommentAction(id)
         if (result.ok) {
           setHeartedCommentIds((prev) => {
@@ -264,17 +284,14 @@ export function StoryMemoryDrawer({
           setComments((prev) =>
             prev.map((c) => {
               if (!sameCommentId(c.id, id)) return c
-              const fromServer = result.likesCount
-              const fallback = Math.max(
-                0,
-                (c.likes_count ?? 0) + (removing ? -1 : 1),
-              )
-              const nextCount =
-                typeof fromServer === "number" && !Number.isNaN(fromServer) ? fromServer : fallback
-              return { ...c, likes_count: nextCount }
+              return { ...c, likes_count: result.likesCount }
             }),
           )
+        } else {
+          bump(removing ? 1 : -1)
         }
+      } catch {
+        bump(removing ? 1 : -1)
       } finally {
         setCommentHeartBusyId(null)
       }
@@ -403,7 +420,7 @@ export function StoryMemoryDrawer({
                 ) : (
                   <ul className="space-y-2.5">
                     {comments.map((c) => {
-                      const cid = String(c.id)
+                      const cid = canonicalCommentId(String(c.id)) ?? String(c.id).trim()
                       const count = c.likes_count ?? 0
                       const isHearted = heartedCommentIds.has(cid)
                       const busy = commentHeartBusyId === cid
@@ -423,7 +440,7 @@ export function StoryMemoryDrawer({
                           </div>
                           <button
                             type="button"
-                            onClick={() => void handleCommentHeart(cid)}
+                            onClick={() => void handleCommentHeart(String(c.id))}
                             disabled={busy}
                             className={`flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-1 py-0.5 transition disabled:opacity-50 ${
                               isHearted

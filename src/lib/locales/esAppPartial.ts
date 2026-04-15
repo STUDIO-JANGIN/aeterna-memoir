@@ -187,8 +187,6 @@ export const ES_APP_REST: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "Plus",
     adminTierLabelPremium: "Premium",
     adminContributionsCollected: (count: number) => `${count} contribuciones sinceras recolectadas`,
-    adminPremiumStatusLine: (count: number) =>
-      `Plan actual / Premium / ${count} contribuciones sinceras recolectadas`,
     adminPremiumAiTitle: "Premium: generación de Eternal Film (5 clips)",
     adminPremiumAiDescription:
       "Cada clip dura unos 10 segundos. Luma AI añade un movimiento suave y casi mágico.\nPara cada clip, elija 1 o 2 fotos. Integramos la historia de cada foto y las palabras de los visitantes (comentarios) en el prompt para captar los momentos más cálidos.",

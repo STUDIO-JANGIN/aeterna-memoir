@@ -1,6 +1,7 @@
 "use server"
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { parseUuidString } from "@/lib/uuid"
 
 export type HeartCommentResult =
   | { ok: true; likesCount: number }
@@ -8,11 +9,15 @@ export type HeartCommentResult =
 
 /** Increment comment heart count (same pattern as story hearts). */
 export async function heartCommentAction(commentId: string): Promise<HeartCommentResult> {
+  const id = parseUuidString(commentId)
+  if (!id) {
+    return { ok: false, error: "Invalid comment id." }
+  }
   const supabase = getSupabaseAdmin()
   const { data: row, error: fetchError } = await supabase
     .from("comments")
     .select("likes_count")
-    .eq("id", commentId)
+    .eq("id", id)
     .single()
 
   if (fetchError || row == null) {
@@ -23,7 +28,7 @@ export async function heartCommentAction(commentId: string): Promise<HeartCommen
   const { error: updateError } = await supabase
     .from("comments")
     .update({ likes_count: nextCount })
-    .eq("id", commentId)
+    .eq("id", id)
 
   if (updateError) {
     if (
@@ -38,11 +43,15 @@ export async function heartCommentAction(commentId: string): Promise<HeartCommen
 }
 
 export async function unheartCommentAction(commentId: string): Promise<HeartCommentResult> {
+  const id = parseUuidString(commentId)
+  if (!id) {
+    return { ok: false, error: "Invalid comment id." }
+  }
   const supabase = getSupabaseAdmin()
   const { data: row, error: fetchError } = await supabase
     .from("comments")
     .select("likes_count")
-    .eq("id", commentId)
+    .eq("id", id)
     .single()
 
   if (fetchError || row == null) {
@@ -54,7 +63,7 @@ export async function unheartCommentAction(commentId: string): Promise<HeartComm
   const { error: updateError } = await supabase
     .from("comments")
     .update({ likes_count: nextCount })
-    .eq("id", commentId)
+    .eq("id", id)
 
   if (updateError) {
     return { ok: false, error: updateError.message }

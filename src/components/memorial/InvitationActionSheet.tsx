@@ -208,6 +208,11 @@ export function InvitationActionSheet({
       const okFile = await sharePdfAsFile(pdfBlob, filename, shareTitle, shareText)
       if (okFile) return
       if (guestPageUrl) {
+        /** WhatsApp: open the app/chat directly with memorial link — skip generic `share()` so the labeled button always targets WhatsApp. */
+        if (primary === "whatsapp") {
+          runPrimaryMessengerFallback(primary, shareText, guestPageUrl, null)
+          return
+        }
         const okUrl = await shareInvitationUrl(guestPageUrl, shareBodyWithLink)
         if (okUrl) return
         runPrimaryMessengerFallback(primary, shareText, guestPageUrl, null)

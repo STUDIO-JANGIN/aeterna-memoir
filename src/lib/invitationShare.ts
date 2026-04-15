@@ -1,4 +1,5 @@
 import type { LandingLocale } from "@/lib/landingTranslations"
+import { openWhatsAppWithPrefilledText } from "@/lib/whatsappInvite"
 
 export type PrimaryMessenger = "instagram" | "line" | "whatsapp"
 
@@ -127,25 +128,16 @@ export async function shareInvitationUrl(url: string, text: string): Promise<boo
 const WHATSAPP_URL_SAFE_CHARS = 2000
 
 /**
- * Opens WhatsApp with prefilled text. Uses `api.whatsapp.com` (more reliable on desktop than `wa.me`
- * in some browsers). Truncates very long payloads so the URL stays within practical limits.
+ * Opens WhatsApp with prefilled text — native app on phones/tablets (`whatsapp://send`),
+ * `wa.me` on desktop (see {@link openWhatsAppWithPrefilledText}). Truncates very long payloads.
  */
 export function openWhatsAppWithText(text: string): void {
   if (typeof window === "undefined") return
   let t = text.trim()
-  let encoded = encodeURIComponent(t)
-  while (encoded.length > WHATSAPP_URL_SAFE_CHARS && t.length > 80) {
+  while (encodeURIComponent(t).length > WHATSAPP_URL_SAFE_CHARS && t.length > 80) {
     t = `${t.slice(0, Math.floor(t.length * 0.85))}…`
-    encoded = encodeURIComponent(t)
   }
-  const u = `https://api.whatsapp.com/send?text=${encoded}`
-  const a = document.createElement("a")
-  a.href = u
-  a.target = "_blank"
-  a.rel = "noopener noreferrer"
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
+  openWhatsAppWithPrefilledText(t)
 }
 
 export function openLineWithText(text: string): void {

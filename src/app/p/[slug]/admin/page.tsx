@@ -364,32 +364,17 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
         </header>
 
         <div className="card-landing-airy p-6 md:p-10 mb-10 md:mb-12">
-          {currentTier === "premium" ? (
-            <>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/[0.08]">
-                <span className="text-landing-label">{tx.memorial.adminCurrentPlan}</span>
-                <span className="inline-flex items-center justify-center min-h-[36px] px-4 py-1.5 bg-[var(--aeterna-gold)]/12 text-[var(--aeterna-gold)] text-[10px] font-medium rounded-full uppercase tracking-[0.2em] ring-1 ring-[var(--aeterna-gold)]/35">
-                  {tierLabel}
-                </span>
-              </div>
-              <p className="text-landing-body mb-8 max-w-2xl leading-relaxed">
-                {tx.memorial.adminPremiumStatusLine(stories.length)}
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/[0.08]">
-                <span className="text-landing-label">{tx.memorial.adminCurrentPlan}</span>
-                <span className="inline-flex items-center justify-center min-h-[36px] px-4 py-1.5 bg-[var(--aeterna-gold)]/12 text-[var(--aeterna-gold)] text-[10px] font-medium rounded-full uppercase tracking-[0.2em] ring-1 ring-[var(--aeterna-gold)]/35">
-                  {tierLabel}
-                </span>
-              </div>
-
-              <p className="text-landing-body mb-8 max-w-2xl leading-relaxed">
-                {tx.memorial.adminContributionsCollected(stories.length)}
-              </p>
-            </>
-          )}
+          <>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-white/[0.08]">
+              <span className="text-landing-label">{tx.memorial.adminCurrentPlan}</span>
+              <span className="inline-flex items-center justify-center min-h-[36px] px-4 py-1.5 bg-[var(--aeterna-gold)]/12 text-[var(--aeterna-gold)] text-[10px] font-medium rounded-full uppercase tracking-[0.2em] ring-1 ring-[var(--aeterna-gold)]/35">
+                {tierLabel}
+              </span>
+            </div>
+            <p className="text-landing-body mb-8 max-w-2xl leading-relaxed">
+              {tx.memorial.adminContributionsCollected(stories.length)}
+            </p>
+          </>
 
           {currentTier === "free" && (
             <>

@@ -10,19 +10,19 @@ export type InvitePdfStrings = {
   scanQr: string
 }
 
-/** “Please contact … for additional information.” */
+/** “Please contact … for more detailed information.” (PDF — below service time) */
 export function formatInvitePdfContactLine(locale: LandingLocale, phone: string): string {
   const p = phone.trim()
   if (!p) return ""
   const map: Record<LandingLocale, string> = {
-    en: `Please contact ${p} for additional information.`,
-    ko: `추가 안내가 필요하시면 ${p}로 연락해 주시기 바랍니다.`,
-    ja: `詳細については ${p} までお問い合わせください。`,
-    fr: `Pour toute information complémentaire, veuillez contacter : ${p}.`,
-    es: `Para más información, comuníquese al ${p}.`,
-    ar: `للمزيد من المعلومات، يُرجى التواصل على ${p}.`,
-    zh: `如需更多資訊，請聯絡：${p}。`,
-    "zh-hk": `如需更多資訊，請聯絡：${p}。`,
+    en: `Please contact ${p} for more detailed information.`,
+    ko: `보다 자세한 안내가 필요하시면 ${p}로 연락해 주시기 바랍니다.`,
+    ja: `より詳しい情報は ${p} までお問い合わせください。`,
+    fr: `Pour des informations plus détaillées, veuillez contacter : ${p}.`,
+    es: `Para información más detallada, comuníquese al ${p}.`,
+    ar: `لمزيد من التفاصيل، يُرجى التواصل على ${p}.`,
+    zh: `如需更詳細的資訊，請聯絡：${p}。`,
+    "zh-hk": `如需更詳細的資訊，請聯絡：${p}。`,
   }
   return map[locale] ?? map.en
 }

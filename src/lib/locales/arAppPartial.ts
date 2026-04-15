@@ -180,8 +180,6 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "بلس",
     adminTierLabelPremium: "بريميوم",
     adminContributionsCollected: (count: number) => `تم جمع ${count} من المساهمات الصادقة`,
-    adminPremiumStatusLine: (count: number) =>
-      `الخطة الحالية / مميزة (Premium) / تم جمع ${count} من المساهمات الصادقة`,
     adminPremiumAiTitle: "بريميوم: إنشاء فيلم الأبد (5 مقاطع)",
     adminPremiumAiDescription:
       "كل مقطع نحو 10 ثوانٍ، وتضيف Luma AI حركةً لطيفة كالسحر.\nللمقطع الواحد، اختر من صورة إلى صورتين. ندمج قصة كل صورة وكلمات الزوار (التعليقات) في الموجه لالتقاط أدفأ اللحظات.",

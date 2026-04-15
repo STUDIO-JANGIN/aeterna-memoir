@@ -249,8 +249,6 @@ export type AppStrings = {
     adminTierLabelPlus: string
     adminTierLabelPremium: string
     adminContributionsCollected: (count: number) => string
-    /** Premium (AI film) admin — one-line status; replaces plan row + contribution count */
-    adminPremiumStatusLine: (count: number) => string
     adminPremiumAiTitle: string
     adminPremiumAiDescription: string
     adminPremiumFilmSelectionSummary: (selected: number, max: number) => string
@@ -732,10 +730,6 @@ const EN: AppStrings = {
     adminTierLabelPremium: "Premium",
     adminContributionsCollected: (count: number) =>
       count === 1 ? "1 Heartfelt Contribution Collected" : `${count} Heartfelt Contributions Collected`,
-    adminPremiumStatusLine: (count: number) =>
-      `Current plan / Premium / ${
-        count === 1 ? "1 heartfelt contribution collected" : `${count} heartfelt contributions collected`
-      }`,
     adminPremiumAiTitle: "Premium: Eternal Film generation (5 clips)",
     adminPremiumAiDescription:
       "Each clip is about 10 seconds. Luma AI adds a gentle, magical sense of motion. For each clip, choose 1–2 photos that work best. We weave each photo’s story and visitors’ words (comments) into the prompt so the warmest moments come through.",
@@ -1221,8 +1215,6 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "플러스",
     adminTierLabelPremium: "프리미엄",
     adminContributionsCollected: (count: number) => `${count}개의 소중한 추억이 수집됨`,
-    adminPremiumStatusLine: (count: number) =>
-      `현재 플랜 / 프리미엄 / ${count}개의 소중한 추억이 수집됨`,
     adminPremiumAiTitle: "프리미엄: 영원한 필름 생성 (5개 클립)",
     adminPremiumAiDescription:
       "각 클립은 약 10초 분량이며, Luma AI를 통해 마법 같은 움직임을 생성합니다.\n한 클립당 최적의 사진 1~2장을 선택하세요. 사진에 담긴 이야기와 방문자의 마음(댓글)을 프롬프트에 녹여 가장 따뜻한 찰나를 구현합니다.",
@@ -1697,8 +1689,6 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     adminTierLabelPlus: "プラス",
     adminTierLabelPremium: "プレミアム",
     adminContributionsCollected: (count: number) => `${count}件の心のこもった寄稿`,
-    adminPremiumStatusLine: (count: number) =>
-      `現在のプラン / プレミアム / ${count}件の心のこもった寄稿`,
     adminPremiumAiTitle: "プレミアム：エターナルフィルム生成（5クリップ）",
     adminPremiumAiDescription:
       "各クリップは約10秒です。Luma AIが、写真に穏やかな動きを添えます。\n1クリップにつき最適な写真を1〜2枚お選びください。各写真のエピソードと訪れた方のコメントをプロンプトに織り込み、いちばん温かい瞬間を引き出します。",

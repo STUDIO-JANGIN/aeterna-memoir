@@ -4,7 +4,7 @@ import { Buffer } from "node:buffer"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export type UploadNewEventProfileResult =
-  | { ok: true }
+  | { ok: true; publicUrl?: string }
   | { ok: false; error: string }
 
 function safeImageFileStem(raw: string): string {
@@ -103,7 +103,7 @@ export async function uploadNewEventProfileAction(
     console.error("[uploadNewEventProfile] update", updateErr)
     return { ok: false, error: updateErr.message }
   }
-  return { ok: true }
+  return { ok: true, publicUrl: profile_image }
 }
 
 function isMissingProfileImagePositionError(message: string | undefined): boolean {

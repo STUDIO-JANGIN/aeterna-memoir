@@ -137,7 +137,11 @@ function wrapTitle(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image()
-    img.crossOrigin = "anonymous"
+    const t = src.trim()
+    /** Blob / data URLs are same-origin; `crossOrigin = "anonymous"` breaks them in Safari/Chrome when drawing to canvas. */
+    if (/^https?:\/\//i.test(t)) {
+      img.crossOrigin = "anonymous"
+    }
     img.onload = () => resolve(img)
     img.onerror = () => resolve(null)
     img.src = src
@@ -156,6 +160,8 @@ export type MemorialInvitationCanvasInput = {
   /** 0–100 each, matches CSS `object-position` (50 = centered). */
   profileImagePan?: { x: number; y: number } | null
   remembranceBio?: string | null
+  /** Full sentence (localized), e.g. “Please contact … for further details.” — shown above the QR block. */
+  contactDetailsLine?: string | null
 }
 
 export async function renderMemorialInvitationCanvas(input: MemorialInvitationCanvasInput): Promise<HTMLCanvasElement> {
@@ -172,6 +178,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     profileImageUrl,
     profileImagePan,
     remembranceBio,
+    contactDetailsLine,
   } = input
 
   const canvas = document.createElement("canvas")
@@ -322,12 +329,44 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     y += 32
   }
 
-  /** Extra air between hero block and service / QR */
+  /** Extra air between hero block and service section */
   y += 28
 
   const fontDetailLine = `300 ${DATE_QUOTE_SIZE_PX}px ${FONT_SANS}`
   const fontScanCta = `500 ${SCAN_CTA_SIZE_PX}px ${FONT_SANS}`
   const fontUrlLine = `400 ${URL_LINE_SIZE_PX}px ${FONT_SANS}`
+
+  const contactGap = Math.round(DATE_QUOTE_SIZE_PX * 1.45)
+  const contactForQr = contactDetailsLine?.trim()
+  ctx.font = fontDetailLine
+  const contactLinesWrapped = contactForQr ? wrapLines(ctx, contactForQr, contentW, 4) : []
+
+  /** Footer anchored to the bottom of the page (QR + caption + URL + brand), not the vertical center. */
+  const qrPad = 22
+  const qrMax = Math.round(176 * 0.85)
+  const qrSize = qrMax
+  const qrPaddedH = qrSize + 2 * qrPad
+  const innerBottom = H - innerM
+  const gapAeternaBottom = 26
+  const gapUrlAeterna = 38
+  const gapScanUrl = 38
+  const gapQrToScan = 32
+  const yAeterna = innerBottom - gapAeternaBottom
+  const yUrl = yAeterna - gapUrlAeterna
+  const yScan = yUrl - gapScanUrl
+  const qrBoxBottom = yScan - 16 - gapQrToScan
+  const qrTop = qrBoxBottom - qrPaddedH
+  const gapContactToQr = 18
+  const nContact = contactLinesWrapped.length
+  const lastContactCenterY = qrTop - qrPad - gapContactToQr
+  const firstContactCenterY = nContact > 0 ? lastContactCenterY - (nContact - 1) * contactGap : lastContactCenterY
+  /** Do not draw main text below this y (centers); keeps service block above the footer stack. */
+  const mainContentBottomY =
+    nContact > 0 ? firstContactCenterY - Math.round(contactGap * 0.55) - 20 : qrTop - 28
+  const approxServiceBlock = 220
+  if (y + approxServiceBlock > mainContentBottomY) {
+    y = Math.max(innerM + 120, mainContentBottomY - approxServiceBlock)
+  }
 
   ctx.textAlign = "center"
   ctx.save()
@@ -358,18 +397,24 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     ctx.fillStyle = INK_MUTED
     ctx.font = fontDetailLine
     const supLines = wrapLines(ctx, fund, contentW, 4)
-    supLines.forEach((ln) => {
+    for (const ln of supLines) {
+      if (y > mainContentBottomY - 8) break
       ctx.fillText(ln, centerX, y)
       y += Math.round(DATE_QUOTE_SIZE_PX * 1.5)
-    })
+    }
     y += 28
   }
 
-  /** QR — ~15% smaller, placed lower for text breathing room */
-  const qrMax = Math.round(176 * 0.85)
-  const reserveBottom = 200
-  y = Math.min(y + 52, H - reserveBottom - qrMax - 56)
-  const qrSize = Math.min(qrMax, H - y - reserveBottom)
+  if (nContact > 0) {
+    ctx.textAlign = "center"
+    ctx.fillStyle = INK_MUTED
+    ctx.font = fontDetailLine
+    let lineY = firstContactCenterY
+    for (const ln of contactLinesWrapped) {
+      ctx.fillText(ln, centerX, lineY)
+      lineY += contactGap
+    }
+  }
 
   const qrCanvas = document.createElement("canvas")
   await QRCode.toCanvas(qrCanvas, guestUrl, {
@@ -379,34 +424,31 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     errorCorrectionLevel: "M",
   })
 
-  const qrPad = 22
   const qrX = (W - qrSize) / 2
   ctx.save()
-  roundRectPath(ctx, qrX - qrPad, y - qrPad, qrSize + qrPad * 2, qrSize + qrPad * 2, 12)
+  roundRectPath(ctx, qrX - qrPad, qrTop - qrPad, qrSize + qrPad * 2, qrSize + qrPad * 2, 12)
   ctx.fillStyle = "#ffffff"
   ctx.fill()
   ctx.strokeStyle = BORDER_INNER
   ctx.lineWidth = 1
   ctx.stroke()
   ctx.restore()
-  ctx.drawImage(qrCanvas, qrX, y)
+  ctx.drawImage(qrCanvas, qrX, qrTop)
 
-  y += qrSize + qrPad + 22
   ctx.textAlign = "center"
   ctx.fillStyle = INK
   ctx.font = fontScanCta
-  ctx.fillText("Scan to visit the memorial", centerX, y)
+  ctx.fillText("Scan to visit the memorial", centerX, yScan)
 
-  y += 40
   ctx.fillStyle = INK_MUTED
   ctx.font = fontUrlLine
   const short = guestUrl.replace(/^https?:\/\//, "")
   const display = short.length > 48 ? `${short.slice(0, 46)}…` : short
-  ctx.fillText(display, centerX, y)
+  ctx.fillText(display, centerX, yUrl)
 
   ctx.fillStyle = "#8a857c"
   ctx.font = `400 ${FOOTER_BRAND_SIZE_PX}px ${FONT_SERIF}`
-  ctx.fillText("Aeterna", centerX, H - innerM - 28)
+  ctx.fillText("Aeterna", centerX, yAeterna)
 
   return canvas
 }

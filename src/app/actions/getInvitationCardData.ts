@@ -11,6 +11,7 @@ export type InvitationCardData = {
   flower_link: string | null
   profile_image: string | null
   invitation_bio: string | null
+  invitation_contact_phone: string | null
   invite_pdf_url: string | null
   invite_pdf_urls: Record<string, string> | null
 }
@@ -24,7 +25,7 @@ export async function getInvitationCardDataAction(slug: string): Promise<Invitat
   const supabase = getSupabaseAdmin()
   const { data, error } = await supabase
     .from("events")
-    .select("name, birth_date, death_date, location, ceremony_time, flower_link, profile_image, invitation_bio, invite_pdf_url, invite_pdf_urls")
+    .select("name, birth_date, death_date, location, ceremony_time, flower_link, profile_image, invitation_bio, invitation_contact_phone, invite_pdf_url, invite_pdf_urls")
     .eq("slug", s)
     .maybeSingle()
 

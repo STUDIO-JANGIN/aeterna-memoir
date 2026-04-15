@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { getPaymentSuccessAction } from "@/app/actions/getPaymentSuccess"
 import { getInvitationCardDataAction, type InvitationCardData } from "@/app/actions/getInvitationCardData"
+import { formatInvitePdfContactLine } from "@/lib/invitePdfTranslations"
 import { MemorialInvitationCard } from "@/components/MemorialInvitationCard"
 import { MemorialShareActions } from "@/components/MemorialShareActions"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
@@ -28,7 +29,7 @@ function SuccessSuspenseFallback() {
 }
 
 function SuccessContent({ slug }: { slug: string }) {
-  const { app: tx } = useLandingLocale()
+  const { app: tx, locale } = useLandingLocale()
   const ps = tx.paymentSuccessPage
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
@@ -197,6 +198,11 @@ function SuccessContent({ slug }: { slug: string }) {
                 fundLink={inviteMeta?.flower_link ?? undefined}
                 profileImageUrl={inviteMeta?.profile_image ?? undefined}
                 remembranceBio={inviteMeta?.invitation_bio ?? undefined}
+                contactDetailsLine={
+                  inviteMeta?.invitation_contact_phone?.trim()
+                    ? formatInvitePdfContactLine(locale, inviteMeta.invitation_contact_phone.trim())
+                    : undefined
+                }
                 invitationInfo={ps.invitationInfo}
                 saveImageLabel={ps.saveImage}
                 printPdfLabel={ps.printPdf}

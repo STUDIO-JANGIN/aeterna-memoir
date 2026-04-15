@@ -29,6 +29,7 @@ import {
   type InvitationCanvasData,
 } from "@/components/memorial/InvitationActionSheet"
 import { parseMemorialBackgroundPosition } from "@/lib/memorialBackgroundPosition"
+import { formatInvitePdfContactLine } from "@/lib/invitePdfTranslations"
 import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
 import { getAppPricingFootnote } from "@/lib/appTranslations"
 import { formatMemorialAdminCheckoutCta } from "@/lib/landingPricing"
@@ -169,6 +170,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
   const invitationCanvasData = useMemo((): InvitationCanvasData | null => {
     if (!event) return null
     const pan = parseMemorialBackgroundPosition(event.profile_image_position ?? null)
+    const phone = event.invitation_contact_phone?.trim()
     return {
       name: event.name?.trim() || "Beloved",
       birthDate: event.birth_date,
@@ -179,8 +181,9 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
       profileImageUrl: event.profile_image,
       profileImagePan: pan,
       remembranceBio: event.invitation_bio,
+      contactDetailsLine: phone ? formatInvitePdfContactLine(locale, phone) : null,
     }
-  }, [event])
+  }, [event, locale])
 
   const tributeSlots = useMemo(() => normalizeTributeSlots(event?.tribute_film_urls), [event?.tribute_film_urls])
   const allTributeClipsComplete = tributeSlots.every((u) => u != null && String(u).length > 0)

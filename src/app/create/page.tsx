@@ -40,6 +40,7 @@ import { LegalFormCaption } from "@/components/LegalFormCaption"
 import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
 import { useSupabaseUser } from "@/hooks/useSupabaseUser"
 import { raceWithTimeout } from "@/lib/raceWithTimeout"
+import { formatInvitePdfContactLine } from "@/lib/invitePdfTranslations"
 import { buildOAuthCallbackRedirectUrl, CANONICAL_SITE_ORIGIN } from "@/lib/appUrl"
 import {
   buildCeremonyDisplay,
@@ -279,6 +280,8 @@ function CreateEventForm() {
   const [profilePreview, setProfilePreview] = useState<string | null>(null)
   /** Set when the memorial row exists but storage upload failed (user can fix from admin). */
   const [profileUploadError, setProfileUploadError] = useState<string | null>(null)
+  /** After create, Supabase public URL for the profile — use for PDF/canvas (blob preview alone can fail to paint). */
+  const [profileImagePublicUrl, setProfileImagePublicUrl] = useState<string | null>(null)
   /** Optional full-page background on /p/[slug] (uploaded after event row exists). */
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null)
   const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null)
@@ -1336,6 +1339,7 @@ function CreateEventForm() {
 
       if (result.ok) {
         const slug = result.slug
+        setProfileImagePublicUrl(null)
 
         const runProfileUpload = async () => {
           if (!profileFile || !slug) return
@@ -1344,6 +1348,9 @@ function CreateEventForm() {
           fd.set("profile_image_position", `${Math.round(profilePan.x)},${Math.round(profilePan.y)}`)
           const uploadRes = await uploadNewEventProfileAction(slug, fd)
           if (uploadRes.ok) {
+            if (uploadRes.publicUrl) {
+              setProfileImagePublicUrl(uploadRes.publicUrl)
+            }
             try {
               sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
             } catch {
@@ -2717,23 +2724,28 @@ function CreateEventForm() {
                     location={location}
                     ceremonyTime={invitationCeremony}
                     fundLink={fundLink}
-                    profileImageUrl={profilePreview}
+                    profileImageUrl={profileImagePublicUrl ?? profilePreview}
                     profileImagePan={profilePan}
                     remembranceBio={invitationBio.trim() || undefined}
+                    contactDetailsLine={
+                      serviceContactPhone.trim()
+                        ? formatInvitePdfContactLine(locale, serviceContactPhone.trim())
+                        : undefined
+                    }
                   />
                 </div>
                 <div className="mt-8 flex w-full shrink-0 flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
                   <button
                     type="button"
                     onClick={() => router.push(`/p/${encodeURIComponent(createdSlug)}`)}
-                    className="btn-landing-gold flex min-h-[52px] w-full items-center justify-center px-6 text-sm font-semibold uppercase tracking-[0.16em] sm:min-w-[200px] sm:flex-1"
+                    className="btn-landing-gold flex min-h-[52px] w-full items-center justify-center px-6 font-sans text-[10px] font-medium uppercase tracking-[0.16em] sm:min-w-[200px] sm:flex-1"
                   >
                     {a.createWizard.viewMemorial}
                   </button>
                   <button
                     type="button"
                     onClick={() => router.push(`/p/${encodeURIComponent(createdSlug)}/admin`)}
-                    className="flex min-h-[52px] w-full items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.04] px-6 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--landing-text-body)] transition-colors hover:border-[var(--aeterna-gold)]/40 hover:bg-[var(--aeterna-gold)]/10 hover:text-[var(--aeterna-gold)] sm:min-w-[200px] sm:flex-1"
+                    className="flex min-h-[52px] w-full items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.04] px-6 font-sans text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--landing-text-body)] transition-colors hover:border-[var(--aeterna-gold)]/40 hover:bg-[var(--aeterna-gold)]/10 hover:text-[var(--aeterna-gold)] sm:min-w-[200px] sm:flex-1"
                   >
                     {a.memorial.admin}
                   </button>

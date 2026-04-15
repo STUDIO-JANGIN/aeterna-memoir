@@ -33,6 +33,8 @@ export type InvitationCanvasData = {
   profileImageUrl: string | null
   profileImagePan: { x: number; y: number } | null
   remembranceBio: string | null
+  /** Localized contact line for canvas PDF — above QR */
+  contactDetailsLine: string | null
 }
 
 type Props = {
@@ -154,6 +156,7 @@ export function InvitationActionSheet({
           profileImageUrl: invitationCanvasData.profileImageUrl,
           profileImagePan: invitationCanvasData.profileImagePan,
           remembranceBio: invitationCanvasData.remembranceBio,
+          contactDetailsLine: invitationCanvasData.contactDetailsLine,
         })
         if (cancelled) return
         setPdfBlob(blob)

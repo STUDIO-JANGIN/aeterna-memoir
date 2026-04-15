@@ -15,7 +15,7 @@ export function formatInvitePdfContactLine(locale: LandingLocale, phone: string)
   const p = phone.trim()
   if (!p) return ""
   const map: Record<LandingLocale, string> = {
-    en: `Please contact ${p} for more detailed information.`,
+    en: `Please contact ${p} for further details.`,
     ko: `보다 자세한 안내가 필요하시면 ${p}로 연락해 주시기 바랍니다.`,
     ja: `より詳しい情報は ${p} までお問い合わせください。`,
     fr: `Pour des informations plus détaillées, veuillez contacter : ${p}.`,

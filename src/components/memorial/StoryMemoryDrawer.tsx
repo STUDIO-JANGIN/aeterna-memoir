@@ -84,14 +84,6 @@ export function StoryMemoryDrawer({
   const photoStoryId = useMemo(() => coerceIdString(story?.id), [story?.id])
   const memorialEventId = useMemo(() => coerceIdString(eventId), [eventId])
 
-  const commentHeartsStorageKey = useMemo(
-    () =>
-      nameStorageKey && photoStoryId
-        ? `aeterna_comment_hearts_${nameStorageKey}_${photoStoryId}`
-        : null,
-    [nameStorageKey, photoStoryId],
-  )
-
   const canPostComment = useMemo(
     () => Boolean(parseUuidString(photoStoryId) && parseUuidString(memorialEventId)),
     [photoStoryId, memorialEventId],
@@ -113,23 +105,6 @@ export function StoryMemoryDrawer({
       // ignore
     }
   }, [nameStorageKey])
-
-  useEffect(() => {
-    if (!commentHeartsStorageKey || typeof window === "undefined") return
-    try {
-      const raw = localStorage.getItem(commentHeartsStorageKey)
-      if (!raw) return
-      const ids = JSON.parse(raw) as unknown
-      if (Array.isArray(ids)) {
-        const keys = ids
-          .map((x) => canonicalCommentId(String(x)) ?? String(x).trim())
-          .filter(Boolean)
-        setHeartedCommentIds(new Set(keys))
-      }
-    } catch {
-      // ignore
-    }
-  }, [commentHeartsStorageKey])
 
   const loadComments = useCallback(
     async (opts?: { silent?: boolean }) => {
@@ -249,10 +224,10 @@ export function StoryMemoryDrawer({
 
   const handleCommentHeart = useCallback(
     async (rawCommentId: string) => {
-      const id = parseUuidString(rawCommentId)
-      if (!id || commentHeartBusyId) return
-      /** One heart per comment per browser — matches story hearts; always increments server count. */
-      if (heartedCommentIds.has(id)) return
+      const id = canonicalCommentId(rawCommentId)
+      if (!id) return
+      /** Only block double-tap on the same comment, not all comments while one request flies. */
+      if (commentHeartBusyId === id) return
 
       setCommentHeartBusyId(id)
 
@@ -273,13 +248,6 @@ export function StoryMemoryDrawer({
           setHeartedCommentIds((prev) => {
             const next = new Set(prev)
             next.add(id)
-            if (commentHeartsStorageKey && typeof window !== "undefined") {
-              try {
-                localStorage.setItem(commentHeartsStorageKey, JSON.stringify([...next]))
-              } catch {
-                // ignore
-              }
-            }
             return next
           })
           setComments((prev) =>
@@ -297,7 +265,7 @@ export function StoryMemoryDrawer({
         setCommentHeartBusyId(null)
       }
     },
-    [commentHeartBusyId, heartedCommentIds, commentHeartsStorageKey],
+    [commentHeartBusyId],
   )
 
   return (
@@ -421,10 +389,12 @@ export function StoryMemoryDrawer({
                 ) : (
                   <ul className="space-y-2.5">
                     {comments.map((c) => {
-                      const cid = parseUuidString(String(c.id)) ?? String(c.id).trim()
+                      const canon = canonicalCommentId(String(c.id))
+                      const cid = canon ?? String(c.id).trim()
                       const count = c.likes_count ?? 0
-                      const isHearted = heartedCommentIds.has(cid)
-                      const busy = commentHeartBusyId === cid
+                      const youHearted = canon ? heartedCommentIds.has(canon) : heartedCommentIds.has(cid)
+                      const busy = canon ? commentHeartBusyId === canon : commentHeartBusyId === cid
+                      const showFilled = youHearted || count > 0
                       return (
                         <li
                           key={c.id}
@@ -442,16 +412,16 @@ export function StoryMemoryDrawer({
                           <button
                             type="button"
                             onClick={() => void handleCommentHeart(String(c.id))}
-                            disabled={busy || isHearted}
+                            disabled={busy}
                             className={`flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-1 py-0.5 transition disabled:opacity-50 ${
-                              isHearted
+                              showFilled
                                 ? "text-red-400"
                                 : "text-[var(--once-text-muted)] hover:bg-white/[0.06] hover:text-red-400/90"
                             }`}
-                            aria-label={isHearted ? m.storyDrawerCommentHeartAriaRemove : m.storyDrawerCommentHeartAriaAdd}
-                            title={isHearted ? m.storyDrawerCommentHeartTitleRemove : m.storyDrawerCommentHeartTitleAdd}
+                            aria-label={m.storyDrawerCommentHeartAriaAdd}
+                            title={m.storyDrawerCommentHeartTitleAdd}
                           >
-                            <svg className="h-4 w-4" fill={isHearted ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-4 w-4" fill={showFilled ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"

@@ -22,6 +22,8 @@ export type MemorialInvitationCardProps = {
   /** Framing for profile photo (matches create-flow drag). */
   profileImagePan?: { x: number; y: number } | null
   remembranceBio?: string | null
+  /** Localized “Please contact … for further details.” — rendered above the QR code on the PDF. */
+  contactDetailsLine?: string | null
   /** Localized labels (defaults are English) */
   invitationInfo?: string
   saveImageLabel?: string
@@ -42,6 +44,7 @@ function buildCanvasInput(p: MemorialInvitationCardProps): MemorialInvitationCan
     profileImageUrl: p.profileImageUrl,
     profileImagePan: p.profileImagePan,
     remembranceBio: p.remembranceBio,
+    contactDetailsLine: p.contactDetailsLine,
   }
 }
 
@@ -58,6 +61,7 @@ export function MemorialInvitationCard({
   profileImageUrl,
   profileImagePan,
   remembranceBio,
+  contactDetailsLine,
   invitationInfo = "Printable invitation · 9:16 · ink-friendly",
   saveImageLabel = "Save image",
   printPdfLabel = "Print PDF",
@@ -82,9 +86,10 @@ export function MemorialInvitationCard({
         profileImageUrl,
         profileImagePan,
         remembranceBio,
+        contactDetailsLine,
       }),
     )
-  }, [name, slug, guestUrl, birthDate, deathDate, location, ceremonyTime, fundLink, profileImageUrl, profileImagePan, remembranceBio])
+  }, [name, slug, guestUrl, birthDate, deathDate, location, ceremonyTime, fundLink, profileImageUrl, profileImagePan, remembranceBio, contactDetailsLine])
 
   useEffect(() => {
     let cancelled = false
@@ -117,6 +122,7 @@ export function MemorialInvitationCard({
         profileImageUrl,
         profileImagePan,
         remembranceBio,
+        contactDetailsLine,
       })
       const pdfBlob = await renderMemorialInvitationPdfFromCanvasInput(input)
       downloadPdfBlob(pdfBlob, buildInvitationPdfFilename(name))
@@ -135,6 +141,7 @@ export function MemorialInvitationCard({
     profileImageUrl,
     profileImagePan,
     remembranceBio,
+    contactDetailsLine,
   ])
 
   const handlePrintPdf = useCallback(async () => {
@@ -152,6 +159,7 @@ export function MemorialInvitationCard({
         profileImageUrl,
         profileImagePan,
         remembranceBio,
+        contactDetailsLine,
       })
       const pdfBlob = await renderMemorialInvitationPdfFromCanvasInput(input)
       const url = URL.createObjectURL(pdfBlob)
@@ -191,6 +199,7 @@ export function MemorialInvitationCard({
     profileImageUrl,
     profileImagePan,
     remembranceBio,
+    contactDetailsLine,
   ])
 
   useEffect(() => {

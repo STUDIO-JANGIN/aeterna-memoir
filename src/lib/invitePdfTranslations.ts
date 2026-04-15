@@ -6,7 +6,7 @@ export type InvitePdfStrings = {
   fallbackName: string
   /** Line above the name (e.g. “In Loving Memory Of”) */
   nameLead: string
-  /** Caption under QR code */
+  /** Caption between QR and memorial URL (PDF footer) */
   scanQr: string
 }
 

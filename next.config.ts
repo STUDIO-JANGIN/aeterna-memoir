@@ -3,9 +3,19 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   // 1) Keep an explicit empty object to avoid Turbopack initialization errors.
-  turbopack: {}, 
+  turbopack: {},
 
   allowedDevOrigins: ["172.20.10.2", "172.20.10.2:3000", "http://172.20.10.2:3000", "localhost:3000", "http://localhost:3000"],
+
+  /** PWA manifest: correct MIME for browsers / Lighthouse. */
+  async headers() {
+    return [
+      {
+        source: "/manifest.json",
+        headers: [{ key: "Content-Type", value: "application/manifest+json; charset=utf-8" }],
+      },
+    ]
+  },
   
   experimental: {
     serverActions: {

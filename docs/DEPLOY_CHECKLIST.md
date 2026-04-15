@@ -42,12 +42,18 @@ If you add the following to `.env.local`, the landing page background uses a vid
 # Landing background video (external URLs such as Supabase Storage are supported)
 NEXT_PUBLIC_LANDING_BACKGROUND_VIDEO_URL=https://your-project.supabase.co/storage/v1/object/public/.../aeterna-background.mp4
 
+# Optional: smaller / lower-bitrate MP4 for phones (≤767px) — faster first play on mobile
+# NEXT_PUBLIC_LANDING_BACKGROUND_VIDEO_URL_MOBILE=https://.../hero-bg-mobile.mp4
+# NEXT_PUBLIC_LANDING_BACKGROUND_VIDEO_URL_ASIA_MOBILE=https://...   # ko / ja / zh / zh-hk
+# NEXT_PUBLIC_LANDING_BACKGROUND_VIDEO_URL_GULF_MOBILE=https://...   # ar
+
 # Poster image during loading / on mobile (optional, default: calm Unsplash nature image)
 NEXT_PUBLIC_LANDING_BACKGROUND_POSTER_URL=https://...
 ```
 
 - If only the video URL is set, uploading to Supabase Storage and pasting that URL is enough.
 - If `POSTER_URL` is not set, the default placeholder image is used.
+- **Mobile:** The landing page defers loading the hero MP4 until the browser is idle, uses `preload="metadata"` on narrow viewports, and uses `*_MOBILE` URLs when set (see `src/lib/landingHeroVideo.ts`).
 
 ## 1. Run Checks
 

@@ -86,14 +86,30 @@ export async function uploadNewEventProfileAction(
     }
   }
 
-  const { error: updateErr } = await supabase
-    .from("events")
-    .update({ profile_image, ...(profile_image_position ? { profile_image_position } : {}) })
-    .eq("id", eventRow.id)
+  const payload: { profile_image: string; profile_image_position?: string } = { profile_image }
+  if (profile_image_position) payload.profile_image_position = profile_image_position
+
+  let { error: updateErr } = await supabase.from("events").update(payload).eq("id", eventRow.id)
+
+  if (updateErr && profile_image_position && isMissingProfileImagePositionError(updateErr.message)) {
+    console.warn(
+      "[uploadNewEventProfile] profile_image_position column missing — retrying without it. Apply supabase-add-profile-image-position.sql on Supabase.",
+    )
+    const retry = await supabase.from("events").update({ profile_image }).eq("id", eventRow.id)
+    updateErr = retry.error
+  }
 
   if (updateErr) {
     console.error("[uploadNewEventProfile] update", updateErr)
     return { ok: false, error: updateErr.message }
   }
   return { ok: true }
+}
+
+function isMissingProfileImagePositionError(message: string | undefined): boolean {
+  const m = (message ?? "").toLowerCase()
+  return (
+    m.includes("profile_image_position") &&
+    (m.includes("schema cache") || m.includes("could not find") || m.includes("column"))
+  )
 }

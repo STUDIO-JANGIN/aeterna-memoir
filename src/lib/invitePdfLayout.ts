@@ -22,8 +22,18 @@ const PAGE_HEIGHT = 595
 const PAPER = rgb(252 / 255, 250 / 255, 245 / 255)
 const INK = rgb(26 / 255, 26 / 255, 26 / 255)
 const INK_MUTED = rgb(95 / 255, 90 / 255, 86 / 255)
-/** Dusty rose / terracotta for the name (reference). */
-const NAME_ACCENT = rgb(175 / 255, 105 / 255, 98 / 255)
+/** Gentle gold for the name (~brand #C5A059). */
+const NAME_GOLD = rgb(197 / 255, 160 / 255, 89 / 255)
+
+/** Footer: URL (bottom) → scan caption → QR; sizes in pt from page bottom. */
+const QR_SIZE = 68
+const URL_FONT_SIZE = 7.5
+const URL_LINE_GAP = 10
+const SCAN_CAP_SIZE = 9
+const GAP_SCAN_URL = 12
+const GAP_QR_SCAN = 14
+const BOTTOM_PAD = 40
+const MAX_URL_LINES = 3
 
 const FRAME_INSET = 34
 const CONTENT_PAD = 26
@@ -229,12 +239,24 @@ export async function renderInvitePdfBytes(input: InvitePdfRenderInput): Promise
   page.drawLine({ start: { x: fx + fw, y: fy + fh }, end: { x: fx, y: fy + fh }, ...stroke })
   page.drawLine({ start: { x: fx, y: fy + fh }, end: { x: fx, y: fy }, ...stroke })
 
+  const urlPrep = pdfSafeLine(guestUrl)
+  const urlLinesRaw = wrapText(font, urlPrep, URL_FONT_SIZE, textW, locale).slice(0, MAX_URL_LINES)
+  const urlLines = urlLinesRaw.length > 0 ? urlLinesRaw : [urlPrep.slice(0, 96) || "—"]
+
+  const nUrl = urlLines.length
+  const urlBottomBaseline = BOTTOM_PAD + 8
+  const urlTopBaseline = urlBottomBaseline + (nUrl - 1) * URL_LINE_GAP
+  const scanBaseline = urlTopBaseline + GAP_SCAN_URL
+  const qrBottom = scanBaseline + GAP_QR_SCAN + QR_SIZE
+  /** No main text baseline may fall below this (footer sits above). */
+  const mainContentFloor = qrBottom + QR_SIZE + 22
+
   const jaGap = locale === "ja" ? 1.12 : 1.05
   let y = height - margin - 8
 
   const lead = prepareLineForPdf(strings.nameLead, locale)
   if (lead) {
-    const leadSize = 9.5
+    const leadSize = 11
     const w = font.widthOfTextAtSize(lead, leadSize)
     page.drawText(lead, {
       x: textX(align, width, margin, w),
@@ -243,17 +265,17 @@ export async function renderInvitePdfBytes(input: InvitePdfRenderInput): Promise
       font: remembranceFont,
       color: INK_MUTED,
     })
-    y -= 20 * jaGap
+    y -= 24 * jaGap
   }
 
   const displayName = prepareLineForPdf(name?.trim() || strings.fallbackName, locale)
-  const nameSize = locale === "ko" || locale === "ja" || locale === "zh" || locale === "zh-hk" ? 21 : 23
+  const nameSize = locale === "ko" || locale === "ja" || locale === "zh" || locale === "zh-hk" ? 23 : 25
   const nameLines = wrapText(emphasis, displayName, nameSize, textW, locale)
   const nameGap = Math.round(nameSize * 1.12)
-  y = drawLines(page, emphasis, nameLines, nameSize, width, margin, y, NAME_ACCENT, nameGap, align)
-  y -= 18 * jaGap
+  y = drawLines(page, emphasis, nameLines, nameSize, width, margin, y, NAME_GOLD, nameGap, align)
+  y -= 20 * jaGap
 
-  const photoSide = 118
+  const photoSide = 122
   if (profileImageUrl?.startsWith("http")) {
     try {
       const res = await fetch(profileImageUrl)
@@ -269,8 +291,12 @@ export async function renderInvitePdfBytes(input: InvitePdfRenderInput): Promise
         }
         const ix = textX("center", width, margin, photoSide)
         const iy = y - photoSide - 10
-        page.drawImage(img, { x: ix, y: iy, width: photoSide, height: photoSide })
-        y = iy - 22 * jaGap
+        if (iy < qrBottom + QR_SIZE + 6) {
+          y -= 6 * jaGap
+        } else {
+          page.drawImage(img, { x: ix, y: iy, width: photoSide, height: photoSide })
+          y = iy - 24 * jaGap
+        }
       }
     } catch {
       y -= 6 * jaGap
@@ -283,69 +309,87 @@ export async function renderInvitePdfBytes(input: InvitePdfRenderInput): Promise
   const dStr = formatInvitePdfIsoDate(deathDate)
   const sep = " — "
   const dateLine = `${bStr}${sep}${dStr}`
-  const dateSize = 10.5
+  const dateSize = 12
   const dl = prepareLineForPdf(dateLine, locale)
-  const dw = emphasis.widthOfTextAtSize(dl, dateSize)
-  page.drawText(dl, {
-    x: textX(align, width, margin, dw),
-    y,
-    size: dateSize,
-    font: emphasis,
-    color: INK,
-  })
-  y -= 22 * jaGap
+  if (y >= mainContentFloor) {
+    const dw = emphasis.widthOfTextAtSize(dl, dateSize)
+    page.drawText(dl, {
+      x: textX(align, width, margin, dw),
+      y,
+      size: dateSize,
+      font: emphasis,
+      color: INK,
+    })
+    y -= 24 * jaGap
+  }
 
   const ceremony = parseCeremonyForInvitePdf(ceremonyTime, locale)
   const serviceLines = buildServiceLines(ceremonyTime, ceremony, locale)
-  const bodySize = 10
+  const bodySize = 11.5
   for (const line of serviceLines) {
-    if (!line || y < 120) break
+    if (!line || y < mainContentFloor) break
     const wrapped = wrapText(font, line, bodySize, textW, locale)
-    const gap = locale === "ja" ? 15 : 14
+    const gap = locale === "ja" ? 16 : 15
     y = drawLines(page, font, wrapped, bodySize, width, margin, y, INK, gap, align)
     y -= 4 * jaGap
   }
 
   const locRaw = location?.trim()
-  if (locRaw && y > 110) {
+  if (locRaw && y >= mainContentFloor) {
     const locPrep = prepareLineForPdf(locRaw, locale)
     const locLines = wrapText(font, locPrep, bodySize, textW, locale)
-    const gap = locale === "ja" ? 15 : 14
+    const gap = locale === "ja" ? 16 : 15
     y = drawLines(page, font, locLines, bodySize, width, margin, y, INK_MUTED, gap, align)
     y -= 10 * jaGap
   }
 
   const phoneRaw = invitationContactPhone?.trim()
-  if (phoneRaw && y > 100) {
+  const contactSize = 10.5
+  if (phoneRaw && y >= mainContentFloor) {
     const contactLine = formatInvitePdfContactLine(locale, phoneRaw)
-    const cl = wrapText(font, prepareLineForPdf(contactLine, locale), 9.5, textW, locale)
-    y = drawLines(page, font, cl, 9.5, width, margin, y, INK_MUTED, locale === "ja" ? 14 : 13, align)
+    const cl = wrapText(font, prepareLineForPdf(contactLine, locale), contactSize, textW, locale)
+    y = drawLines(
+      page,
+      font,
+      cl,
+      contactSize,
+      width,
+      margin,
+      y,
+      INK_MUTED,
+      locale === "ja" ? 15 : 14,
+      align
+    )
     y -= 8 * jaGap
   }
 
-  const qrSize = 100
-  const qrBottom = 44
-  const scanBaseline = qrBottom + qrSize + 11
   const cap = prepareLineForPdf(strings.scanQr, locale)
-  const capSize = 8.5
-  const capW = font.widthOfTextAtSize(cap, capSize)
+  const capW = font.widthOfTextAtSize(cap, SCAN_CAP_SIZE)
 
-  let scanY = Math.min(y - 18, scanBaseline)
-  if (scanY < qrBottom + qrSize + 36) {
-    scanY = qrBottom + qrSize + 36
+  let yUrl = urlBottomBaseline + (nUrl - 1) * URL_LINE_GAP
+  for (const line of urlLines) {
+    const uw = font.widthOfTextAtSize(line, URL_FONT_SIZE)
+    page.drawText(line, {
+      x: textX("center", width, margin, uw),
+      y: yUrl,
+      size: URL_FONT_SIZE,
+      font,
+      color: INK_MUTED,
+    })
+    yUrl -= URL_LINE_GAP
   }
 
   page.drawText(cap, {
     x: textX("center", width, margin, capW),
-    y: scanY,
-    size: capSize,
+    y: scanBaseline,
+    size: SCAN_CAP_SIZE,
     font,
     color: INK_MUTED,
   })
 
   const qrImage = await pdfDoc.embedPng(qrBytes)
-  const qx = (width - qrSize) / 2
-  page.drawImage(qrImage, { x: qx, y: qrBottom, width: qrSize, height: qrSize })
+  const qx = (width - QR_SIZE) / 2
+  page.drawImage(qrImage, { x: qx, y: qrBottom, width: QR_SIZE, height: QR_SIZE })
 
   return pdfDoc.save()
 }

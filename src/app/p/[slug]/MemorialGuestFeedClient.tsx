@@ -807,6 +807,21 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
     return `${p.x}% ${p.y}%`
   }, [event])
 
+  /** Must run before any conditional return — hooks order must be stable across loading / error / ready. */
+  const isOwner = useMemo(() => {
+    if (!event) return false
+    if (!authReady) {
+      return initialViewerIsOwner
+    }
+    return (
+      !!sessionUser &&
+      isMemorialOwner(sessionUser, {
+        creator_user_id: event.creator_user_id,
+        creator_email: event.creator_email,
+      })
+    )
+  }, [event, authReady, initialViewerIsOwner, sessionUser])
+
   if (loading) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-3 font-sans text-[var(--landing-text-muted)] text-sm label-uppercase tracking-widest uppercase px-6 text-center">
@@ -842,24 +857,6 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
   const birth = formatLongDateForLandingLocale(event.birth_date, appLocale)
   const death = formatLongDateForLandingLocale(event.death_date, appLocale)
   const profileSrc = resolveProfileImageUrl(event.profile_image)
-  const isOwner = useMemo(() => {
-    if (!authReady) {
-      return initialViewerIsOwner
-    }
-    return (
-      !!sessionUser &&
-      isMemorialOwner(sessionUser, {
-        creator_user_id: event.creator_user_id,
-        creator_email: event.creator_email,
-      })
-    )
-  }, [
-    authReady,
-    initialViewerIsOwner,
-    sessionUser,
-    event.creator_user_id,
-    event.creator_email,
-  ])
 
   const showAddStoryCta =
     !filmReleased && !isClosed && photoDeadlineRemainingMs !== null && photoDeadlineRemainingMs > 0

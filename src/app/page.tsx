@@ -22,32 +22,19 @@ import {
 import { isLandingLocale, type LandingLocale } from "@/lib/landingTranslations"
 import { getLandingHeroTitleTrackingClass, getLandingLocaleFontClasses } from "@/lib/landingLocaleFonts"
 import {
+  getLandingHeroBackgroundVideos,
+  isNarrowViewportForHeroVideo,
+  scheduleHeroVideoMount,
+} from "@/lib/landingHeroVideo"
+import {
   IPhoneShell,
   StepScreenConnectVote,
   StepScreenCreate,
   StepScreenMemorialShare,
 } from "@/components/landing/IPhoneMockup"
 
-const DEFAULT_LANDING_BACKGROUND_VIDEO_URL =
-  process.env.NEXT_PUBLIC_LANDING_BACKGROUND_VIDEO_URL ?? "/hero-bg.mp4"
-/** Korean, Japanese, Chinese landing locales use this asset (override via env for CDN). */
-const ASIA_LANDING_BACKGROUND_VIDEO_URL =
-  process.env.NEXT_PUBLIC_LANDING_BACKGROUND_VIDEO_URL_ASIA ?? "/hero-bg-asia.mp4"
-/** Arabic landing locale uses this asset (override via env for CDN). */
-const GULF_LANDING_BACKGROUND_VIDEO_URL =
-  process.env.NEXT_PUBLIC_LANDING_BACKGROUND_VIDEO_URL_GULF ?? "/hero-bg-gulf.mp4"
 const LANDING_BACKGROUND_POSTER_URL =
   process.env.NEXT_PUBLIC_LANDING_BACKGROUND_POSTER_URL ?? "/hero-fallback.jpg"
-
-function landingHeroVideoUrlForLocale(locale: LandingLocale): string {
-  if (locale === "ko" || locale === "ja" || locale === "zh" || locale === "zh-hk") {
-    return ASIA_LANDING_BACKGROUND_VIDEO_URL
-  }
-  if (locale === "ar") {
-    return GULF_LANDING_BACKGROUND_VIDEO_URL
-  }
-  return DEFAULT_LANDING_BACKGROUND_VIDEO_URL
-}
 
 const HOW_IT_WORKS_META = [
   { Icon: Sparkles, mockup: "create" as const },
@@ -120,9 +107,12 @@ function LandingPageInner() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [videoError, setVideoError] = useState(false)
   const [activeNavId, setActiveNavId] = useState<LandingNavId | null>(null)
-  const heroBackgroundVideoUrl = landingHeroVideoUrlForLocale(locale)
-  const hasVideo = !!heroBackgroundVideoUrl
-  const showPlaceholder = !hasVideo || videoError
+  const [heroVideoMountReady, setHeroVideoMountReady] = useState(false)
+  const [heroVideoPreload, setHeroVideoPreload] = useState<"auto" | "metadata">("metadata")
+  const heroVideos = getLandingHeroBackgroundVideos(locale)
+  const hasVideo = Boolean(heroVideos.desktop)
+  /** Static poster / gradient until video mounts or errors — avoids competing with MP4 on mobile cold start. */
+  const showStaticHeroPoster = !hasVideo || videoError || !heroVideoMountReady
   const stepFlowLabels = t.howItWorks.steps.map((s) => `${s.title}: ${s.description}`)
   const heroImages = getLandingHeroImages(locale)
   /** Locale font utilities (see globals `.landing-*-md`); KO serif class applies at all breakpoints. */
@@ -158,6 +148,14 @@ function LandingPageInner() {
 
   useEffect(() => {
     setVideoError(false)
+  }, [locale])
+
+  useEffect(() => {
+    setHeroVideoMountReady(false)
+    return scheduleHeroVideoMount(() => {
+      setHeroVideoPreload(isNarrowViewportForHeroVideo() ? "metadata" : "auto")
+      setHeroVideoMountReady(true)
+    })
   }, [locale])
 
   useEffect(() => {
@@ -229,29 +227,37 @@ function LandingPageInner() {
 
       {/* Background — decorative video/poster: LTR so playback/scrub semantics stay global; no mirroring of footage */}
       <div className="absolute inset-0 z-0 min-h-dvh overflow-hidden pointer-events-none" dir="ltr">
-        <div className={`absolute inset-0 transition-opacity ${showPlaceholder ? "opacity-100" : "opacity-0"}`}>
+        <div className={`absolute inset-0 transition-opacity ${showStaticHeroPoster ? "opacity-100" : "opacity-0"}`}>
           <div className="absolute inset-0 bg-landing" />
           <img
             src={LANDING_BACKGROUND_POSTER_URL}
             alt=""
             className={`absolute inset-0 h-full w-full object-cover opacity-[0.12] ${heroVideoObjectClass} ${heroVideoTransformClass}`}
             fetchPriority="high"
+            decoding="async"
           />
         </div>
-        {hasVideo && !videoError && (
+        {hasVideo && !videoError && heroVideoMountReady && (
           <>
             <video
-              key={heroBackgroundVideoUrl}
+              key={`${locale}-${heroVideos.desktop}-${heroVideos.mobile}`}
               className={`absolute inset-0 z-0 h-full w-full max-h-[100dvh] object-cover ${heroVideoObjectClass} ${heroVideoTransformClass}`}
               autoPlay
               loop
               muted
               playsInline
-              preload="auto"
-              poster="/hero-fallback.jpg"
+              preload={heroVideoPreload}
+              poster={LANDING_BACKGROUND_POSTER_URL}
               onError={() => setVideoError(true)}
             >
-              <source src={heroBackgroundVideoUrl} type="video/mp4" />
+              {heroVideos.mobile !== heroVideos.desktop ? (
+                <>
+                  <source src={heroVideos.mobile} type="video/mp4" media="(max-width: 767px)" />
+                  <source src={heroVideos.desktop} type="video/mp4" />
+                </>
+              ) : (
+                <source src={heroVideos.desktop} type="video/mp4" />
+              )}
             </video>
             {/* Tonal overlay: same hue as --landing-bg so video grade matches the scroll canvas */}
             <div className="absolute inset-0 z-[1] bg-[color:var(--landing-bg)]/50 pointer-events-none" />

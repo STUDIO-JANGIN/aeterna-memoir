@@ -3,13 +3,9 @@
 import { useCallback, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { Download, Printer, X } from "lucide-react"
-import {
-  canvasToPngBlob,
-  renderMemorialInvitationCanvas,
-  type MemorialInvitationCanvasInput,
-} from "@/lib/memorialInvitationCanvas"
+import { renderMemorialInvitationCanvas, type MemorialInvitationCanvasInput } from "@/lib/memorialInvitationCanvas"
 import { renderMemorialInvitationPdfFromCanvasInput } from "@/lib/memorialInvitationPdfExport"
-import { shareOrDownloadPng } from "@/lib/shareImage"
+import { buildInvitationPdfFilename, downloadPdfBlob } from "@/lib/invitationShare"
 import { MemorialCard } from "@/components/MemorialCard"
 
 export type MemorialInvitationCardProps = {
@@ -109,13 +105,37 @@ export function MemorialInvitationCard({
   const handleSaveImage = useCallback(async () => {
     setBusy(true)
     try {
-      const canvas = await renderCanvas()
-      const blob = await canvasToPngBlob(canvas)
-      await shareOrDownloadPng(blob, `memorial-invitation-${slug}.png`, invitationShareTitle)
+      const input = buildCanvasInput({
+        name,
+        slug,
+        guestUrl,
+        birthDate,
+        deathDate,
+        location,
+        ceremonyTime,
+        fundLink,
+        profileImageUrl,
+        profileImagePan,
+        remembranceBio,
+      })
+      const pdfBlob = await renderMemorialInvitationPdfFromCanvasInput(input)
+      downloadPdfBlob(pdfBlob, buildInvitationPdfFilename(name))
     } finally {
       setBusy(false)
     }
-  }, [renderCanvas, slug, invitationShareTitle])
+  }, [
+    name,
+    slug,
+    guestUrl,
+    birthDate,
+    deathDate,
+    location,
+    ceremonyTime,
+    fundLink,
+    profileImageUrl,
+    profileImagePan,
+    remembranceBio,
+  ])
 
   const handlePrintPdf = useCallback(async () => {
     setBusy(true)

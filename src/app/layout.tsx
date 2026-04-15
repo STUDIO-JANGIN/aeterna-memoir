@@ -82,7 +82,7 @@ export const metadata: Metadata = {
   description:
     'A digital sanctuary to honor and preserve the stories of your loved ones forever.',
   applicationName: 'Aeterna Memoir',
-  manifest: '/site.webmanifest',
+  manifest: '/manifest.json',
   icons: {
     icon: [
       { url: '/favicon.png', sizes: '1024x1024', type: 'image/png' },

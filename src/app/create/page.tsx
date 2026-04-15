@@ -378,6 +378,27 @@ function CreateEventForm() {
     if (l && isLandingLocale(l)) setLocale(l)
   }, [searchParams, setLocale])
 
+  /** Warm connection to Stripe Checkout while the user is in the wizard — faster redirect after “Continue”. */
+  useEffect(() => {
+    if (typeof document === "undefined") return
+    const specs: { rel: string; href: string; crossOrigin?: string }[] = [
+      { rel: "dns-prefetch", href: "https://checkout.stripe.com" },
+      { rel: "preconnect", href: "https://checkout.stripe.com", crossOrigin: "anonymous" },
+    ]
+    const added: HTMLLinkElement[] = []
+    for (const s of specs) {
+      const el = document.createElement("link")
+      el.rel = s.rel
+      el.href = s.href
+      if (s.crossOrigin) el.crossOrigin = s.crossOrigin
+      document.head.appendChild(el)
+      added.push(el)
+    }
+    return () => {
+      added.forEach((el) => el.parentNode?.removeChild(el))
+    }
+  }, [])
+
   const pricingCurrency = usePersistedPricingCurrencyForCreate(locale, currencyQuery)
   const planSummaryMap = useMemo(
     () => buildCreatePlanSummary(pricingCurrency, a.createWizard.plans),
@@ -1314,11 +1335,15 @@ function CreateEventForm() {
       }
 
       if (result.ok) {
-        if (profileFile && result.slug) {
+        const slug = result.slug
+        const paidTier = storagePlan === "plus" || storagePlan === "premium"
+
+        const runProfileUpload = async () => {
+          if (!profileFile || !slug) return
           const fd = new FormData()
           fd.set("profile_image", profileFile)
           fd.set("profile_image_position", `${Math.round(profilePan.x)},${Math.round(profilePan.y)}`)
-          const uploadRes = await uploadNewEventProfileAction(result.slug, fd)
+          const uploadRes = await uploadNewEventProfileAction(slug, fd)
           if (uploadRes.ok) {
             try {
               sessionStorage.removeItem(LS_PROFILE_IMAGE_DRAFT_KEY)
@@ -1333,19 +1358,28 @@ function CreateEventForm() {
           }
         }
 
-        if (backgroundFile && result.slug) {
+        const runBackgroundUpload = async () => {
+          if (!backgroundFile || !slug) return
           const bgFd = new FormData()
           bgFd.set("memorial_background_image", backgroundFile)
           bgFd.set(
             "memorial_background_position",
             `${Math.round(backgroundPan.x)},${Math.round(backgroundPan.y)}`,
           )
-          const bgRes = await uploadNewEventBackgroundAction(result.slug, bgFd)
+          const bgRes = await uploadNewEventBackgroundAction(slug, bgFd)
           if (!bgRes.ok) {
             setBackgroundUploadError(
               bgRes.error || "Background image could not be uploaded. You can set it later from admin.",
             )
           }
+        }
+
+        if (paidTier) {
+          void runProfileUpload().catch((e) => console.error("[handleCreate] profile upload", e))
+          void runBackgroundUpload().catch((e) => console.error("[handleCreate] background upload", e))
+        } else {
+          await runProfileUpload()
+          await runBackgroundUpload()
         }
 
         if (storagePlan === "plus") {
@@ -2697,14 +2731,14 @@ function CreateEventForm() {
                   <button
                     type="button"
                     onClick={() => router.push(`/p/${encodeURIComponent(createdSlug)}`)}
-                    className="btn-landing-gold flex min-h-[52px] w-full items-center justify-center px-6 text-base font-semibold sm:min-w-[200px] sm:flex-1"
+                    className="btn-landing-gold flex min-h-[52px] w-full items-center justify-center px-6 text-sm font-semibold uppercase tracking-[0.16em] sm:min-w-[200px] sm:flex-1"
                   >
                     {a.createWizard.viewMemorial}
                   </button>
                   <button
                     type="button"
                     onClick={() => router.push(`/p/${encodeURIComponent(createdSlug)}/admin`)}
-                    className="flex min-h-[52px] w-full items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.04] px-6 text-base font-semibold uppercase tracking-[0.16em] text-[var(--landing-text-body)] transition-colors hover:border-[var(--aeterna-gold)]/40 hover:bg-[var(--aeterna-gold)]/10 hover:text-[var(--aeterna-gold)] sm:min-w-[200px] sm:flex-1 [font-family:var(--font-sans)]"
+                    className="flex min-h-[52px] w-full items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.04] px-6 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--landing-text-body)] transition-colors hover:border-[var(--aeterna-gold)]/40 hover:bg-[var(--aeterna-gold)]/10 hover:text-[var(--aeterna-gold)] sm:min-w-[200px] sm:flex-1"
                   >
                     {a.memorial.admin}
                   </button>

@@ -11,8 +11,8 @@ const PAPER = "#fcf8f5"
 const INK = "#333333"
 const INK_SOFT = "#4a4a6a"
 const INK_MUTED = "#6b6b6b"
-/** Reference-style dusty rose for the name */
-const NAME_ROSE = "#af6962"
+/** Gentle gold for the name (aligned with invitation PDF) */
+const NAME_GOLD = "#C5A059"
 /** Subtle monument dividers */
 const DIVIDER_GOLD = "rgba(212, 175, 55, 0.1)"
 /** Outer deckle frame */
@@ -198,7 +198,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.fillText("In Loving Memory Of", centerX, y)
   y += 44
 
-  ctx.fillStyle = NAME_ROSE
+  ctx.fillStyle = NAME_GOLD
   ctx.font = `600 ${NAME_SIZE_PX}px ${FONT_SERIF}`
   const displayName = name.trim() || "Beloved"
   const nameLines = wrapTitle(ctx, displayName, contentW)

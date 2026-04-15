@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
 import { ArrowUp } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
-import { heartCommentAction, unheartCommentAction } from "@/app/actions/heartComment"
+import { heartCommentAction } from "@/app/actions/heartComment"
 import {
   addStoryCommentAction,
   getStoryCommentsAction,
@@ -249,9 +249,11 @@ export function StoryMemoryDrawer({
 
   const handleCommentHeart = useCallback(
     async (rawCommentId: string) => {
-      const id = canonicalCommentId(rawCommentId)
+      const id = parseUuidString(rawCommentId)
       if (!id || commentHeartBusyId) return
-      const removing = heartedCommentIds.has(id)
+      /** One heart per comment per browser — matches story hearts; always increments server count. */
+      if (heartedCommentIds.has(id)) return
+
       setCommentHeartBusyId(id)
 
       const bump = (delta: number) => {
@@ -263,15 +265,14 @@ export function StoryMemoryDrawer({
         )
       }
 
-      bump(removing ? -1 : 1)
+      bump(1)
 
       try {
-        const result = removing ? await unheartCommentAction(id) : await heartCommentAction(id)
+        const result = await heartCommentAction(id)
         if (result.ok) {
           setHeartedCommentIds((prev) => {
             const next = new Set(prev)
-            if (removing) next.delete(id)
-            else next.add(id)
+            next.add(id)
             if (commentHeartsStorageKey && typeof window !== "undefined") {
               try {
                 localStorage.setItem(commentHeartsStorageKey, JSON.stringify([...next]))
@@ -288,10 +289,10 @@ export function StoryMemoryDrawer({
             }),
           )
         } else {
-          bump(removing ? 1 : -1)
+          bump(-1)
         }
       } catch {
-        bump(removing ? 1 : -1)
+        bump(-1)
       } finally {
         setCommentHeartBusyId(null)
       }
@@ -420,7 +421,7 @@ export function StoryMemoryDrawer({
                 ) : (
                   <ul className="space-y-2.5">
                     {comments.map((c) => {
-                      const cid = canonicalCommentId(String(c.id)) ?? String(c.id).trim()
+                      const cid = parseUuidString(String(c.id)) ?? String(c.id).trim()
                       const count = c.likes_count ?? 0
                       const isHearted = heartedCommentIds.has(cid)
                       const busy = commentHeartBusyId === cid
@@ -441,7 +442,7 @@ export function StoryMemoryDrawer({
                           <button
                             type="button"
                             onClick={() => void handleCommentHeart(String(c.id))}
-                            disabled={busy}
+                            disabled={busy || isHearted}
                             className={`flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-1 py-0.5 transition disabled:opacity-50 ${
                               isHearted
                                 ? "text-red-400"

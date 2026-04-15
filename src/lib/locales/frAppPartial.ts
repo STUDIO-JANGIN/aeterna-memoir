@@ -110,6 +110,7 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     storyDrawerComposerPlaceholder: "Quelques mots…",
     storyDrawerComposerLabel: "Partager un souvenir",
     storyDrawerSendAria: "Envoyer",
+    storyDrawerScrollHint: "Glissez vers le haut pour la suite",
     donationSupportCta: "soutien · voir les coordonnées",
     donationStatus: "État du soutien",
     donationSoFar: (count: number) =>

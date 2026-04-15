@@ -1,9 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { motion } from "framer-motion"
 import { ARTISAN_SPRING, artisanPresence } from "@/lib/artisanMotion"
-import { ArrowUp } from "lucide-react"
+import { ArrowUp, ChevronDown } from "lucide-react"
 import { supabase } from "@/lib/supabase/browser"
 import { heartCommentAction } from "@/app/actions/heartComment"
 import {
@@ -79,6 +79,9 @@ export function StoryMemoryDrawer({
   const [sendError, setSendError] = useState<string | null>(null)
   const [heartedCommentIds, setHeartedCommentIds] = useState<Set<string>>(new Set())
   const [commentHeartBusyId, setCommentHeartBusyId] = useState<string | null>(null)
+  const storyScrollRef = useRef<HTMLDivElement>(null)
+  const storyScrollContentRef = useRef<HTMLDivElement>(null)
+  const [showBelowFoldHint, setShowBelowFoldHint] = useState(false)
 
   /** stories.id from DB (UUID text) — never pass objects/numbers raw into server actions */
   const photoStoryId = useMemo(() => coerceIdString(story?.id), [story?.id])
@@ -162,6 +165,38 @@ export function StoryMemoryDrawer({
       void supabase.removeChannel(channel)
     }
   }, [memorialEventId, photoStoryId, loadComments])
+
+  const updateBelowFoldHint = useCallback(() => {
+    const el = storyScrollRef.current
+    if (!el) return
+    const { scrollTop, scrollHeight, clientHeight } = el
+    const overflow = scrollHeight > clientHeight + 2
+    const atBottom = scrollTop + clientHeight >= scrollHeight - 8
+    setShowBelowFoldHint(Boolean(overflow && !atBottom))
+  }, [])
+
+  useLayoutEffect(() => {
+    updateBelowFoldHint()
+  }, [updateBelowFoldHint, story.id, story.story_text, comments, commentsLoading])
+
+  useEffect(() => {
+    const el = storyScrollRef.current
+    const inner = storyScrollContentRef.current
+    if (!el) return
+    updateBelowFoldHint()
+    const ro = new ResizeObserver(() => {
+      updateBelowFoldHint()
+    })
+    ro.observe(el)
+    if (inner) ro.observe(inner)
+    el.addEventListener("scroll", updateBelowFoldHint, { passive: true })
+    window.addEventListener("resize", updateBelowFoldHint)
+    return () => {
+      ro.disconnect()
+      el.removeEventListener("scroll", updateBelowFoldHint)
+      window.removeEventListener("resize", updateBelowFoldHint)
+    }
+  }, [updateBelowFoldHint])
 
   const persistName = useCallback((name: string) => {
     try {
@@ -258,9 +293,11 @@ export function StoryMemoryDrawer({
           )
         } else {
           bump(-1)
+          console.warn("[StoryMemoryDrawer] heartCommentAction failed", result.error)
         }
-      } catch {
+      } catch (e) {
         bump(-1)
+        console.warn("[StoryMemoryDrawer] heartCommentAction threw", e)
       } finally {
         setCommentHeartBusyId(null)
       }
@@ -343,14 +380,19 @@ export function StoryMemoryDrawer({
               )}
             </div>
 
-            {/* Scroll: story, hearts, and shared memories — scroll-touch + touch-pan-y for smooth mobile momentum */}
-            <div className="scroll-touch memorial-drawer-scroll min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain px-4 pb-2 pt-3">
-              <p className="font-[var(--font-serif)] text-base text-[var(--aeterna-gold)]">
-                {story.author_name ?? m.storyDrawerAnonymous}
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-[var(--once-text-primary)]">{story.story_text ?? ""}</p>
+            {/* Scroll: story, hearts, comments — gradient + hint when more content below (mobile affordance) */}
+            <div className="relative min-h-0 flex-1">
+              <div
+                ref={storyScrollRef}
+                className="scroll-touch memorial-drawer-scroll h-full min-h-0 touch-pan-y overflow-y-auto overscroll-y-contain px-4 pb-2 pt-3"
+              >
+                <div ref={storyScrollContentRef}>
+                  <p className="font-[var(--font-serif)] text-base text-[var(--aeterna-gold)]">
+                    {story.author_name ?? m.storyDrawerAnonymous}
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-[var(--once-text-primary)]">{story.story_text ?? ""}</p>
 
-              <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--border-gold-subtle)]/50 bg-[#030303]/20 px-3 py-2.5">
+                  <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--border-gold-subtle)]/50 bg-[#030303]/20 px-3 py-2.5">
                 <motion.button
                   type="button"
                   onClick={onHeart}
@@ -437,6 +479,19 @@ export function StoryMemoryDrawer({
                   </ul>
                 )}
               </div>
+                </div>
+              </div>
+              {showBelowFoldHint && (
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-col items-center justify-end bg-gradient-to-t from-[var(--once-bg-elevated)] via-[var(--once-bg-elevated)]/88 to-transparent pb-1 pt-14"
+                  aria-hidden
+                >
+                  <p className="flex items-center gap-1.5 text-[10px] font-medium tracking-wide text-[var(--aeterna-gold-muted)] md:hidden">
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-90" strokeWidth={2.4} aria-hidden />
+                    {m.storyDrawerScrollHint}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Composer — chat bubble style */}

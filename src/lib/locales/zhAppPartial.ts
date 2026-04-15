@@ -104,6 +104,7 @@ export const ZH_APP_REST: DeepPartial<AppStrings> = {
     storyDrawerComposerPlaceholder: "寫下幾句話…",
     storyDrawerComposerLabel: "分享回憶",
     storyDrawerSendAria: "送出",
+    storyDrawerScrollHint: "向上滑动查看更多",
     donationSupportCta: "援助 · 查看帳戶",
     donationStatus: "援助狀態",
     donationSoFar: (count: number) => `迄今已有 ${count} 位向家屬獻上心意。`,

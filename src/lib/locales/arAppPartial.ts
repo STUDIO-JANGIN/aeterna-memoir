@@ -106,6 +106,7 @@ export const AR_APP_REST: DeepPartial<AppStrings> = {
     storyDrawerComposerPlaceholder: "اكتب بضع كلمات…",
     storyDrawerComposerLabel: "مشاركة ذكرى",
     storyDrawerSendAria: "إرسال",
+    storyDrawerScrollHint: "مرّر لأعلى لرؤية المزيد",
     donationSupportCta: "دعم · بيانات الحساب",
     donationStatus: "حالة الدعم",
     donationSoFar: (count: number) => `إلى الآن ${count} من الناس قدّموا دعماً للعائلة.`,

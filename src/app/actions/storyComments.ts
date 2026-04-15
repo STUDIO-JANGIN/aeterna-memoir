@@ -52,11 +52,13 @@ function toPublicComment(row: Record<string, unknown>): StoryCommentPublic | nul
   if (!id) return null
   const likesRaw = row.likes_count
   const likes_count =
-    typeof likesRaw === "number" && !Number.isNaN(likesRaw)
-      ? likesRaw
-      : typeof likesRaw === "string"
-        ? parseInt(likesRaw, 10) || 0
-        : 0
+    typeof likesRaw === "bigint"
+      ? Number(likesRaw)
+      : typeof likesRaw === "number" && !Number.isNaN(likesRaw)
+        ? likesRaw
+        : typeof likesRaw === "string"
+          ? parseInt(likesRaw, 10) || 0
+          : 0
 
   return {
     id,
@@ -143,26 +145,38 @@ export async function getStoryCommentsAction(
 
   if (error) {
     const msg = error.message ?? ""
-    /** Prefer targeted retries so we do not drop `likes_count` when only `is_reported` is missing (common). */
+    /** If `likes_count` failed (often schema cache), try `*` before dropping the column. */
     if (isLikesCountColumnError(msg)) {
-      const second = await supabase
+      const star = await supabase
         .from("comments")
-        .select("id, visitor_name, text, created_at, is_reported")
+        .select("*")
         .eq("photo_id", photoIdUuid)
         .eq("event_id", eventIdUuid)
         .eq("is_reported", false)
         .order("created_at", { ascending: true })
-      data = (second.data ?? null) as Record<string, unknown>[] | null
-      error = second.error
-      if (error && isReportColumnOrCacheError(error.message ?? "")) {
-        const third = await supabase
+      if (!star.error) {
+        data = (star.data ?? null) as Record<string, unknown>[] | null
+        error = null
+      } else {
+        const second = await supabase
           .from("comments")
-          .select("id, visitor_name, text, created_at")
+          .select("id, visitor_name, text, created_at, is_reported")
           .eq("photo_id", photoIdUuid)
           .eq("event_id", eventIdUuid)
+          .eq("is_reported", false)
           .order("created_at", { ascending: true })
-        data = (third.data ?? null) as Record<string, unknown>[] | null
-        error = third.error
+        data = (second.data ?? null) as Record<string, unknown>[] | null
+        error = second.error
+        if (error && isReportColumnOrCacheError(error.message ?? "")) {
+          const third = await supabase
+            .from("comments")
+            .select("id, visitor_name, text, created_at")
+            .eq("photo_id", photoIdUuid)
+            .eq("event_id", eventIdUuid)
+            .order("created_at", { ascending: true })
+          data = (third.data ?? null) as Record<string, unknown>[] | null
+          error = third.error
+        }
       }
     } else if (isReportColumnOrCacheError(msg)) {
       const second = await supabase

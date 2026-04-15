@@ -177,6 +177,8 @@ export type AppStrings = {
     storyDrawerComposerPlaceholder: string
     storyDrawerComposerLabel: string
     storyDrawerSendAria: string
+    /** Shown when story + comments overflow; mobile scroll affordance */
+    storyDrawerScrollHint: string
     donationSupportCta: string
     donationStatus: string
     donationSoFar: (count: number) => string
@@ -654,6 +656,7 @@ const EN: AppStrings = {
     storyDrawerComposerPlaceholder: "Write a few words…",
     storyDrawerComposerLabel: "Share a memory",
     storyDrawerSendAria: "Send",
+    storyDrawerScrollHint: "Swipe up for more",
     donationSupportCta: "support · view account details",
     donationStatus: "Donation status",
     donationSoFar: (count: number) =>
@@ -1141,6 +1144,7 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     storyDrawerComposerPlaceholder: "짧은 메시지를 남겨 주세요…",
     storyDrawerComposerLabel: "추억 나누기",
     storyDrawerSendAria: "보내기",
+    storyDrawerScrollHint: "위로 밀어 더 보기",
     donationSupportCta: "후원 · 계좌 보기",
     donationStatus: "후원 현황",
     donationSoFar: (count: number) => `지금까지 ${count}분이 가족을 위해 마음을 나누었습니다.`,
@@ -1619,6 +1623,7 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     storyDrawerComposerPlaceholder: "短いメッセージをどうぞ…",
     storyDrawerComposerLabel: "思い出を共有",
     storyDrawerSendAria: "送信",
+    storyDrawerScrollHint: "上にスワイプして続きを表示",
     donationSupportCta: "支援 · 口座を見る",
     donationStatus: "寄付の状況",
     donationSoFar: (count: number) => `これまでに ${count} 名がご家族を支援されています。`,

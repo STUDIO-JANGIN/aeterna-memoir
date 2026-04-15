@@ -15,29 +15,36 @@ const INK_MUTED = "#6b6b6b"
 const NAME_GOLD = "#C5A059"
 /** Subtle monument dividers */
 const DIVIDER_GOLD = "rgba(212, 175, 55, 0.1)"
-/** Outer deckle frame */
-const CHAMPAGNE_STROKE = "rgba(197, 160, 89, 0.42)"
-const BORDER_INNER = "#d9d4cc"
+/** Outer deckle frame (slightly richer so thicker stroke stays legible) */
+const CHAMPAGNE_STROKE = "rgba(197, 160, 89, 0.58)"
+const BORDER_INNER = "#c8c3bb"
 /** Profile ring — champagne gold */
 const GOLD_RING = "#D4AF37"
 
 const FONT_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif"
 const FONT_SANS = "Inter, system-ui, -apple-system, sans-serif"
 
-/** Typography scale (rem → px at 16px root) — sized for print/PDF readability */
-const NAME_REM = 2.8125
-const NAME_SIZE_PX = Math.round(16 * NAME_REM) // 45
-const DATE_QUOTE_REM = 1.0625
-const DATE_QUOTE_SIZE_PX = Math.round(16 * DATE_QUOTE_REM) // 17
-const SECTION_HEADER_REM = 0.875
-const SECTION_HEADER_SIZE_PX = Math.round(16 * SECTION_HEADER_REM) // 14
+/** Typography scale (rem → px at 16px root) — print/PDF: larger body for readability */
+const NAME_REM = 3.25
+const NAME_SIZE_PX = Math.round(16 * NAME_REM) // 52
+const DATE_QUOTE_REM = 1.3125
+const DATE_QUOTE_SIZE_PX = Math.round(16 * DATE_QUOTE_REM) // 21
+const SECTION_HEADER_REM = 1.0625
+const SECTION_HEADER_SIZE_PX = Math.round(16 * SECTION_HEADER_REM) // 17
 const SECTION_HEADER_TRACKING_EM = 0.2
 
-const KICKER_SIZE_PX = 23 /** “In Loving Memory Of” */
-const PLACEHOLDER_INITIAL_PX = 62 /** Letter in empty photo circle */
-const SCAN_CTA_SIZE_PX = 24 /** “Scan to visit…” */
-const URL_LINE_SIZE_PX = 20 /** Short URL under QR */
-const FOOTER_BRAND_SIZE_PX = 16 /** “Aeterna” */
+const KICKER_SIZE_PX = 27 /** “In Loving Memory Of” */
+const PLACEHOLDER_INITIAL_PX = 70 /** Letter in empty photo circle */
+const SCAN_CTA_SIZE_PX = 28 /** “Scan to visit…” */
+const URL_LINE_SIZE_PX = 23 /** Short URL under QR */
+const FOOTER_BRAND_SIZE_PX = 19 /** “Aeterna” */
+
+/** Outer champagne + inner gray frame strokes (px) */
+const STROKE_OUTER_CHAMPAGNE = 3.25
+const STROKE_INNER_GRAY = 2.75
+const STROKE_PROFILE_RING = 2
+const STROKE_QR_FRAME = 2
+const STROKE_DIVIDER = 1.5
 
 async function ensureInvitationFonts(): Promise<void> {
   if (typeof document === "undefined" || !document.fonts) return
@@ -193,13 +200,13 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   const margin = 44
   roundRectPath(ctx, margin, margin, W - margin * 2, H - margin * 2, 12)
   ctx.strokeStyle = CHAMPAGNE_STROKE
-  ctx.lineWidth = 1.5
+  ctx.lineWidth = STROKE_OUTER_CHAMPAGNE
   ctx.stroke()
 
   const innerM = margin + 28
   roundRectPath(ctx, innerM, innerM, W - innerM * 2, H - innerM * 2, 8)
   ctx.strokeStyle = BORDER_INNER
-  ctx.lineWidth = 1
+  ctx.lineWidth = STROKE_INNER_GRAY
   ctx.stroke()
 
   const contentW = W - innerM * 2 - 64
@@ -210,7 +217,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.fillStyle = INK_MUTED
   ctx.font = `400 ${KICKER_SIZE_PX}px ${FONT_SANS}`
   ctx.fillText("In Loving Memory Of", centerX, y)
-  y += 44
+  y += 48
 
   ctx.fillStyle = NAME_GOLD
   ctx.font = `600 ${NAME_SIZE_PX}px ${FONT_SERIF}`
@@ -221,7 +228,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     ctx.fillText(line, centerX, y)
     y += nameLineHeight
   })
-  y += 40
+  y += 46
 
   /** Circular portrait — slightly smaller than legacy rectangular frame */
   const photoD = Math.floor(contentW * 0.28)
@@ -275,28 +282,28 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   }
   ctx.restore()
 
-  /** 1px gold ring — high-end monument frame */
+  /** Gold ring — portrait frame */
   ctx.save()
   ctx.beginPath()
   ctx.arc(photoCx, photoCy, photoRadius, 0, Math.PI * 2)
   ctx.strokeStyle = GOLD_RING
-  ctx.lineWidth = 1
+  ctx.lineWidth = STROKE_PROFILE_RING
   ctx.stroke()
   ctx.restore()
 
   const birth = formatDisplayDate(birthDate)
   const death = formatDisplayDate(deathDate)
-  y = photoY + photoD + 36
+  y = photoY + photoD + 40
   ctx.textAlign = "center"
   ctx.fillStyle = INK
-  ctx.font = `500 ${DATE_QUOTE_SIZE_PX + 1}px ${FONT_SANS}`
+  ctx.font = `500 ${DATE_QUOTE_SIZE_PX + 2}px ${FONT_SANS}`
   ctx.fillText(`${birth}  —  ${death}`, centerX, y)
-  y += 52
+  y += 56
 
   const drawGoldDivider = (dividerY: number) => {
     ctx.beginPath()
     ctx.strokeStyle = DIVIDER_GOLD
-    ctx.lineWidth = 1
+    ctx.lineWidth = STROKE_DIVIDER
     ctx.moveTo(innerM + 56, dividerY)
     ctx.lineTo(W - innerM - 56, dividerY)
     ctx.stroke()
@@ -316,21 +323,21 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
       ctx.fillText(ln, centerX, y)
       y += quoteLineGap
     })
-    y += 36
+    y += 52
   } else {
     y += 28
   }
 
   if (bioRaw) {
-    const sepY = y + 12
+    const sepY = y + 20
     drawGoldDivider(sepY)
-    y = sepY + 48
+    y = sepY + 64
   } else {
-    y += 32
+    y += 40
   }
 
-  /** Extra air between hero block and service section */
-  y += 28
+  /** Extra air between hero / bio block and SERVICE section */
+  y += 52
 
   const fontDetailLine = `300 ${DATE_QUOTE_SIZE_PX}px ${FONT_SANS}`
   const fontScanCta = `500 ${SCAN_CTA_SIZE_PX}px ${FONT_SANS}`
@@ -347,23 +354,24 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   const qrSize = qrMax
   const qrPaddedH = qrSize + 2 * qrPad
   const innerBottom = H - innerM
-  const gapAeternaBottom = 26
-  const gapUrlAeterna = 38
-  const gapScanUrl = 38
-  const gapQrToScan = 32
+  const gapAeternaBottom = 30
+  const gapUrlAeterna = 42
+  const gapScanUrl = 42
+  const gapQrToScan = 36
   const yAeterna = innerBottom - gapAeternaBottom
   const yUrl = yAeterna - gapUrlAeterna
   const yScan = yUrl - gapScanUrl
   const qrBoxBottom = yScan - 16 - gapQrToScan
   const qrTop = qrBoxBottom - qrPaddedH
-  const gapContactToQr = 18
+  /** Space between “Please contact…” lines and the QR card */
+  const gapContactToQr = 44
   const nContact = contactLinesWrapped.length
   const lastContactCenterY = qrTop - qrPad - gapContactToQr
   const firstContactCenterY = nContact > 0 ? lastContactCenterY - (nContact - 1) * contactGap : lastContactCenterY
   /** Do not draw main text below this y (centers); keeps service block above the footer stack. */
   const mainContentBottomY =
     nContact > 0 ? firstContactCenterY - Math.round(contactGap * 0.55) - 20 : qrTop - 28
-  const approxServiceBlock = 220
+  const approxServiceBlock = 280
   if (y + approxServiceBlock > mainContentBottomY) {
     y = Math.max(innerM + 120, mainContentBottomY - approxServiceBlock)
   }
@@ -376,16 +384,18 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.fillText("SERVICE", centerX, y)
   ctx.letterSpacing = "0"
   ctx.restore()
-  y += 40
+  y += 46
   ctx.fillStyle = INK_MUTED
   ctx.font = fontDetailLine
   ctx.fillText(`Location: ${displayLocation(location)}`, centerX, y)
-  y += 36
+  y += 42
   ctx.fillText(`Service time: ${displayService(ceremonyTime)}`, centerX, y)
-  y += 44
+  /** Space after service details — extra gap before MEMORIAL FUND when present */
+  y += 58
 
   const fund = fundLink?.trim()
   if (fund) {
+    y += 40
     ctx.save()
     ctx.fillStyle = INK
     ctx.font = `500 ${SECTION_HEADER_SIZE_PX}px ${FONT_SANS}`
@@ -393,16 +403,16 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     ctx.fillText("MEMORIAL FUND", centerX, y)
     ctx.letterSpacing = "0"
     ctx.restore()
-    y += 36
+    y += 42
     ctx.fillStyle = INK_MUTED
     ctx.font = fontDetailLine
     const supLines = wrapLines(ctx, fund, contentW, 4)
     for (const ln of supLines) {
       if (y > mainContentBottomY - 8) break
       ctx.fillText(ln, centerX, y)
-      y += Math.round(DATE_QUOTE_SIZE_PX * 1.5)
+      y += Math.round(DATE_QUOTE_SIZE_PX * 1.58)
     }
-    y += 28
+    y += 32
   }
 
   if (nContact > 0) {
@@ -430,7 +440,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.fillStyle = "#ffffff"
   ctx.fill()
   ctx.strokeStyle = BORDER_INNER
-  ctx.lineWidth = 1
+  ctx.lineWidth = STROKE_QR_FRAME
   ctx.stroke()
   ctx.restore()
   ctx.drawImage(qrCanvas, qrX, qrTop)

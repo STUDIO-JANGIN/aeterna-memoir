@@ -196,6 +196,7 @@ function SuccessContent({ slug }: { slug: string }) {
                 location={inviteMeta?.location ?? undefined}
                 ceremonyTime={inviteMeta?.ceremony_time ?? undefined}
                 fundLink={inviteMeta?.flower_link ?? undefined}
+                bankInfo={inviteMeta?.bank_info ?? undefined}
                 profileImageUrl={inviteMeta?.profile_image ?? undefined}
                 remembranceBio={inviteMeta?.invitation_bio ?? undefined}
                 contactDetailsLine={

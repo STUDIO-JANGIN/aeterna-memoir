@@ -30,6 +30,8 @@ export type InvitationCanvasData = {
   location: string | null
   ceremonyTime: string | null
   fundLink: string | null
+  /** Condolence / bank details (admin profile settings). */
+  bankInfo: string | null
   profileImageUrl: string | null
   profileImagePan: { x: number; y: number } | null
   remembranceBio: string | null
@@ -153,6 +155,7 @@ export function InvitationActionSheet({
           location: invitationCanvasData.location,
           ceremonyTime: invitationCanvasData.ceremonyTime,
           fundLink: invitationCanvasData.fundLink,
+          bankInfo: invitationCanvasData.bankInfo,
           profileImageUrl: invitationCanvasData.profileImageUrl,
           profileImagePan: invitationCanvasData.profileImagePan,
           remembranceBio: invitationCanvasData.remembranceBio,

@@ -24,20 +24,21 @@ const GOLD_RING = "#D4AF37"
 const FONT_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif"
 const FONT_SANS = "Inter, system-ui, -apple-system, sans-serif"
 
-/** Typography scale (rem → px at 16px root) — print/PDF: larger body for readability */
-const NAME_REM = 3.25
-const NAME_SIZE_PX = Math.round(16 * NAME_REM) // 52
-const DATE_QUOTE_REM = 1.3125
-const DATE_QUOTE_SIZE_PX = Math.round(16 * DATE_QUOTE_REM) // 21
-const SECTION_HEADER_REM = 1.0625
-const SECTION_HEADER_SIZE_PX = Math.round(16 * SECTION_HEADER_REM) // 17
+/** Typography: main copy large; QR footer lines (scan + URL) smaller */
+const NAME_REM = 3.5
+const NAME_SIZE_PX = Math.round(16 * NAME_REM) // 56
+const DATE_QUOTE_REM = 1.4375
+const DATE_QUOTE_SIZE_PX = Math.round(16 * DATE_QUOTE_REM) // 23
+const SECTION_HEADER_REM = 1.1875
+const SECTION_HEADER_SIZE_PX = Math.round(16 * SECTION_HEADER_REM) // 19
 const SECTION_HEADER_TRACKING_EM = 0.2
 
-const KICKER_SIZE_PX = 27 /** “In Loving Memory Of” */
-const PLACEHOLDER_INITIAL_PX = 70 /** Letter in empty photo circle */
-const SCAN_CTA_SIZE_PX = 28 /** “Scan to visit…” */
-const URL_LINE_SIZE_PX = 23 /** Short URL under QR */
-const FOOTER_BRAND_SIZE_PX = 19 /** “Aeterna” */
+const KICKER_SIZE_PX = 30 /** “In Loving Memory Of” */
+const PLACEHOLDER_INITIAL_PX = 76 /** Letter in empty photo circle */
+/** Footer under QR only — keep small */
+const SCAN_CTA_SIZE_PX = 20 /** “Scan to visit the memorial” */
+const URL_LINE_SIZE_PX = 16 /** aeternamemoir.com/p/… */
+const FOOTER_BRAND_SIZE_PX = 22 /** “Aeterna” */
 
 /** Outer champagne + inner gray frame strokes (px) */
 const STROKE_OUTER_CHAMPAGNE = 3.25
@@ -162,7 +163,10 @@ export type MemorialInvitationCanvasInput = {
   deathDate?: string | null
   location?: string | null
   ceremonyTime?: string | null
+  /** External memorial fund URL (e.g. flower link). */
   fundLink?: string | null
+  /** Bank / condolence account details — shown under MEMORIAL FUND with optional {@link fundLink}. */
+  bankInfo?: string | null
   profileImageUrl?: string | null
   /** 0–100 each, matches CSS `object-position` (50 = centered). */
   profileImagePan?: { x: number; y: number } | null
@@ -182,6 +186,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     location,
     ceremonyTime,
     fundLink,
+    bankInfo,
     profileImageUrl,
     profileImagePan,
     remembranceBio,
@@ -296,7 +301,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   y = photoY + photoD + 40
   ctx.textAlign = "center"
   ctx.fillStyle = INK
-  ctx.font = `500 ${DATE_QUOTE_SIZE_PX + 2}px ${FONT_SANS}`
+  ctx.font = `500 ${DATE_QUOTE_SIZE_PX + 3}px ${FONT_SANS}`
   ctx.fillText(`${birth}  —  ${death}`, centerX, y)
   y += 56
 
@@ -355,9 +360,10 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   const qrPaddedH = qrSize + 2 * qrPad
   const innerBottom = H - innerM
   const gapAeternaBottom = 30
-  const gapUrlAeterna = 42
-  const gapScanUrl = 42
-  const gapQrToScan = 36
+  /** Tighter than main copy — scan + URL use smaller type */
+  const gapUrlAeterna = 36
+  const gapScanUrl = 34
+  const gapQrToScan = 34
   const yAeterna = innerBottom - gapAeternaBottom
   const yUrl = yAeterna - gapUrlAeterna
   const yScan = yUrl - gapScanUrl
@@ -371,7 +377,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   /** Do not draw main text below this y (centers); keeps service block above the footer stack. */
   const mainContentBottomY =
     nContact > 0 ? firstContactCenterY - Math.round(contactGap * 0.55) - 20 : qrTop - 28
-  const approxServiceBlock = 280
+  const approxServiceBlock = 300
   if (y + approxServiceBlock > mainContentBottomY) {
     y = Math.max(innerM + 120, mainContentBottomY - approxServiceBlock)
   }
@@ -393,8 +399,9 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   /** Space after service details — extra gap before MEMORIAL FUND when present */
   y += 58
 
-  const fund = fundLink?.trim()
-  if (fund) {
+  const bankPart = bankInfo?.trim()
+  const urlPart = fundLink?.trim()
+  if (bankPart || urlPart) {
     y += 40
     ctx.save()
     ctx.fillStyle = INK
@@ -406,11 +413,29 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     y += 42
     ctx.fillStyle = INK_MUTED
     ctx.font = fontDetailLine
-    const supLines = wrapLines(ctx, fund, contentW, 4)
-    for (const ln of supLines) {
-      if (y > mainContentBottomY - 8) break
-      ctx.fillText(ln, centerX, y)
-      y += Math.round(DATE_QUOTE_SIZE_PX * 1.58)
+
+    const drawWrappedBlock = (text: string, maxLines: number) => {
+      const lines = wrapLines(ctx, text, contentW, maxLines)
+      for (const ln of lines) {
+        if (y > mainContentBottomY - 8) break
+        ctx.fillText(ln, centerX, y)
+        y += Math.round(DATE_QUOTE_SIZE_PX * 1.58)
+      }
+    }
+
+    if (bankPart) {
+      for (const segment of bankPart.split(/\n/)) {
+        const seg = segment.trim()
+        if (!seg) {
+          y += Math.round(DATE_QUOTE_SIZE_PX * 0.85)
+          continue
+        }
+        drawWrappedBlock(seg, 12)
+      }
+    }
+    if (urlPart) {
+      if (bankPart) y += 10
+      drawWrappedBlock(urlPart, 4)
     }
     y += 32
   }
@@ -453,7 +478,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.fillStyle = INK_MUTED
   ctx.font = fontUrlLine
   const short = guestUrl.replace(/^https?:\/\//, "")
-  const display = short.length > 48 ? `${short.slice(0, 46)}…` : short
+  const display = short.length > 56 ? `${short.slice(0, 54)}…` : short
   ctx.fillText(display, centerX, yUrl)
 
   ctx.fillStyle = "#8a857c"

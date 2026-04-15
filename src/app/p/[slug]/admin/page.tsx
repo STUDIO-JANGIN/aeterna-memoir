@@ -8,6 +8,7 @@ import {
 } from "@/components/memorial/MemorialTrialCountdown"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
 import {
+  getEventBySlugAction,
   getStoriesForAdminAction,
   setStorySelectedAction,
   type AdminEvent,
@@ -148,6 +149,14 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
     setLoading(false)
   }, [slug])
 
+  /** Fresh event row so PDF invitation (canvas) picks up e.g. `invitation_contact_phone` edited in Settings. */
+  const openInviteSheet = useCallback(async () => {
+    if (!slug) return
+    const fresh = await getEventBySlugAction(slug)
+    if (fresh) setEvent(fresh)
+    setInviteSheetOpen(true)
+  }, [slug])
+
   const deadlineAt = event?.expired_at ?? event?.collection_end_at
   const deadlineMs = deadlineAt ? new Date(deadlineAt).getTime() : null
   const trialRemainingMs = deadlineMs !== null ? Math.max(0, deadlineMs - countdownNow) : 0
@@ -178,6 +187,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
       location: event.location,
       ceremonyTime: event.ceremony_time,
       fundLink: event.flower_link,
+      bankInfo: event.bank_info ?? null,
       profileImageUrl: event.profile_image,
       profileImagePan: pan,
       remembranceBio: event.invitation_bio,
@@ -350,7 +360,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => setInviteSheetOpen(true)}
+                  onClick={() => void openInviteSheet()}
                   className="btn-landing-outline-gold w-full justify-center min-h-[48px]"
                 >
                   {tx.memorial.adminSharePdfInvitation}
@@ -434,9 +444,9 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
         ) : null}
 
         <div className="card-landing-airy p-6 md:p-8 mb-6 md:mb-8">
-          <h2 className="text-landing-label mb-6">
+          <p className="text-landing-label mb-6" role="heading" aria-level={2}>
             {tx.memorial.adminMemoriesSectionTitle}
-          </h2>
+          </p>
           <div
             className="flex w-full max-w-xl mx-auto md:mx-0 items-stretch justify-center gap-2 border-b border-white/[0.08]"
             role="tablist"

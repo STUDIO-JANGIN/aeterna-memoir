@@ -18,6 +18,7 @@ export type MemorialInvitationCardProps = {
   location?: string | null
   ceremonyTime?: string | null
   fundLink?: string | null
+  bankInfo?: string | null
   profileImageUrl?: string | null
   /** Framing for profile photo (matches create-flow drag). */
   profileImagePan?: { x: number; y: number } | null
@@ -41,6 +42,7 @@ function buildCanvasInput(p: MemorialInvitationCardProps): MemorialInvitationCan
     location: p.location,
     ceremonyTime: p.ceremonyTime,
     fundLink: p.fundLink,
+    bankInfo: p.bankInfo,
     profileImageUrl: p.profileImageUrl,
     profileImagePan: p.profileImagePan,
     remembranceBio: p.remembranceBio,
@@ -58,6 +60,7 @@ export function MemorialInvitationCard({
   location,
   ceremonyTime,
   fundLink,
+  bankInfo,
   profileImageUrl,
   profileImagePan,
   remembranceBio,
@@ -83,13 +86,28 @@ export function MemorialInvitationCard({
         location,
         ceremonyTime,
         fundLink,
+        bankInfo,
         profileImageUrl,
         profileImagePan,
         remembranceBio,
         contactDetailsLine,
       }),
     )
-  }, [name, slug, guestUrl, birthDate, deathDate, location, ceremonyTime, fundLink, profileImageUrl, profileImagePan, remembranceBio, contactDetailsLine])
+  }, [
+    name,
+    slug,
+    guestUrl,
+    birthDate,
+    deathDate,
+    location,
+    ceremonyTime,
+    fundLink,
+    bankInfo,
+    profileImageUrl,
+    profileImagePan,
+    remembranceBio,
+    contactDetailsLine,
+  ])
 
   useEffect(() => {
     let cancelled = false
@@ -138,6 +156,7 @@ export function MemorialInvitationCard({
     location,
     ceremonyTime,
     fundLink,
+    bankInfo,
     profileImageUrl,
     profileImagePan,
     remembranceBio,
@@ -156,6 +175,7 @@ export function MemorialInvitationCard({
         location,
         ceremonyTime,
         fundLink,
+        bankInfo,
         profileImageUrl,
         profileImagePan,
         remembranceBio,
@@ -196,6 +216,7 @@ export function MemorialInvitationCard({
     location,
     ceremonyTime,
     fundLink,
+    bankInfo,
     profileImageUrl,
     profileImagePan,
     remembranceBio,

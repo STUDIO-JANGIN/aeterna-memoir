@@ -25,6 +25,10 @@ import {
 } from "@/app/actions/getPublicMemorialPageData"
 import { LegalFormCaption } from "@/components/LegalFormCaption"
 import { StoryMemoryDrawer } from "@/components/memorial/StoryMemoryDrawer"
+import {
+  MemorialTrialCountdown,
+  type MemorialTrialBannerCopy,
+} from "@/components/memorial/MemorialTrialCountdown"
 import { buildGlobalShareMessage } from "@/components/MemorialShareActions"
 import { ShareMemorialModal } from "@/components/memorial/ShareMemorialModal"
 import { coerceIdString, parseUuidString } from "@/lib/uuid"
@@ -191,13 +195,34 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
   }, [])
 
   const [photoDeadlineRemainingMs, setPhotoDeadlineRemainingMs] = useState<number | null>(null)
+  /** Same window as admin `MemorialTrialCountdown`: `expired_at ?? collection_end_at` only (not created+7d fallback). */
+  const [trialBannerRemainingMs, setTrialBannerRemainingMs] = useState(0)
+
+  const memorialTrialBannerCopy = useMemo<MemorialTrialBannerCopy>(
+    () => ({
+      preserveLegacyHeader: tx.memorial.preserveLegacyHeader,
+      trialGatheringTimerLabel: tx.memorial.trialGatheringTimerLabel,
+      trialCountdownFromMs: tx.memorial.trialCountdownFromMs,
+      trialUpgradePart1: tx.memorial.trialUpgradePart1,
+      trialUpgradeLinkLabel: tx.memorial.trialUpgradeLinkLabel,
+      trialUpgradePart2: tx.memorial.trialUpgradePart2,
+    }),
+    [tx.memorial],
+  )
 
   useEffect(() => {
     if (!event) return
     const deadline = getDeadlineMs(event)
     const tick = () => {
-      const left = deadline - Date.now()
+      const now = Date.now()
+      const left = deadline - now
       setRemainingMs(left <= 0 ? 0 : left)
+      const at = event.expired_at ?? event.collection_end_at
+      if (at) {
+        setTrialBannerRemainingMs(Math.max(0, new Date(at).getTime() - now))
+      } else {
+        setTrialBannerRemainingMs(0)
+      }
     }
     tick()
     const id = setInterval(tick, 1000)
@@ -882,6 +907,15 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
         </div>
       ) : null}
       <div className="relative z-[1]">
+      {!isPaidMemorial && trialBannerRemainingMs > 0 && (
+        <MemorialTrialCountdown
+          variant="banner"
+          remainingMs={trialBannerRemainingMs}
+          className="mb-0"
+          upgradeHref={`/?locale=${encodeURIComponent(appLocale)}#pricing`}
+          copy={memorialTrialBannerCopy}
+        />
+      )}
       <AnimatePresence>
         {showPremiumBlurPopup && (
           <motion.div

@@ -100,18 +100,26 @@ export async function sharePdfAsFile(
 ): Promise<boolean> {
   if (typeof navigator === "undefined" || !navigator.share) return false
   const file = new File([blob], filename, { type: "application/pdf" })
-  if (!canSharePdfFile(file)) return false
-  try {
-    await navigator.share({
-      files: [file],
-      title,
-      text,
-    })
-    return true
-  } catch (e) {
-    if (e instanceof DOMException && e.name === "AbortError") return true
-    return false
+
+  const tryShare = async (data: ShareData): Promise<boolean> => {
+    try {
+      await navigator.share(data)
+      return true
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return true
+      return false
+    }
   }
+
+  /**
+   * Always try `navigator.share({ files })` — do not gate on `canShare`, which is often wrong on
+   * mobile Safari / Chrome (reports false even when sharing a PDF works). User can pick WhatsApp
+   * from the system sheet and attach the invitation PDF.
+   */
+  if (await tryShare({ files: [file], title, text })) return true
+  /** Some WebKit builds reject mixed fields; files-only still opens the sheet with the PDF. */
+  if (await tryShare({ files: [file] })) return true
+  return false
 }
 
 export async function shareInvitationUrl(url: string, text: string): Promise<boolean> {

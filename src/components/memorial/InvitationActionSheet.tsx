@@ -208,8 +208,13 @@ export function InvitationActionSheet({
       const okFile = await sharePdfAsFile(pdfBlob, filename, shareTitle, shareText)
       if (okFile) return
       if (guestPageUrl) {
-        /** WhatsApp: open the app/chat directly with memorial link — skip generic `share()` so the labeled button always targets WhatsApp. */
+        /**
+         * WhatsApp has no URL scheme to attach a PDF. If Web Share with a file failed, save the PDF
+         * locally and open WhatsApp with the memorial link so the user can attach the file from
+         * their downloads / Files app.
+         */
         if (primary === "whatsapp") {
+          downloadPdfBlob(pdfBlob, filename)
           runPrimaryMessengerFallback(primary, shareText, guestPageUrl, null)
           return
         }

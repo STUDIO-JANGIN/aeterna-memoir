@@ -24,27 +24,34 @@ const GOLD_RING = "#D4AF37"
 const FONT_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif"
 const FONT_SANS = "Inter, system-ui, -apple-system, sans-serif"
 
-/** Typography scale (rem → px at 16px root) */
-const NAME_REM = 2.5
-const NAME_SIZE_PX = Math.round(16 * NAME_REM) // 40
-const DATE_QUOTE_REM = 0.9
-const DATE_QUOTE_SIZE_PX = Math.round(16 * DATE_QUOTE_REM) // ~14
-const SECTION_HEADER_REM = 0.75
-const SECTION_HEADER_SIZE_PX = Math.round(16 * SECTION_HEADER_REM) // 12
+/** Typography scale (rem → px at 16px root) — sized for print/PDF readability */
+const NAME_REM = 2.8125
+const NAME_SIZE_PX = Math.round(16 * NAME_REM) // 45
+const DATE_QUOTE_REM = 1.0625
+const DATE_QUOTE_SIZE_PX = Math.round(16 * DATE_QUOTE_REM) // 17
+const SECTION_HEADER_REM = 0.875
+const SECTION_HEADER_SIZE_PX = Math.round(16 * SECTION_HEADER_REM) // 14
 const SECTION_HEADER_TRACKING_EM = 0.2
+
+const KICKER_SIZE_PX = 23 /** “In Loving Memory Of” */
+const PLACEHOLDER_INITIAL_PX = 62 /** Letter in empty photo circle */
+const SCAN_CTA_SIZE_PX = 24 /** “Scan to visit…” */
+const URL_LINE_SIZE_PX = 20 /** Short URL under QR */
+const FOOTER_BRAND_SIZE_PX = 16 /** “Aeterna” */
 
 async function ensureInvitationFonts(): Promise<void> {
   if (typeof document === "undefined" || !document.fonts) return
   try {
     await Promise.all([
       document.fonts.load(`600 ${NAME_SIZE_PX}px 'Playfair Display'`),
-      document.fonts.load(`400 20px 'Playfair Display'`),
+      document.fonts.load(`400 ${KICKER_SIZE_PX}px Inter`),
       document.fonts.load(`italic 300 ${DATE_QUOTE_SIZE_PX}px 'Playfair Display'`),
       document.fonts.load(`300 ${DATE_QUOTE_SIZE_PX}px Inter`),
-      document.fonts.load(`400 22px Inter`),
+      document.fonts.load(`400 ${SCAN_CTA_SIZE_PX}px Inter`),
       document.fonts.load(`500 ${SECTION_HEADER_SIZE_PX}px Inter`),
-      document.fonts.load(`300 ${DATE_QUOTE_SIZE_PX}px Inter`),
-      document.fonts.load(`400 17px Inter`),
+      document.fonts.load(`400 ${URL_LINE_SIZE_PX}px Inter`),
+      document.fonts.load(`400 ${FOOTER_BRAND_SIZE_PX}px 'Playfair Display'`),
+      document.fonts.load(`600 ${PLACEHOLDER_INITIAL_PX}px 'Playfair Display'`),
     ])
   } catch {
     /* fall back to system fonts */
@@ -194,7 +201,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
 
   ctx.textAlign = "center"
   ctx.fillStyle = INK_MUTED
-  ctx.font = `400 20px ${FONT_SANS}`
+  ctx.font = `400 ${KICKER_SIZE_PX}px ${FONT_SANS}`
   ctx.fillText("In Loving Memory Of", centerX, y)
   y += 44
 
@@ -255,7 +262,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
     ctx.rect(photoX, photoY, photoD, photoD)
     ctx.fill()
     ctx.fillStyle = INK_MUTED
-    ctx.font = `600 56px ${FONT_SERIF}`
+    ctx.font = `600 ${PLACEHOLDER_INITIAL_PX}px ${FONT_SERIF}`
     ctx.textAlign = "center"
     ctx.fillText(displayName.charAt(0).toUpperCase() || "·", photoCx, photoCy + 6)
   }
@@ -319,8 +326,8 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   y += 28
 
   const fontDetailLine = `300 ${DATE_QUOTE_SIZE_PX}px ${FONT_SANS}`
-  const fontScanCta = `500 21px ${FONT_SANS}`
-  const fontUrlLine = `400 17px ${FONT_SANS}`
+  const fontScanCta = `500 ${SCAN_CTA_SIZE_PX}px ${FONT_SANS}`
+  const fontUrlLine = `400 ${URL_LINE_SIZE_PX}px ${FONT_SANS}`
 
   ctx.textAlign = "center"
   ctx.save()
@@ -334,7 +341,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.fillStyle = INK_MUTED
   ctx.font = fontDetailLine
   ctx.fillText(`Location: ${displayLocation(location)}`, centerX, y)
-  y += 32
+  y += 36
   ctx.fillText(`Service time: ${displayService(ceremonyTime)}`, centerX, y)
   y += 44
 
@@ -398,7 +405,7 @@ export async function renderMemorialInvitationCanvas(input: MemorialInvitationCa
   ctx.fillText(display, centerX, y)
 
   ctx.fillStyle = "#8a857c"
-  ctx.font = `400 14px ${FONT_SERIF}`
+  ctx.font = `400 ${FOOTER_BRAND_SIZE_PX}px ${FONT_SERIF}`
   ctx.fillText("Aeterna", centerX, H - innerM - 28)
 
   return canvas

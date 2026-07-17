@@ -7,6 +7,7 @@
 -- Related single-purpose files (same definitions; this bundle is for one-shot sync):
 --   - supabase-add-memorial-background-image.sql
 --   - supabase-add-memorial-background-position.sql
+--   - supabase-add-profile-image.sql
 --   - supabase-add-profile-image-position.sql
 --
 -- TypeScript mirror: `src/types/events.schema.ts` (`EventsRow`).
@@ -23,6 +24,12 @@ ALTER TABLE events
   ADD COLUMN IF NOT EXISTS memorial_background_position text;
 
 COMMENT ON COLUMN events.memorial_background_position IS 'Optional "x,y" percentages (0–100) for CSS object-position when memorial_background_image is set.';
+
+-- Circular profile photo on guest memorial + invitation PDF (public storage URL).
+ALTER TABLE events
+  ADD COLUMN IF NOT EXISTS profile_image text;
+
+COMMENT ON COLUMN events.profile_image IS 'Public storage URL for circular profile on /p/[slug] and invitation PDF.';
 
 -- CSS object-position for circular profile on /p/[slug] (same "x,y" format as memorial_background_position).
 ALTER TABLE events

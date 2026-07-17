@@ -2,7 +2,7 @@
 
 import { unstable_noStore as noStore } from "next/cache"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
-import { parseUuidString } from "@/lib/uuid"
+import { parseUuidString, coerceIdString } from "@/lib/uuid"
 import type { Comment } from "@/types/database.types"
 
 export type { Comment }
@@ -93,17 +93,12 @@ export async function getStoryCommentsAction(
 ): Promise<StoryCommentsResult> {
   noStore()
 
-  const rawPhoto =
-    photoId != null && typeof photoId === "string"
-      ? photoId.trim()
-      : String(photoId ?? "").trim()
-  const rawEvent =
-    eventId != null && typeof eventId === "string"
-      ? eventId.trim()
-      : String(eventId ?? "").trim()
+  const rawPhoto = coerceIdString(photoId)
+  const rawEvent = coerceIdString(eventId)
   const photoIdUuid = parseUuidString(rawPhoto)
   const eventIdUuid = parseUuidString(rawEvent)
   if (!photoIdUuid || !eventIdUuid) {
+    console.warn("[getStoryComments] invalid ids", { rawPhoto, rawEvent })
     return { ok: true, comments: [] }
   }
 
@@ -228,32 +223,25 @@ export async function addStoryCommentAction(
 ): Promise<AddCommentResult> {
   noStore()
 
-  const rawPhoto =
-    clientPhotoId != null && typeof clientPhotoId === "string"
-      ? clientPhotoId.trim()
-      : String(clientPhotoId ?? "").trim()
+  const rawPhoto = coerceIdString(clientPhotoId)
+  const rawEvent = coerceIdString(clientEventId)
   if (!rawPhoto) {
     console.error("CRITICAL: photo_id missing (empty after cast)")
-    return { ok: false, error: "Error: Photo ID missing" }
+    return { ok: false, error: "This memory could not be found. Please close and try again." }
   }
-
-  const rawEvent =
-    clientEventId != null && typeof clientEventId === "string"
-      ? clientEventId.trim()
-      : String(clientEventId ?? "").trim()
   if (!rawEvent) {
     console.error("CRITICAL: event_id missing")
-    return { ok: false, error: "Error: Event ID missing" }
+    return { ok: false, error: "This memorial could not be found. Please refresh the page." }
   }
 
   const pid = parseUuidString(rawPhoto)
   const parsedClientEventId = parseUuidString(rawEvent)
   if (!pid) {
     console.error("CRITICAL: photo_id not a valid UUID string:", rawPhoto)
-    return { ok: false, error: "Error: Photo ID missing" }
+    return { ok: false, error: "This memory could not be found. Please close and try again." }
   }
   if (!parsedClientEventId) {
-    return { ok: false, error: "Error: Event ID missing" }
+    return { ok: false, error: "This memorial could not be found. Please refresh the page." }
   }
 
   const name = visitorName.trim().slice(0, MAX_NAME) || "Anonymous"
@@ -268,9 +256,13 @@ export async function addStoryCommentAction(
     .from("stories")
     .select("id, event_id, is_approved")
     .eq("id", pid)
-    .single()
+    .maybeSingle()
 
-  if (storyErr || !story) {
+  if (storyErr) {
+    console.error("[addStoryComment] story lookup failed", storyErr.message)
+    return { ok: false, error: "Could not load this memory. Please try again." }
+  }
+  if (!story) {
     return { ok: false, error: "Memory not found." }
   }
 
@@ -340,7 +332,13 @@ export async function addStoryCommentAction(
       photo_id: photoId,
       event_id: eventId,
     })
-    return { ok: false, error: msg || "Could not send your message." }
+    if (msg.includes("comments") && (msg.includes("does not exist") || msg.includes("schema cache"))) {
+      return {
+        ok: false,
+        error: "Comments are not set up yet on this memorial. Please contact the family administrator.",
+      }
+    }
+    return { ok: false, error: msg || "Could not send your message. Please try again." }
   }
 
   const pub = toPublicComment(inserted as Record<string, unknown>)

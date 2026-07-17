@@ -5,6 +5,7 @@ import { renderInvitePdfBytes } from "@/lib/invitePdfLayout"
 import type { InvitePdfUrlsMap } from "@/lib/resolveInvitePdfUrl"
 import { getEventBySlug } from "@/app/actions/setStorySelected"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { resolveProfileImageUrl } from "@/lib/profileImageUrl"
 import { type LandingLocale, LANDING_LOCALES } from "@/lib/landingTranslations"
 
 export type GenerateInvitePdfOptions = {
@@ -61,7 +62,7 @@ export async function generateInvitePdfAction(
         invitationBio: (event.invitation_bio as string | null) ?? null,
         invitationContactPhone: event.invitation_contact_phone ?? null,
         bankInfo: (event.bank_info as string | null) ?? null,
-        profileImageUrl: (event.profile_image as string | null) ?? null,
+        profileImageUrl: resolveProfileImageUrl((event.profile_image as string | null) ?? null),
         locale,
       })
 

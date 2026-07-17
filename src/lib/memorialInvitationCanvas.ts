@@ -142,18 +142,41 @@ function wrapTitle(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines.slice(0, 3)
 }
 
-function loadImage(src: string): Promise<HTMLImageElement | null> {
+function loadImageElement(src: string, useCrossOrigin: boolean): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image()
-    const t = src.trim()
-    /** Blob / data URLs are same-origin; `crossOrigin = "anonymous"` breaks them in Safari/Chrome when drawing to canvas. */
-    if (/^https?:\/\//i.test(t)) {
-      img.crossOrigin = "anonymous"
-    }
+    if (useCrossOrigin) img.crossOrigin = "anonymous"
     img.onload = () => resolve(img)
     img.onerror = () => resolve(null)
     img.src = src
   })
+}
+
+async function loadImage(src: string): Promise<HTMLImageElement | null> {
+  const t = src.trim()
+  if (!t) return null
+
+  /** Blob / data URLs are same-origin; crossOrigin breaks them when drawing to canvas. */
+  if (!/^https?:\/\//i.test(t)) {
+    return loadImageElement(t, false)
+  }
+
+  try {
+    const res = await fetch(t, { mode: "cors", credentials: "omit" })
+    if (res.ok) {
+      const blob = await res.blob()
+      const objUrl = URL.createObjectURL(blob)
+      try {
+        return await loadImageElement(objUrl, false)
+      } finally {
+        URL.revokeObjectURL(objUrl)
+      }
+    }
+  } catch {
+    /* CORS or network — fall back to direct load */
+  }
+
+  return loadImageElement(t, true)
 }
 
 export type MemorialInvitationCanvasInput = {

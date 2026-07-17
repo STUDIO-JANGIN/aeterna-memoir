@@ -522,6 +522,15 @@ function CreateEventForm() {
   }, [showSuccessPopup])
 
   useEffect(() => {
+    if (!showSuccessPopup) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [showSuccessPopup])
+
+  useEffect(() => {
     const authErr = searchParams.get("auth_error")
     if (!authErr) return
     setCreateError(decodeURIComponent(authErr.replace(/\+/g, " ")))
@@ -1380,8 +1389,13 @@ function CreateEventForm() {
           }
         }
 
-        /** Don’t await uploads: mobile networks are slow; show “Invitation ready” as soon as the event exists. Errors still surface on that screen. */
-        void runProfileUpload().catch((e) => console.error("[handleCreate] profile upload", e))
+        /** Wait for profile upload so the guest page and PDF have the photo; background can finish in the background. */
+        const PROFILE_UPLOAD_RACE_MS = 25_000
+        if (profileFile && slug) {
+          await raceWithTimeout(runProfileUpload(), PROFILE_UPLOAD_RACE_MS, undefined).catch((e) =>
+            console.error("[handleCreate] profile upload", e),
+          )
+        }
         void runBackgroundUpload().catch((e) => console.error("[handleCreate] background upload", e))
 
         if (storagePlan === "plus") {
@@ -1586,7 +1600,7 @@ function CreateEventForm() {
       </AnimatePresence>
 
       {/* Thin progress + step label (fixed so it stays visible while scrolling) */}
-      {memorialType !== null && (
+      {memorialType !== null && !showSuccessPopup && (
         <header className="pointer-events-auto fixed top-0 left-0 right-0 z-[50] pt-[env(safe-area-inset-top,0px)]">
           <div className="h-[2px] w-full overflow-hidden bg-white/[0.08]">
             <motion.div
@@ -2683,12 +2697,12 @@ function CreateEventForm() {
             animate={stepPresence.animate}
             exit={stepPresence.exit}
             transition={ARTISAN_SPRING}
-            className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-landing/90 backdrop-blur-xl"
+            className="fixed inset-0 z-[55] overflow-y-auto overscroll-y-contain scroll-touch bg-landing/90 backdrop-blur-xl"
             onClick={() => setShowSuccessPopup(false)}
           >
-            <div className="flex min-h-[100dvh] w-full flex-col items-center justify-center px-4 py-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-8">
+            <div className="mx-auto w-full max-w-lg px-4 py-[max(1.25rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-10">
               <div
-                className="card-landing-airy flex w-full max-w-lg flex-col gap-0 p-6 text-center md:p-10"
+                className="card-landing-airy flex w-full flex-col gap-0 p-6 text-center md:p-10"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="shrink-0">

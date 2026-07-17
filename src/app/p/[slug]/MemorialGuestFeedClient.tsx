@@ -501,6 +501,35 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
     }
   }, [slug, tx.memorial.errors])
 
+  /** Post-create profile upload can finish after the first page load — poll briefly for the photo URL. */
+  useEffect(() => {
+    if (!slug?.trim() || !event?.id || event.profile_image) return
+    let cancelled = false
+    const deadline = Date.now() + 20_000
+    void (async () => {
+      while (!cancelled && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 600))
+        if (cancelled) return
+        const data = await getPublicMemorialPageDataAction(slug.trim())
+        if (cancelled || !data?.ok || !data.event.profile_image) continue
+        setEvent((prev) =>
+          prev
+            ? {
+                ...prev,
+                profile_image: data.event.profile_image,
+                profile_image_position:
+                  data.event.profile_image_position ?? prev.profile_image_position,
+              }
+            : prev,
+        )
+        return
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [slug, event?.id, event?.profile_image])
+
   // When collection is closed, fetch Final Selection for teaser (3–5 images)
   useEffect(() => {
     if (!event?.id || !isClosed) return

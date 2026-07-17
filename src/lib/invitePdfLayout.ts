@@ -3,6 +3,7 @@ import type { PDFPage, PDFFont } from "pdf-lib"
 import QRCode from "qrcode"
 import sharp from "sharp"
 import { parseCeremonyForInvitePdf, type CeremonyParts } from "@/lib/invitePdfCeremony"
+import { resolveProfileImageUrl } from "@/lib/profileImageUrl"
 import { shapeArabicLineForPdf } from "@/lib/invitePdfArabic"
 import { formatInvitePdfIsoDate } from "@/lib/invitePdfFormat"
 import {
@@ -277,9 +278,10 @@ export async function renderInvitePdfBytes(input: InvitePdfRenderInput): Promise
   y -= 22 * jaGap
 
   const photoSide = 128
-  if (profileImageUrl?.startsWith("http")) {
+  const resolvedProfileUrl = resolveProfileImageUrl(profileImageUrl)
+  if (resolvedProfileUrl?.startsWith("http")) {
     try {
-      const res = await fetch(profileImageUrl)
+      const res = await fetch(resolvedProfileUrl)
       if (res.ok) {
         const buf = new Uint8Array(await res.arrayBuffer())
         const circ = await toCircularProfilePng(buf, photoSide)

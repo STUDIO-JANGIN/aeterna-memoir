@@ -3,10 +3,11 @@
 import { use, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase/browser"
 import { getEventBySlugAction, type AdminEvent } from "@/app/actions/setStorySelected"
 import { updateEventBySlugAction } from "@/app/actions/updateEventBySlug"
+import { uploadNewEventProfileAction } from "@/app/actions/uploadNewEventProfile"
 import { useLandingLocale } from "@/components/landing/LandingLocaleContext"
+import { resolveProfileImageUrl } from "@/lib/profileImageUrl"
 import { resolveInvitePdfUrl } from "@/lib/resolveInvitePdfUrl"
 
 type PageProps = {
@@ -76,12 +77,15 @@ export default function AdminSettingsPage({ params }: PageProps) {
     const file = formData.get("profile_image") as File | null
     let profile_image: string | null = event.profile_image ?? null
     if (file && file.size > 0) {
-      const path = `profiles/${event.id}/${Date.now()}_${file.name}`
-      const { data: up, error: upErr } = await supabase.storage.from("photos").upload(path, file)
-      if (!upErr && up) {
-        const { data: url } = supabase.storage.from("photos").getPublicUrl(path)
-        profile_image = url.publicUrl
+      const uploadFd = new FormData()
+      uploadFd.set("profile_image", file)
+      const up = await uploadNewEventProfileAction(slug, uploadFd)
+      if (!up.ok) {
+        setSavingProfile(false)
+        setProfileError(up.error ?? ap.saveFailed)
+        return
       }
+      if (up.publicUrl) profile_image = up.publicUrl
     }
     const result = await updateEventBySlugAction(slug, {
       name,
@@ -147,6 +151,8 @@ export default function AdminSettingsPage({ params }: PageProps) {
     )
   }
 
+  const profilePreviewSrc = resolveProfileImageUrl(event.profile_image)
+
   return (
     <div className="min-h-dvh bg-landing text-white font-sans">
       <header className="sticky top-0 z-10 border-b border-white/[0.06] bg-landing/95 backdrop-blur">
@@ -178,8 +184,8 @@ export default function AdminSettingsPage({ params }: PageProps) {
           <form onSubmit={handleProfileSubmit} className="space-y-5">
             <div className="flex flex-col items-center gap-3 w-full">
               <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/[0.1] bg-[#030303]/50 flex items-center justify-center shrink-0">
-                {event.profile_image ? (
-                  <img src={event.profile_image} alt="" className="w-full h-full object-cover" />
+                {profilePreviewSrc ? (
+                  <img src={profilePreviewSrc} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-2xl font-serif text-[var(--landing-text-muted)]">
                     {(event.name ?? "?").trim().charAt(0) || "?"}

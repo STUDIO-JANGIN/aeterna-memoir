@@ -24,7 +24,8 @@ function extForMime(mime: string): string {
 /**
  * Upload profile image for a newly created event (by slug). Called from create page after event creation.
  * Uses Buffer + explicit content-type so uploads work when FormData yields a Blob (not a live File) on the server.
- * Optional column `profile_image_position` — apply `supabase-sync-events-optional-columns.sql` or `supabase-add-profile-image-position.sql` if missing.
+ * Optional columns `profile_image`, `profile_image_position` — apply `supabase-add-profile-image.sql`
+ * and `supabase-add-profile-image-position.sql` (or `supabase-sync-events-optional-columns.sql`) if missing.
  */
 export async function uploadNewEventProfileAction(
   slug: string,
@@ -99,6 +100,17 @@ export async function uploadNewEventProfileAction(
     updateErr = retry.error
   }
 
+  if (updateErr && isMissingProfileImageError(updateErr.message)) {
+    console.error(
+      "[uploadNewEventProfile] profile_image column missing — apply supabase-add-profile-image.sql on Supabase.",
+    )
+    return {
+      ok: false,
+      error:
+        "Profile photo storage is not configured on the server yet. Please contact support or try again after the database migration is applied.",
+    }
+  }
+
   if (updateErr) {
     console.error("[uploadNewEventProfile] update", updateErr)
     return { ok: false, error: updateErr.message }
@@ -110,6 +122,15 @@ function isMissingProfileImagePositionError(message: string | undefined): boolea
   const m = (message ?? "").toLowerCase()
   return (
     m.includes("profile_image_position") &&
+    (m.includes("schema cache") || m.includes("could not find") || m.includes("column"))
+  )
+}
+
+function isMissingProfileImageError(message: string | undefined): boolean {
+  const m = (message ?? "").toLowerCase()
+  return (
+    m.includes("profile_image") &&
+    !m.includes("profile_image_position") &&
     (m.includes("schema cache") || m.includes("could not find") || m.includes("column"))
   )
 }

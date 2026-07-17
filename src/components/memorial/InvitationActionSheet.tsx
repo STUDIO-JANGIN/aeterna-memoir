@@ -17,6 +17,8 @@ import {
   type PrimaryMessenger,
 } from "@/lib/invitationShare"
 import { renderMemorialInvitationPdfFromCanvasInput } from "@/lib/memorialInvitationPdfExport"
+import { fetchProfileImageDataUrlAction } from "@/app/actions/fetchProfileImageDataUrl"
+import { resolveProfileImageUrl } from "@/lib/profileImageUrl"
 import type { LandingLocale } from "@/lib/landingTranslations"
 import { ARTISAN_SPRING } from "@/lib/artisanMotion"
 
@@ -147,6 +149,12 @@ export function InvitationActionSheet({
     ;(async () => {
       try {
         const gu = guestMemorialUrl(slug)
+        const resolvedProfile = resolveProfileImageUrl(invitationCanvasData.profileImageUrl)
+        let profileImageUrl = resolvedProfile
+        if (resolvedProfile) {
+          const dataUrl = await fetchProfileImageDataUrlAction(resolvedProfile)
+          if (dataUrl) profileImageUrl = dataUrl
+        }
         const blob = await renderMemorialInvitationPdfFromCanvasInput({
           name: invitationCanvasData.name.trim() || "Beloved",
           guestUrl: gu,
@@ -156,7 +164,7 @@ export function InvitationActionSheet({
           ceremonyTime: invitationCanvasData.ceremonyTime,
           fundLink: invitationCanvasData.fundLink,
           bankInfo: invitationCanvasData.bankInfo,
-          profileImageUrl: invitationCanvasData.profileImageUrl,
+          profileImageUrl,
           profileImagePan: invitationCanvasData.profileImagePan,
           remembranceBio: invitationCanvasData.remembranceBio,
           contactDetailsLine: invitationCanvasData.contactDetailsLine,

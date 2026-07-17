@@ -5,6 +5,8 @@ import { createPortal } from "react-dom"
 import { Download, Printer, X } from "lucide-react"
 import { renderMemorialInvitationCanvas, type MemorialInvitationCanvasInput } from "@/lib/memorialInvitationCanvas"
 import { renderMemorialInvitationPdfFromCanvasInput } from "@/lib/memorialInvitationPdfExport"
+import { fetchProfileImageDataUrlAction } from "@/app/actions/fetchProfileImageDataUrl"
+import { resolveProfileImageUrl } from "@/lib/profileImageUrl"
 import { buildInvitationPdfFilename, downloadPdfBlob } from "@/lib/invitationShare"
 import { MemorialCard } from "@/components/MemorialCard"
 
@@ -50,6 +52,16 @@ function buildCanvasInput(p: MemorialInvitationCardProps): MemorialInvitationCan
   }
 }
 
+async function profileUrlForCanvas(raw: string | null | undefined): Promise<string | null | undefined> {
+  const resolved = resolveProfileImageUrl(raw) ?? raw ?? null
+  if (!resolved) return resolved
+  if (/^https?:\/\//i.test(resolved)) {
+    const dataUrl = await fetchProfileImageDataUrlAction(resolved)
+    if (dataUrl) return dataUrl
+  }
+  return resolved
+}
+
 export function MemorialInvitationCard({
   name,
   slug,
@@ -76,6 +88,7 @@ export function MemorialInvitationCard({
   const [zoomOpen, setZoomOpen] = useState(false)
 
   const renderCanvas = useCallback(async () => {
+    const canvasProfileUrl = await profileUrlForCanvas(profileImageUrl)
     return renderMemorialInvitationCanvas(
       buildCanvasInput({
         name,
@@ -87,7 +100,7 @@ export function MemorialInvitationCard({
         ceremonyTime,
         fundLink,
         bankInfo,
-        profileImageUrl,
+        profileImageUrl: canvasProfileUrl,
         profileImagePan,
         remembranceBio,
         contactDetailsLine,
@@ -128,6 +141,7 @@ export function MemorialInvitationCard({
   const handleSaveImage = useCallback(async () => {
     setBusy(true)
     try {
+      const canvasProfileUrl = await profileUrlForCanvas(profileImageUrl)
       const input = buildCanvasInput({
         name,
         slug,
@@ -137,7 +151,8 @@ export function MemorialInvitationCard({
         location,
         ceremonyTime,
         fundLink,
-        profileImageUrl,
+        bankInfo,
+        profileImageUrl: canvasProfileUrl,
         profileImagePan,
         remembranceBio,
         contactDetailsLine,
@@ -166,6 +181,7 @@ export function MemorialInvitationCard({
   const handlePrintPdf = useCallback(async () => {
     setBusy(true)
     try {
+      const canvasProfileUrl = await profileUrlForCanvas(profileImageUrl)
       const input = buildCanvasInput({
         name,
         slug,
@@ -176,7 +192,7 @@ export function MemorialInvitationCard({
         ceremonyTime,
         fundLink,
         bankInfo,
-        profileImageUrl,
+        profileImageUrl: canvasProfileUrl,
         profileImagePan,
         remembranceBio,
         contactDetailsLine,

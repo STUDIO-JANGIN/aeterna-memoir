@@ -31,6 +31,7 @@ import {
 } from "@/components/memorial/InvitationActionSheet"
 import { parseMemorialBackgroundPosition } from "@/lib/memorialBackgroundPosition"
 import { formatInvitePdfContactLine } from "@/lib/invitePdfTranslations"
+import { resolveProfileImageUrl } from "@/lib/profileImageUrl"
 import { usePersistedPricingCurrencyForCreate } from "@/hooks/usePersistedPricingCurrencyForCreate"
 import { getAppPricingFootnote } from "@/lib/appTranslations"
 import { formatMemorialAdminCheckoutCta } from "@/lib/landingPricing"
@@ -188,7 +189,7 @@ export default function AdminPhotoSelectPage({ params }: PageProps) {
       ceremonyTime: event.ceremony_time,
       fundLink: event.flower_link,
       bankInfo: event.bank_info ?? null,
-      profileImageUrl: event.profile_image,
+      profileImageUrl: resolveProfileImageUrl(event.profile_image),
       profileImagePan: pan,
       remembranceBio: event.invitation_bio,
       contactDetailsLine: phone ? formatInvitePdfContactLine(locale, phone) : null,

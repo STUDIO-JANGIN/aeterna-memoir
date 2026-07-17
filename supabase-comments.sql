@@ -1,4 +1,5 @@
 -- Photo/memory comfort comments (guest-facing). Run in Supabase SQL Editor if not already applied.
+-- Prefer the one-shot bundle: supabase-sync-comments.sql (table + likes_count + heart RPC + realtime).
 -- Aligns with app usage: photo_id = stories.id, event_id = events.id.
 
 CREATE TABLE IF NOT EXISTS comments (

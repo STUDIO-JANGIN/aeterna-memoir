@@ -1,4 +1,6 @@
 -- Lightweight one-line tributes on memorial story photos (guest-facing).
+-- ⚠️ LEGACY: the current app uses **public.comments** (see supabase-comments.sql / supabase-sync-comments.sql),
+-- NOT this story_comments table. Only run this if you maintain separate legacy code.
 -- Run in Supabase SQL Editor or via migration.
 
 CREATE TABLE IF NOT EXISTS story_comments (

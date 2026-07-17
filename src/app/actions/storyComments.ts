@@ -289,38 +289,52 @@ export async function addStoryCommentAction(
     is_reported: false,
   }
 
-  const firstInsert = await supabase
-    .from("comments")
-    .insert(insertPayload)
-    .select("id, visitor_name, text, created_at, is_reported, likes_count")
-    .single()
-
-  let inserted: Record<string, unknown> | null = (firstInsert.data ?? null) as Record<string, unknown> | null
-  let insertErr = firstInsert.error
-
-  if (insertErr && isLikesCountColumnError(insertErr.message ?? "")) {
-    const second = await supabase
-      .from("comments")
-      .insert(insertPayload)
-      .select("id, visitor_name, text, created_at, is_reported")
-      .single()
-    inserted = (second.data ?? null) as Record<string, unknown> | null
-    insertErr = second.error
+  const minimalPayload = {
+    photo_id: photoId,
+    event_id: eventId,
+    text: body,
+    visitor_name: name,
   }
 
-  if (insertErr && isReportColumnOrCacheError(insertErr.message ?? "")) {
-    const minimal = {
-      photo_id: photoId,
-      event_id: eventId,
-      text: body,
-      visitor_name: name,
+  /** Prefer a minimal RETURNING list so insert succeeds even if likes_count / is_reported lag in schema cache. */
+  async function tryInsert(
+    payload: Record<string, unknown>,
+    selectCols: string,
+  ): Promise<{ data: Record<string, unknown> | null; error: { message?: string; code?: string; details?: string; hint?: string } | null }> {
+    const { data, error } = await supabase.from("comments").insert(payload).select(selectCols).single()
+    return {
+      data: (data ?? null) as Record<string, unknown> | null,
+      error,
     }
-    let retry = await supabase.from("comments").insert(minimal).select("id, visitor_name, text, created_at, is_reported").single()
-    if (retry.error && isReportColumnOrCacheError(retry.error.message ?? "")) {
-      retry = await supabase.from("comments").insert(minimal).select("id, visitor_name, text, created_at").single()
+  }
+
+  let inserted: Record<string, unknown> | null = null
+  let insertErr: { message?: string; code?: string; details?: string; hint?: string } | null = null
+
+  const attempts: Array<{ payload: Record<string, unknown>; select: string }> = [
+    { payload: insertPayload, select: "id, visitor_name, text, created_at" },
+    { payload: minimalPayload, select: "id, visitor_name, text, created_at" },
+    { payload: minimalPayload, select: "id, visitor_name, text, created_at, is_reported" },
+    { payload: insertPayload, select: "id, visitor_name, text, created_at, is_reported, likes_count" },
+  ]
+
+  for (const { payload, select } of attempts) {
+    const result = await tryInsert(payload, select)
+    if (!result.error && result.data) {
+      inserted = result.data
+      insertErr = null
+      break
     }
-    inserted = (retry.data ?? null) as Record<string, unknown> | null
-    insertErr = retry.error
+    insertErr = result.error
+    const msg = result.error?.message ?? ""
+    if (
+      !msg.includes("schema cache") &&
+      !msg.includes("could not find") &&
+      !msg.includes("column") &&
+      !msg.includes("does not exist")
+    ) {
+      break
+    }
   }
 
   if (insertErr || !inserted) {

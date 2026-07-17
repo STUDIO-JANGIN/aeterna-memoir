@@ -117,7 +117,10 @@ export function StoryMemoryDrawer({
       try {
         const res = await getStoryCommentsAction(photoStoryId, memorialEventId)
         if (res.ok) {
-          setComments(res.comments)
+          setComments((prev) => {
+            if (opts?.silent && res.comments.length === 0 && prev.length > 0) return prev
+            return res.comments
+          })
         } else {
           console.error("[StoryMemoryDrawer] loadComments failed", {
             photoId: photoStoryId,

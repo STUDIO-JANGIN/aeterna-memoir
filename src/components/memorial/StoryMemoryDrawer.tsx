@@ -287,7 +287,7 @@ export function StoryMemoryDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby="memory-drawer-title"
-        className="relative z-10 grid max-h-[92dvh] w-full max-w-full grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-[1.75rem] border border-[var(--border-gold-subtle)] border-b-0 bg-[var(--once-bg-elevated)] shadow-[0_-24px_80px_rgba(0,0,0,0.45)] md:max-h-[85vh] md:max-w-lg md:rounded-2xl md:border-b md:shadow-2xl"
+        className="relative z-10 grid max-h-[96dvh] w-full max-w-full grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-[1.75rem] border border-[var(--border-gold-subtle)] border-b-0 bg-[var(--once-bg-elevated)] shadow-[0_-24px_80px_rgba(0,0,0,0.45)] md:max-h-[88vh] md:max-w-lg md:rounded-2xl md:border-b md:shadow-2xl"
         initial={isDesktop ? artisanPresence.initial : { y: "100%" }}
         animate={isDesktop ? artisanPresence.animate : { y: 0, opacity: 1 }}
         exit={isDesktop ? artisanPresence.exit : { y: "100%" }}
@@ -324,14 +324,18 @@ export function StoryMemoryDrawer({
           </button>
         </div>
 
-        {/* Photo — shorter on mobile so composer stays on screen */}
+        {/* Photo — a bit shorter when comments exist so the message list has more room */}
         <div className="relative shrink-0 bg-[var(--once-bg)]">
           {story.image_url ? (
             <motion.img
               layoutId={`story-img-${story.id}`}
               src={story.thumb_url ?? story.image_url}
               alt=""
-              className="mx-auto max-h-[26vh] w-full object-contain md:max-h-[34vh]"
+              className={`mx-auto w-full object-contain ${
+                comments.length > 0 || commentsLoading
+                  ? "max-h-[20vh] md:max-h-[28vh]"
+                  : "max-h-[24vh] md:max-h-[32vh]"
+              }`}
               transition={ARTISAN_SPRING}
               draggable={false}
             />
@@ -342,8 +346,12 @@ export function StoryMemoryDrawer({
           )}
         </div>
 
-        {/* Scroll: caption, hearts, existing messages only */}
-        <div className="scroll-touch min-h-0 overflow-y-auto overscroll-y-contain px-4 py-3">
+        {/* Scroll: caption, hearts, existing messages */}
+        <div
+          className={`scroll-touch min-h-0 overflow-y-auto overscroll-y-contain px-4 py-3 ${
+            comments.length > 0 ? "min-h-[44vh] md:min-h-[36vh]" : ""
+          }`}
+        >
           <p className="font-[var(--font-serif)] text-base text-[var(--aeterna-gold)]">
             {story.author_name ?? m.storyDrawerAnonymous}
           </p>
@@ -385,11 +393,11 @@ export function StoryMemoryDrawer({
           {commentsLoading ? (
             <p className="mt-5 text-xs text-[var(--once-text-muted)]">{m.storyDrawerCommentsLoading}</p>
           ) : comments.length > 0 ? (
-            <div className="mt-5 pb-1">
-              <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--aeterna-gold-muted)]">
+            <div className="mt-4 pb-2">
+              <p className="mb-2.5 text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--aeterna-gold-muted)]">
                 {m.storyDrawerCommentsHeading}
               </p>
-              <ul className="space-y-2.5">
+              <ul className="space-y-2">
                 {comments.map((c) => {
                   const canon = canonicalCommentId(String(c.id))
                   const cid = canon ?? String(c.id).trim()
@@ -449,7 +457,7 @@ export function StoryMemoryDrawer({
         {/* Composer — isolated panel; opaque fields so scroll text never bleeds through */}
         <form
           ref={composerRef}
-          className="relative isolate shrink-0 border-t border-[var(--border-gold-subtle)]/50 bg-[var(--once-bg)] px-4 py-3 shadow-[0_-12px_32px_rgba(0,0,0,0.35)] pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+          className="relative isolate shrink-0 border-t border-[var(--border-gold-subtle)]/50 bg-[var(--once-bg)] px-4 py-2.5 shadow-[0_-12px_32px_rgba(0,0,0,0.35)] pb-[max(0.65rem,env(safe-area-inset-bottom))]"
           onSubmit={(e) => {
             e.preventDefault()
             if (!canSubmit) return

@@ -136,6 +136,10 @@ export type AppStrings = {
     donationThankYou: string
     memoryReceivedTitle: string
     memoryReceivedBody: string
+    /** Shown in the share modal while photo compress + upload runs. */
+    memoryUploadingHint: string
+    /** Primary button on the post-submit confirmation step. */
+    memoryReceivedDone: string
     emailPlaceholder: string
     saving: string
     notifyMe: string
@@ -616,7 +620,10 @@ const EN: AppStrings = {
     donationThankYou: "Thank you for your thoughtful support.",
     memoryReceivedTitle: "Memory Received",
     memoryReceivedBody:
-      "Your memory has been submitted and will be displayed on the memorial once approved by the admin. Once public, others will be able to like and comment on your post.",
+      "Thank you. Your photo and message were submitted for review. They will appear on this memorial after the family admin approves them — this usually takes a little while, so you won’t see them on the page right away.",
+    memoryUploadingHint:
+      "Uploading your photo… Please keep this screen open. After it sends, the family will review it before it appears on the memorial.",
+    memoryReceivedDone: "Got it",
     emailPlaceholder: "Email",
     saving: "Saving…",
     notifyMe: "Notify me",
@@ -1106,7 +1113,10 @@ const KO_PATCH: DeepPartial<AppStrings> = {
     donationThankYou: "따뜻한 마음에 감사드립니다.",
     memoryReceivedTitle: "소중한 추억을 받았습니다",
     memoryReceivedBody:
-      "보내주신 추억은 관리자의 확인 후 기념관에 게시됩니다. 공개된 후에는 다른 분들도 함께 보고 공감(좋아요)과 댓글을 남길 수 있습니다.",
+      "감사합니다. 사진과 메시지가 검토를 위해 제출되었습니다. 가족 관리자가 승인한 뒤에 이 기념관에 표시됩니다. 바로 페이지에 보이지 않는 것이 정상입니다.",
+    memoryUploadingHint:
+      "사진을 올리는 중입니다… 이 화면을 닫지 마세요. 전송이 끝나면 가족이 검토한 뒤 기념관에 표시됩니다.",
+    memoryReceivedDone: "확인",
     emailPlaceholder: "이메일",
     saving: "저장 중…",
     notifyMe: "알림 받기",
@@ -1589,7 +1599,10 @@ const JA_PATCH: DeepPartial<AppStrings> = {
     donationThankYou: "温かいご支援ありがとうございます。",
     memoryReceivedTitle: "思い出を受け取りました",
     memoryReceivedBody:
-      "お送りいただいた思い出は、管理者の承認後に記念館に掲載されます。公開後は、他の方々も「いいね」やコメントを残すことができます。",
+      "ありがとうございます。写真とメッセージは確認のため送信されました。ご家族の管理者が承認したあと、この記念館に表示されます。すぐにはページに出ないのが正常です。",
+    memoryUploadingHint:
+      "写真をアップロードしています… この画面を閉じないでください。送信後、ご家族の確認を経て記念館に表示されます。",
+    memoryReceivedDone: "了解しました",
     notifyMe: "通知する",
     shareModalTitle: "この記念館を共有する",
     shareModalBody: "家族や知人を招待して、一緒に思い出を残しましょう。",

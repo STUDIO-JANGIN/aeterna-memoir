@@ -71,7 +71,10 @@ export const FR_APP_REST: DeepPartial<AppStrings> = {
     donationThankYou: "Merci pour votre soutien délicat.",
     memoryReceivedTitle: "Souvenir reçu",
     memoryReceivedBody:
-      "Votre souvenir a été soumis et sera affiché après approbation de l'administrateur. Une fois public, les autres pourront aimer et commenter votre message.",
+      "Merci. Votre photo et votre message ont été envoyés pour relecture. Ils apparaîtront sur ce mémorial après l’approbation de l’administrateur familial — pas immédiatement sur la page.",
+    memoryUploadingHint:
+      "Envoi de votre photo… Veuillez garder cet écran ouvert. Après l’envoi, la famille l’examinera avant qu’elle n’apparaisse sur le mémorial.",
+    memoryReceivedDone: "Compris",
     emailPlaceholder: "E-mail",
     saving: "Enregistrement…",
     notifyMe: "Me prévenir",

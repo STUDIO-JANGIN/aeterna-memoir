@@ -125,7 +125,7 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
   const [loadSyncing, setLoadSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
-  /** 1 = name, 2 = photo, 3 = story */
+  /** 1 = name, 2 = photo, 3 = story, 4 = submitted (pending admin review) */
   const [shareStep, setShareStep] = useState(1)
   const [memoryAuthorName, setMemoryAuthorName] = useState("")
   const [memoryStoryText, setMemoryStoryText] = useState("")
@@ -693,7 +693,7 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
       payload.set("thumb", new File([compressedThumb], "photo-thumb.webp", { type: "image/webp" }))
 
       const result = await createStoryAction(payload)
-      if (result?.ok && result?.storyId && typeof window !== "undefined") {
+      if (result?.ok) {
         if (result.imageUrl) {
           setPhotoPermanentUrl(result.imageUrl)
           setPhotoPreviewUrl((prev) => {
@@ -701,29 +701,32 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
             return null
           })
         }
-        try {
-          const stored: Record<string, string> = {}
-          const raw = localStorage.getItem("aeterna_my_stories")
-          if (raw) {
-            const parsed = JSON.parse(raw) as Record<string, string>
-            Object.assign(stored, parsed)
+        if (result.storyId && typeof window !== "undefined") {
+          try {
+            const stored: Record<string, string> = {}
+            const raw = localStorage.getItem("aeterna_my_stories")
+            if (raw) {
+              const parsed = JSON.parse(raw) as Record<string, string>
+              Object.assign(stored, parsed)
+            }
+            stored[event.id] = result.storyId
+            localStorage.setItem("aeterna_my_stories", JSON.stringify(stored))
+          } catch {
+            // ignore
           }
-          stored[event.id] = result.storyId
-          localStorage.setItem("aeterna_my_stories", JSON.stringify(stored))
-        } catch {
-          // ignore
         }
-        setShowUploadSuccessToast(true)
+        setShareStep(4)
+        const refreshed = await getPublicApprovedStoriesForEventAction(event.id)
+        setStories(refreshed as Story[])
+        const map: Record<string, number> = {}
+        refreshed.forEach((s: Story) => {
+          const k = normalizeStoryIdForHearts(s.id)
+          if (k) map[k] = s.likes_count ?? 0
+        })
+        setLikesMap((prev) => ({ ...prev, ...map }))
+      } else {
+        setSubmitError(tx.memorial.errors.submitFailed)
       }
-      handleCloseForm()
-      const refreshed = await getPublicApprovedStoriesForEventAction(event.id)
-      setStories(refreshed as Story[])
-      const map: Record<string, number> = {}
-      refreshed.forEach((s: Story) => {
-        const k = normalizeStoryIdForHearts(s.id)
-        if (k) map[k] = s.likes_count ?? 0
-      })
-      setLikesMap((prev) => ({ ...prev, ...map }))
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : tx.memorial.errors.submitFailed)
     } finally {
@@ -1647,7 +1650,7 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
               <motion.div
                 className="absolute inset-y-0 left-0 rounded-r-full bg-[var(--aeterna-gold)]"
                 initial={false}
-                animate={{ width: `${(shareStep / 3) * 100}%` }}
+                animate={{ width: `${(Math.min(shareStep, 3) / 3) * 100}%` }}
                 transition={ARTISAN_SPRING}
               />
             </div>
@@ -1659,19 +1662,22 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
                     id="form-title"
                     className="text-[11px] font-sans font-normal text-[var(--aeterna-gold-muted)] tracking-[0.28em] uppercase"
                   >
-                    {tx.memorial.shareMemoryTitle}
+                    {shareStep === 4 ? tx.memorial.memoryReceivedTitle : tx.memorial.shareMemoryTitle}
                   </h2>
-                  <p className="mt-1.5 text-[10px] font-sans text-[var(--aeterna-gold-muted)]/90 tracking-[0.2em] uppercase tabular-nums">
-                    {tx.memorial.stepCounter(shareStep)}
-                  </p>
+                  {shareStep < 4 ? (
+                    <p className="mt-1.5 text-[10px] font-sans text-[var(--aeterna-gold-muted)]/90 tracking-[0.2em] uppercase tabular-nums">
+                      {tx.memorial.stepCounter(shareStep)}
+                    </p>
+                  ) : null}
                 </div>
                 <motion.button
                   type="button"
                   onClick={handleCloseForm}
-                  className="shrink-0 p-2 text-[var(--landing-text-body)] hover:text-[var(--landing-text-hero)] rounded-lg"
+                  disabled={submitLoading}
+                  className="shrink-0 p-2 text-[var(--landing-text-body)] hover:text-[var(--landing-text-hero)] rounded-lg disabled:opacity-40"
                   aria-label={tx.memorial.close}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: submitLoading ? 1 : 1.05 }}
+                  whileTap={{ scale: submitLoading ? 1 : 0.95 }}
                   transition={ARTISAN_SPRING}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1689,6 +1695,25 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
                   transition={ARTISAN_SPRING}
                   className="min-h-[200px] flex flex-col"
                 >
+                  {shareStep === 4 ? (
+                    <div className="flex flex-1 flex-col items-center justify-center py-4 text-center">
+                      <div
+                        className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-[var(--aeterna-gold)]/40 bg-[var(--aeterna-gold)]/10 text-[var(--aeterna-gold)]"
+                        aria-hidden
+                      >
+                        <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <h3 className="font-heading font-serif text-xl md:text-[1.35rem] text-[var(--aeterna-headline)] leading-snug">
+                        {tx.memorial.memoryReceivedTitle}
+                      </h3>
+                      <p className="mt-4 max-w-sm text-sm leading-relaxed text-[var(--aeterna-body)] text-balance">
+                        {tx.memorial.memoryReceivedBody}
+                      </p>
+                    </div>
+                  ) : null}
+
                   {shareStep === 1 && (
                     <>
                       <h3 className="font-heading font-serif text-xl md:text-[1.35rem] text-[var(--aeterna-headline)] text-center leading-snug mb-8 mt-2">
@@ -1700,8 +1725,9 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
                         onChange={(e) => setMemoryAuthorName(e.target.value)}
                         autoComplete="name"
                         autoFocus
+                        disabled={submitLoading}
                         placeholder={tx.memorial.formNamePh}
-                        className="w-full min-h-[52px] px-4 rounded-xl border border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)] font-sans text-base text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] placeholder:opacity-80 focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)]/70"
+                        className="w-full min-h-[52px] px-4 rounded-xl border border-[var(--border-gold-subtle)] bg-[var(--aeterna-charcoal)] font-sans text-base text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] placeholder:opacity-80 focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)]/70 disabled:opacity-60"
                       />
                     </>
                   )}
@@ -1716,6 +1742,7 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
                         type="file"
                         accept="image/*"
                         className="sr-only"
+                        disabled={submitLoading}
                         onChange={(e) => handleMemoryPhotoChange(e.target.files?.[0] ?? null)}
                       />
                       <button
@@ -1760,8 +1787,9 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
                         onChange={(e) => setMemoryStoryText(e.target.value)}
                         autoFocus
                         rows={5}
+                        disabled={submitLoading}
                         placeholder={tx.memorial.formStoryPh}
-                        className="w-full resize-none rounded-[32px] border-[0.5px] border-[rgba(255,255,255,0.1)] bg-[var(--aeterna-charcoal)] px-4 py-3.5 font-sans text-base leading-relaxed text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] placeholder:opacity-75 focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)]/70"
+                        className="w-full resize-none rounded-[32px] border-[0.5px] border-[rgba(255,255,255,0.1)] bg-[var(--aeterna-charcoal)] px-4 py-3.5 font-sans text-base leading-relaxed text-[var(--aeterna-headline)] placeholder:text-[var(--aeterna-body)] placeholder:opacity-75 focus:outline-none focus:ring-2 focus:ring-[var(--aeterna-gold-muted)]/70 disabled:opacity-60"
                       />
                       <p className="mt-6 text-center font-sans text-sm leading-relaxed text-[var(--aeterna-body)] text-balance">
                         {isPremiumTier ? tx.memorial.formStoryPremium : tx.memorial.formStoryFree}
@@ -1771,51 +1799,80 @@ export default function GuestFeedPage({ params, initialViewerIsOwner = false }: 
                 </motion.div>
               </AnimatePresence>
 
-              {submitError && (
+              {submitLoading && shareStep === 3 ? (
+                <div
+                  className="mt-5 rounded-xl border border-[var(--aeterna-gold)]/25 bg-[var(--aeterna-gold)]/10 px-4 py-3 text-center"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <p className="text-sm font-medium text-[var(--aeterna-gold)]">{tx.memorial.sending}</p>
+                  <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--aeterna-body)] text-balance">
+                    {tx.memorial.memoryUploadingHint}
+                  </p>
+                </div>
+              ) : null}
+
+              {submitError && shareStep !== 4 ? (
                 <p className="mt-5 text-center font-sans text-sm text-[var(--aeterna-gold-muted)]" role="alert">
                   {submitError}
                 </p>
-              )}
+              ) : null}
 
-              <LegalFormCaption className="mt-6" />
+              {shareStep < 4 ? <LegalFormCaption className="mt-6" /> : null}
 
               <div className="mt-6 flex gap-3">
-                {shareStep > 1 ? (
+                {shareStep === 4 ? (
                   <motion.button
                     type="button"
-                    onClick={goShareBack}
-                    disabled={submitLoading}
-                    className="min-h-[52px] flex-1 rounded-[32px] border border-[var(--border-gold-subtle)] font-sans text-sm text-[var(--landing-text-body)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-white/5 disabled:opacity-50"
-                    whileHover={{ scale: submitLoading ? 1 : 1.01 }}
-                    whileTap={{ scale: submitLoading ? 1 : 0.99 }}
-                    transition={ARTISAN_SPRING}
-                  >
-                    {tx.common.back}
-                  </motion.button>
-                ) : null}
-                {shareStep < 3 ? (
-                  <motion.button
-                    type="button"
-                    onClick={goShareNext}
-                    className="min-h-[52px] flex-1 rounded-[32px] bg-[var(--aeterna-gold)] font-sans text-sm font-medium text-[var(--aeterna-charcoal)] shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[var(--aeterna-gold-light)]"
+                    onClick={handleCloseForm}
+                    className="min-h-[52px] w-full rounded-[32px] bg-[var(--aeterna-gold)] font-sans text-sm font-medium text-[var(--aeterna-charcoal)] shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[var(--aeterna-gold-light)]"
                     whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98, boxShadow: "0 0 36px rgba(197, 160, 89, 0.42)" }}
+                    whileTap={{ scale: 0.98 }}
                     transition={ARTISAN_SPRING}
                   >
-                    {tx.memorial.continueTheStoryBtn}
+                    {tx.memorial.memoryReceivedDone}
                   </motion.button>
                 ) : (
-                  <motion.button
-                    type="button"
-                    onClick={handleSubmitStory}
-                    disabled={submitLoading}
-                    className="min-h-[52px] flex-1 rounded-[32px] bg-[var(--aeterna-gold)] font-sans text-sm font-medium text-[var(--aeterna-charcoal)] shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60"
-                    whileHover={{ scale: submitLoading ? 1 : 1.01 }}
-                    whileTap={{ scale: submitLoading ? 1 : 0.99 }}
-                    transition={ARTISAN_SPRING}
-                  >
-                    {submitLoading ? tx.memorial.sending : tx.memorial.shareThisMemory}
-                  </motion.button>
+                  <>
+                    {shareStep > 1 ? (
+                      <motion.button
+                        type="button"
+                        onClick={goShareBack}
+                        disabled={submitLoading}
+                        className="min-h-[52px] flex-1 rounded-[32px] border border-[var(--border-gold-subtle)] font-sans text-sm text-[var(--landing-text-body)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-white/5 disabled:opacity-50"
+                        whileHover={{ scale: submitLoading ? 1 : 1.01 }}
+                        whileTap={{ scale: submitLoading ? 1 : 0.99 }}
+                        transition={ARTISAN_SPRING}
+                      >
+                        {tx.common.back}
+                      </motion.button>
+                    ) : null}
+                    {shareStep < 3 ? (
+                      <motion.button
+                        type="button"
+                        onClick={goShareNext}
+                        disabled={submitLoading}
+                        className="min-h-[52px] flex-1 rounded-[32px] bg-[var(--aeterna-gold)] font-sans text-sm font-medium text-[var(--aeterna-charcoal)] shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[var(--aeterna-gold-light)] disabled:opacity-50"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.98, boxShadow: "0 0 36px rgba(197, 160, 89, 0.42)" }}
+                        transition={ARTISAN_SPRING}
+                      >
+                        {tx.memorial.continueTheStoryBtn}
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        type="button"
+                        onClick={handleSubmitStory}
+                        disabled={submitLoading}
+                        className="min-h-[52px] flex-1 rounded-[32px] bg-[var(--aeterna-gold)] font-sans text-sm font-medium text-[var(--aeterna-charcoal)] shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[var(--aeterna-gold-light)] disabled:opacity-60"
+                        whileHover={{ scale: submitLoading ? 1 : 1.01 }}
+                        whileTap={{ scale: submitLoading ? 1 : 0.99 }}
+                        transition={ARTISAN_SPRING}
+                      >
+                        {submitLoading ? tx.memorial.sending : tx.memorial.shareThisMemory}
+                      </motion.button>
+                    )}
+                  </>
                 )}
               </div>
             </div>

@@ -80,6 +80,10 @@ export function StoryMemoryDrawer({
 
   const photoStoryId = coerceIdString(story?.id)
   const memorialEventId = coerceIdString(eventId)
+  const commentHeartStorageKey =
+    memorialEventId && photoStoryId
+      ? `aeterna_hearted_comments_${memorialEventId}_${photoStoryId}`
+      : null
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)")
@@ -105,6 +109,30 @@ export function StoryMemoryDrawer({
       // ignore
     }
   }, [nameStorageKey])
+
+  useEffect(() => {
+    if (!commentHeartStorageKey || typeof window === "undefined") return
+    try {
+      const raw = localStorage.getItem(commentHeartStorageKey)
+      if (!raw) {
+        setHeartedCommentIds(new Set())
+        return
+      }
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) {
+        setHeartedCommentIds(new Set())
+        return
+      }
+      const next = new Set<string>()
+      for (const item of parsed) {
+        const id = typeof item === "string" ? canonicalCommentId(item) : null
+        if (id) next.add(id)
+      }
+      setHeartedCommentIds(next)
+    } catch {
+      setHeartedCommentIds(new Set())
+    }
+  }, [commentHeartStorageKey])
 
   const loadComments = useCallback(
     async (opts?: { silent?: boolean }) => {
@@ -224,6 +252,8 @@ export function StoryMemoryDrawer({
       const id = canonicalCommentId(rawCommentId)
       if (!id) return
       if (commentHeartBusyId === id) return
+      // One heart per person (this browser) — ignore further clicks
+      if (heartedCommentIds.has(id)) return
 
       setCommentHeartBusyId(id)
 
@@ -244,6 +274,13 @@ export function StoryMemoryDrawer({
           setHeartedCommentIds((prev) => {
             const next = new Set(prev)
             next.add(id)
+            if (commentHeartStorageKey && typeof window !== "undefined") {
+              try {
+                localStorage.setItem(commentHeartStorageKey, JSON.stringify([...next]))
+              } catch {
+                // ignore
+              }
+            }
             return next
           })
           setComments((prev) =>
@@ -263,7 +300,7 @@ export function StoryMemoryDrawer({
         setCommentHeartBusyId(null)
       }
     },
-    [commentHeartBusyId],
+    [commentHeartBusyId, heartedCommentIds, commentHeartStorageKey],
   )
 
   const canSubmit = body.trim().length > 0 && !sending
@@ -422,18 +459,20 @@ export function StoryMemoryDrawer({
                       <button
                         type="button"
                         onClick={() => void handleCommentHeart(String(c.id))}
-                        disabled={busy}
+                        disabled={busy || youHearted}
                         className={`flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-1 py-0.5 transition disabled:opacity-50 ${
-                          showFilled
+                          youHearted || showFilled
                             ? "text-red-400"
                             : "text-[var(--once-text-muted)] hover:bg-white/[0.06] hover:text-red-400/90"
                         }`}
-                        aria-label={m.storyDrawerCommentHeartAriaAdd}
-                        title={m.storyDrawerCommentHeartTitleAdd}
+                        aria-label={
+                          youHearted ? m.storyDrawerCommentHeartAriaRemove : m.storyDrawerCommentHeartAriaAdd
+                        }
+                        title={youHearted ? m.storyDrawerCommentHeartTitleRemove : m.storyDrawerCommentHeartTitleAdd}
                       >
                         <svg
                           className="h-4 w-4"
-                          fill={showFilled ? "currentColor" : "none"}
+                          fill={youHearted || showFilled ? "currentColor" : "none"}
                           stroke="currentColor"
                           viewBox="0 0 24 24"
                         >
